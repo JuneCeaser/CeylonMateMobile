@@ -1,0 +1,50 @@
+======================================================================
+COMPONENT 3: RISK ZONE PREDICTION - STACKING MODEL METRICS
+======================================================================
+
+Base Learner Models:
+----------------------------------------------------------------------
+1. Weather Model: XGBoost Regressor
+2. Traffic Model: Random Forest Regressor
+3. Incident Model: XGBoost Regressor
+
+Fusion Model (Neural Network):
+----------------------------------------------------------------------
+Input: [weather_risk, traffic_risk, incident_risk, hour_norm, day_norm]
+Dense(16) -> Dense(8) -> multi-task outputs:
+  - risk_score (regression)
+  - risk_category (classification)
+  - severity_level (regression)
+
+======================================================================
+BASE LEARNER PERFORMANCE (VALIDATION)
+======================================================================
+
+weather_mae............................. 0.0770
+weather_r2.............................. -0.0754
+traffic_mae............................. 0.0707
+traffic_r2.............................. 0.0683
+incident_mae............................ 0.0616
+incident_r2............................. 0.3004
+
+======================================================================
+FUSION MODEL PERFORMANCE (FINAL EPOCH)
+======================================================================
+
+Final training loss.....................0.2437
+Final validation loss...................0.4669
+Risk score MAE (train).................0.0489
+Risk score MAE (val)...................0.0635
+Severity MAE (train)...................0.4083
+Severity MAE (val).....................0.6168
+Risk category accuracy (train).........0.9787
+Risk category accuracy (val)...........0.9700
+
+======================================================================
+TRAINING SUMMARY
+======================================================================
+
+Total epochs trained: 80
+Batch size: 32
+Optimizer: Adam (lr=0.001)
+Validation split: 20%

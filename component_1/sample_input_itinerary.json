@@ -1,0 +1,8 @@
+{
+  "budget": 150000,
+  "available_days": 3,
+  "distance_preference": 80,
+  "num_travelers": 2,
+  "activity_type": "cultural",
+  "season": 2
+}

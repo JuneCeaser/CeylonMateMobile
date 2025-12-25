@@ -1,0 +1,81 @@
+hotel_id,name,location,latitude,longitude,price_range_min,price_range_max,rating,amenities,room_types,verified,contact
+1,Hotel Budget 1,Nuwara Eliya,6.75786,80.292396,5903.9,6963.03,3.4,"[""restaurant"", ""bar"", ""parking"", ""gym""]","[""single"", ""double""]",True,+94 89 2861900
+2,Hotel Mid 2,Arugam Bay,7.680684,81.508062,14193.58,17270.65,3.7,"[""parking"", ""airport_shuttle"", ""gym"", ""pool"", ""bar"", ""restaurant"", ""wifi""]","[""single"", ""double"", ""suite""]",True,+94 73 8439987
+3,Hotel Luxury 3,Kandy,6.862847,80.814598,27062.28,69225.12,4.5,"[""room_service"", ""pool"", ""restaurant"", ""spa"", ""airport_shuttle"", ""parking""]","[""single"", ""double""]",True,+94 39 8675444
+4,Hotel Mid 4,Mirissa,8.819255,80.569047,9942.68,18257.02,4.1,"[""gym"", ""bar"", ""wifi"", ""pool""]","[""single"", ""double""]",True,+94 61 5128525
+5,Hotel Budget 5,Galle,7.722985,80.435248,4681.45,9800.74,3.7,"[""spa"", ""gym"", ""room_service""]","[""single""]",True,+94 69 3163354
+6,Hotel Mid 6,Bentota,7.297448,79.668774,11324.2,22104.26,3.9,"[""room_service"", ""pool"", ""airport_shuttle"", ""spa"", ""restaurant"", ""parking"", ""beach_access""]","[""single"", ""double""]",True,+94 58 5187244
+7,Hotel Luxury 7,Ella,8.865485,79.865425,46694.89,134170.59,4.9,"[""spa"", ""parking"", ""bar"", ""wifi"", ""gym"", ""airport_shuttle"", ""beach_access"", ""pool"", ""room_service""]","[""single""]",False,+94 16 4851315
+8,Hotel Luxury 8,Kandy,9.209257,81.801215,46987.21,88538.82,4.8,"[""room_service"", ""wifi"", ""gym"", ""restaurant"", ""spa"", ""pool"", ""bar"", ""beach_access""]","[""single"", ""double"", ""suite""]",True,+94 88 7355586
+9,Hotel Mid 9,Colombo,7.779924,80.590546,10284.29,16470.17,4.4,"[""parking"", ""beach_access"", ""bar"", ""pool"", ""restaurant"", ""spa""]","[""single"", ""double""]",True,+94 76 5625097
+10,Hotel Budget 10,Nuwara Eliya,9.642656,81.528014,2172.72,10793.76,3.0,"[""pool"", ""bar""]","[""single""]",True,+94 79 2806706
+11,Hotel Mid 11,Mirissa,7.677276,81.554257,13298.93,19384.11,3.5,"[""spa"", ""bar"", ""room_service"", ""beach_access""]","[""single"", ""double"", ""suite""]",True,+94 23 7592234
+12,Hotel Mid 12,Colombo,7.50767,81.306457,8115.69,25550.21,3.5,"[""spa"", ""pool"", ""restaurant"", ""wifi"", ""bar"", ""airport_shuttle"", ""beach_access""]","[""single""]",True,+94 57 7924206
+13,Hotel Mid 13,Nuwara Eliya,7.54095,81.059781,14935.41,16949.19,4.2,"[""gym"", ""parking"", ""room_service"", ""spa"", ""wifi"", ""bar""]","[""single""]",True,+94 38 4688912
+14,Hotel Budget 14,Mirissa,8.734502,80.497104,5409.66,10080.94,3.0,"[""gym"", ""wifi"", ""room_service""]","[""single"", ""double""]",True,+94 72 9014336
+15,Hotel Mid 15,Kandy,9.171547,81.384897,11583.3,16462.78,4.0,"[""bar"", ""beach_access"", ""restaurant"", ""wifi"", ""gym"", ""pool""]","[""single"", ""double""]",True,+94 60 3592413
+16,Hotel Mid 16,Mirissa,6.938178,80.687339,10755.29,20880.47,3.9,"[""room_service"", ""wifi"", ""pool"", ""airport_shuttle"", ""bar""]","[""single""]",True,+94 94 8731883
+17,Hotel Budget 17,Ella,8.81049,80.997285,4716.96,8294.42,3.3,"[""airport_shuttle"", ""bar"", ""spa"", ""wifi""]","[""single""]",True,+94 54 1291763
+18,Hotel Mid 18,Colombo,9.415487,81.089841,9040.79,28800.79,3.6,"[""restaurant"", ""gym"", ""airport_shuttle"", ""room_service"", ""spa"", ""beach_access"", ""bar""]","[""single"", ""double""]",True,+94 75 2470702
+19,Hotel Budget 19,Galle,8.852566,79.983228,2690.29,11282.87,3.7,"[""beach_access"", ""pool"", ""spa""]","[""single""]",True,+94 67 5449328
+20,Hotel Luxury 20,Kandy,9.447492,81.052846,47459.07,139731.61,4.4,"[""wifi"", ""room_service"", ""airport_shuttle"", ""pool"", ""beach_access"", ""spa"", ""restaurant"", ""bar"", ""gym""]","[""single"", ""double""]",False,+94 62 6072868
+21,Hotel Budget 21,Colombo,6.197653,81.770814,5008.78,6370.39,3.6,"[""restaurant"", ""wifi""]","[""single""]",True,+94 80 4910432
+22,Hotel Luxury 22,Kandy,8.229466,80.63191,47515.47,128504.65,4.2,"[""wifi"", ""restaurant"", ""airport_shuttle"", ""room_service"", ""bar"", ""parking""]","[""single""]",True,+94 88 5271937
+23,Hotel Luxury 23,Galle,9.387274,80.574434,41670.39,115927.6,4.0,"[""airport_shuttle"", ""pool"", ""gym"", ""bar"", ""restaurant"", ""parking"", ""wifi"", ""spa""]","[""single"", ""double"", ""suite""]",True,+94 93 8199621
+24,Hotel Mid 24,Arugam Bay,6.116273,80.379278,8261.63,22532.82,4.5,"[""parking"", ""gym"", ""bar"", ""wifi"", ""airport_shuttle"", ""beach_access"", ""spa""]","[""single"", ""double"", ""suite""]",True,+94 88 3678057
+25,Hotel Luxury 25,Galle,6.204855,80.012196,27951.67,89368.01,4.7,"[""beach_access"", ""restaurant"", ""bar"", ""airport_shuttle"", ""room_service"", ""pool"", ""wifi""]","[""single"", ""double""]",True,+94 73 6683237
+26,Hotel Mid 26,Bentota,7.452572,80.082216,14608.21,17768.78,3.7,"[""pool"", ""airport_shuttle"", ""spa"", ""restaurant"", ""wifi"", ""gym"", ""beach_access""]","[""single""]",True,+94 32 4157361
+27,Hotel Budget 27,Mirissa,6.969237,80.303116,2793.09,10210.26,2.6,"[""gym"", ""parking"", ""pool"", ""restaurant""]","[""single"", ""double""]",False,+94 84 3626898
+28,Hotel Budget 28,Arugam Bay,7.128414,81.165932,5636.57,11484.63,3.7,"[""spa"", ""pool"", ""bar"", ""restaurant""]","[""single"", ""double""]",True,+94 72 6945359
+29,Hotel Luxury 29,Arugam Bay,7.231695,81.824702,39863.96,128475.0,4.7,"[""wifi"", ""beach_access"", ""spa"", ""room_service"", ""airport_shuttle"", ""restaurant"", ""pool"", ""parking"", ""gym""]","[""single"", ""double""]",True,+94 15 3217796
+30,Hotel Mid 30,Kandy,6.266839,80.2708,12595.2,25262.06,4.4,"[""beach_access"", ""pool"", ""restaurant"", ""spa""]","[""single"", ""double""]",True,+94 55 5590429
+31,Hotel Mid 31,Arugam Bay,8.277348,79.62475,11151.01,28814.14,3.6,"[""restaurant"", ""wifi"", ""parking"", ""room_service""]","[""single""]",False,+94 79 6040091
+32,Hotel Mid 32,Colombo,6.033103,81.300525,10755.54,24367.95,4.2,"[""gym"", ""wifi"", ""airport_shuttle"", ""room_service"", ""bar""]","[""single""]",True,+94 11 6818912
+33,Hotel Mid 33,Colombo,9.690673,79.866183,13991.68,23772.54,3.9,"[""pool"", ""room_service"", ""restaurant"", ""gym"", ""beach_access"", ""bar"", ""parking""]","[""single"", ""double"", ""suite""]",True,+94 28 8553966
+34,Hotel Mid 34,Mirissa,6.563805,79.729948,10271.95,16121.95,3.6,"[""room_service"", ""beach_access"", ""parking"", ""bar""]","[""single""]",False,+94 95 2059765
+35,Hotel Mid 35,Galle,9.550883,79.517698,11116.55,22219.73,4.3,"[""gym"", ""spa"", ""room_service"", ""airport_shuttle"", ""restaurant"", ""beach_access""]","[""single""]",True,+94 14 6991065
+36,Hotel Mid 36,Bentota,8.273155,79.647508,12439.18,22071.25,4.5,"[""room_service"", ""beach_access"", ""wifi"", ""bar"", ""restaurant"", ""spa"", ""parking""]","[""single"", ""double"", ""suite""]",True,+94 74 8208730
+37,Hotel Mid 37,Mirissa,8.917414,81.565895,9176.4,15283.75,3.9,"[""spa"", ""wifi"", ""airport_shuttle"", ""beach_access"", ""gym""]","[""single"", ""double""]",False,+94 35 9706253
+38,Hotel Mid 38,Ella,8.093668,81.781459,10707.39,29125.02,4.2,"[""wifi"", ""spa"", ""beach_access"", ""room_service"", ""gym""]","[""single"", ""double"", ""suite""]",True,+94 70 6150781
+39,Hotel Mid 39,Bentota,6.263203,81.405518,13986.75,29678.26,3.9,"[""restaurant"", ""parking"", ""pool"", ""airport_shuttle"", ""wifi"", ""room_service""]","[""single""]",True,+94 34 3681889
+40,Hotel Mid 40,Nuwara Eliya,8.908845,80.663173,11700.77,20124.58,4.3,"[""beach_access"", ""room_service"", ""spa"", ""airport_shuttle"", ""gym"", ""bar"", ""wifi""]","[""single"", ""double""]",True,+94 64 4237320
+41,Hotel Luxury 41,Galle,7.662199,79.903707,27278.53,80209.77,4.2,"[""wifi"", ""room_service"", ""spa"", ""airport_shuttle"", ""restaurant"", ""beach_access"", ""pool""]","[""single"", ""double""]",True,+94 48 8954267
+42,Hotel Mid 42,Colombo,8.013018,80.097945,10763.3,18640.03,3.9,"[""parking"", ""gym"", ""airport_shuttle"", ""restaurant"", ""pool"", ""beach_access"", ""wifi""]","[""single"", ""double""]",True,+94 27 8388177
+43,Hotel Mid 43,Bentota,9.441767,80.259396,8701.23,19009.27,3.8,"[""restaurant"", ""parking"", ""airport_shuttle"", ""spa"", ""beach_access""]","[""single"", ""double"", ""suite""]",True,+94 57 7878415
+44,Hotel Mid 44,Mirissa,6.076314,80.236318,11015.11,15854.94,4.4,"[""spa"", ""restaurant"", ""pool"", ""room_service"", ""beach_access"", ""gym""]","[""single"", ""double""]",True,+94 85 7111368
+45,Hotel Budget 45,Kandy,6.959971,80.992556,5994.17,7287.92,3.6,"[""airport_shuttle"", ""parking"", ""room_service""]","[""single"", ""double"", ""suite""]",True,+94 42 6197277
+46,Hotel Mid 46,Bentota,8.472419,81.680094,11628.9,24103.53,4.4,"[""airport_shuttle"", ""gym"", ""wifi"", ""restaurant"", ""room_service"", ""pool""]","[""single""]",True,+94 86 3596721
+47,Hotel Budget 47,Nuwara Eliya,6.505487,80.290896,5013.13,6214.32,3.7,"[""bar"", ""wifi""]","[""single"", ""double""]",True,+94 96 1386948
+48,Hotel Mid 48,Nuwara Eliya,6.211218,80.916014,9811.72,24342.6,3.8,"[""parking"", ""gym"", ""pool"", ""airport_shuttle""]","[""single"", ""double"", ""suite""]",True,+94 58 2414698
+49,Hotel Budget 49,Arugam Bay,7.826109,81.525545,3619.32,7695.32,3.0,"[""spa"", ""room_service"", ""bar"", ""gym""]","[""single""]",True,+94 95 3079330
+50,Hotel Mid 50,Ella,8.1141,80.568162,8548.75,24686.22,4.2,"[""beach_access"", ""gym"", ""bar"", ""pool"", ""wifi"", ""room_service"", ""spa""]","[""single"", ""double""]",True,+94 71 8957125
+51,Hotel Mid 51,Nuwara Eliya,6.950055,81.592282,11151.1,16380.46,4.1,"[""room_service"", ""bar"", ""restaurant"", ""airport_shuttle"", ""beach_access""]","[""single""]",True,+94 11 7349475
+52,Hotel Mid 52,Mirissa,6.27748,80.300721,14872.2,17577.45,3.9,"[""room_service"", ""spa"", ""airport_shuttle"", ""restaurant"", ""beach_access""]","[""single"", ""double""]",False,+94 56 5070805
+53,Hotel Mid 53,Mirissa,7.859909,80.977379,12671.37,18776.66,3.9,"[""parking"", ""room_service"", ""pool"", ""restaurant"", ""spa"", ""beach_access""]","[""single""]",False,+94 72 9811313
+54,Hotel Mid 54,Ella,7.947459,81.771156,8486.0,27059.41,4.0,"[""spa"", ""airport_shuttle"", ""restaurant"", ""beach_access""]","[""single"", ""double""]",True,+94 69 4499667
+55,Hotel Mid 55,Colombo,7.394041,79.846933,9846.9,27143.66,3.8,"[""beach_access"", ""parking"", ""pool"", ""gym"", ""bar"", ""spa""]","[""single"", ""double""]",True,+94 69 3306427
+56,Hotel Mid 56,Arugam Bay,7.988883,79.650262,10351.69,18625.53,3.9,"[""wifi"", ""spa"", ""beach_access"", ""room_service"", ""pool""]","[""single"", ""double""]",True,+94 24 9534498
+57,Hotel Budget 57,Colombo,7.038679,80.986307,2220.75,8480.61,3.2,"[""pool"", ""restaurant"", ""bar""]","[""single"", ""double"", ""suite""]",True,+94 91 7122432
+58,Hotel Budget 58,Galle,9.590227,80.442801,2179.65,7803.84,2.6,"[""pool"", ""restaurant"", ""wifi"", ""spa""]","[""single"", ""double"", ""suite""]",True,+94 79 4790387
+59,Hotel Luxury 59,Galle,8.906931,81.723917,25416.32,77843.86,4.5,"[""parking"", ""bar"", ""spa"", ""airport_shuttle"", ""gym"", ""wifi"", ""room_service""]","[""single"", ""double"", ""suite""]",False,+94 40 2399552
+60,Hotel Luxury 60,Arugam Bay,6.898413,81.464346,34893.02,63106.22,4.4,"[""room_service"", ""airport_shuttle"", ""wifi"", ""bar"", ""pool"", ""parking"", ""beach_access"", ""restaurant"", ""spa""]","[""single"", ""double""]",True,+94 53 3700319
+61,Hotel Mid 61,Kandy,8.516563,80.27153,11915.26,23773.82,4.4,"[""restaurant"", ""wifi"", ""parking"", ""bar"", ""pool""]","[""single""]",True,+94 94 6332298
+62,Hotel Mid 62,Bentota,9.511978,79.739839,9995.66,29798.51,4.1,"[""wifi"", ""pool"", ""gym"", ""parking"", ""beach_access"", ""bar"", ""airport_shuttle""]","[""single"", ""double"", ""suite""]",False,+94 12 4110685
+63,Hotel Mid 63,Kandy,8.031862,80.868289,13029.91,28880.11,3.5,"[""pool"", ""bar"", ""restaurant"", ""gym"", ""room_service""]","[""single"", ""double"", ""suite""]",True,+94 47 1501417
+64,Hotel Budget 64,Ella,7.33682,80.186267,4782.94,10700.68,3.5,"[""beach_access"", ""airport_shuttle"", ""pool""]","[""single"", ""double"", ""suite""]",True,+94 41 1740472
+65,Hotel Luxury 65,Mirissa,5.949228,81.666815,30693.61,125070.71,4.9,"[""bar"", ""restaurant"", ""gym"", ""wifi"", ""room_service"", ""parking"", ""beach_access"", ""airport_shuttle"", ""pool""]","[""single"", ""double""]",True,+94 38 1540003
+66,Hotel Mid 66,Bentota,8.712322,80.765939,10061.42,25475.48,3.5,"[""pool"", ""restaurant"", ""airport_shuttle"", ""gym"", ""room_service""]","[""single""]",True,+94 38 3489569
+67,Hotel Mid 67,Mirissa,6.444787,80.0425,12607.58,28661.66,3.6,"[""wifi"", ""airport_shuttle"", ""pool"", ""spa"", ""gym"", ""restaurant""]","[""single"", ""double"", ""suite""]",True,+94 24 6326287
+68,Hotel Mid 68,Ella,8.706151,79.787989,14812.19,28457.17,4.3,"[""wifi"", ""beach_access"", ""airport_shuttle"", ""pool""]","[""single"", ""double""]",True,+94 58 9999105
+69,Hotel Budget 69,Colombo,6.127712,81.034677,3611.04,11636.82,3.1,"[""bar"", ""beach_access"", ""parking"", ""airport_shuttle""]","[""single"", ""double""]",True,+94 61 1878574
+70,Hotel Mid 70,Nuwara Eliya,8.467356,79.770155,12798.26,17246.11,3.8,"[""wifi"", ""pool"", ""restaurant"", ""spa"", ""parking"", ""room_service""]","[""single"", ""double""]",True,+94 47 7284261
+71,Hotel Budget 71,Kandy,9.791544,80.197385,5393.05,9144.32,3.8,"[""wifi"", ""gym""]","[""single""]",True,+94 15 2947269
+72,Hotel Mid 72,Bentota,9.18044,79.76601,12112.6,23053.13,4.2,"[""parking"", ""wifi"", ""spa"", ""restaurant"", ""pool"", ""beach_access""]","[""single"", ""double""]",True,+94 78 9877196
+73,Hotel Mid 73,Ella,9.040519,79.671882,13215.89,24282.48,3.7,"[""airport_shuttle"", ""bar"", ""wifi"", ""spa"", ""restaurant"", ""room_service"", ""gym""]","[""single"", ""double""]",True,+94 80 6955519
+74,Hotel Mid 74,Colombo,9.767732,80.823863,10758.99,29804.54,3.6,"[""wifi"", ""parking"", ""spa"", ""airport_shuttle"", ""beach_access"", ""restaurant"", ""bar""]","[""single""]",True,+94 52 3592895
+75,Hotel Mid 75,Nuwara Eliya,7.325789,80.74477,12423.97,24234.8,4.3,"[""parking"", ""pool"", ""gym"", ""airport_shuttle"", ""restaurant"", ""spa"", ""beach_access""]","[""single""]",True,+94 23 1583246
+76,Hotel Budget 76,Colombo,9.404009,79.552518,3949.18,10844.2,2.8,"[""gym"", ""bar"", ""restaurant"", ""pool""]","[""single"", ""double""]",True,+94 33 5716644
+77,Hotel Luxury 77,Ella,9.231103,81.230719,28209.8,61195.46,4.7,"[""room_service"", ""beach_access"", ""bar"", ""spa"", ""restaurant"", ""airport_shuttle"", ""parking"", ""gym"", ""pool""]","[""single"", ""double""]",True,+94 53 2705103
+78,Hotel Mid 78,Ella,8.289891,81.821725,13704.86,16200.3,4.1,"[""parking"", ""airport_shuttle"", ""bar"", ""room_service""]","[""single""]",True,+94 66 5434950
+79,Hotel Luxury 79,Galle,6.208872,79.993232,31736.53,55738.83,4.8,"[""parking"", ""restaurant"", ""pool"", ""bar"", ""gym"", ""wifi"", ""airport_shuttle""]","[""single"", ""double"", ""suite""]",True,+94 70 1300593
+80,Hotel Budget 80,Ella,7.069698,81.617326,2832.29,7298.43,3.1,"[""room_service"", ""airport_shuttle"", ""wifi""]","[""single"", ""double"", ""suite""]",True,+94 38 7116262

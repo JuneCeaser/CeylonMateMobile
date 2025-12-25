@@ -1,0 +1,14 @@
+{
+  "locations": [
+    {
+      "rainfall_mm": 10,
+      "wind_speed": 5,
+      "temperature": 29,
+      "traffic_congestion_level": 0.6,
+      "average_speed": 40,
+      "traffic_volume": 300,
+      "num_recent_accidents": 6,
+      "num_recent_incidents": 8
+    }
+  ]
+}

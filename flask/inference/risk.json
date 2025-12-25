@@ -1,0 +1,24 @@
+{
+  "user_preferences": {
+    "budget": 150000,
+    "available_days": 3,
+    "num_travelers": 2,
+    "distance_preference": 80,
+    "activity_type": "cultural",
+    "season": "any",
+    "start_latitude": 6.9271,
+    "start_longitude": 79.8612,
+    "max_attractions": 8,
+    "min_attraction_score": 0.2,
+    "max_hotels": 5
+  },
+  "context": {
+    "weather": {
+      "rainfall_mm": 10,
+      "temperature": 29
+    },
+    "traffic": {
+      "congestion_level": 4
+    }
+  }
+}
