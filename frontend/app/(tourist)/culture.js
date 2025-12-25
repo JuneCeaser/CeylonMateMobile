@@ -5,7 +5,7 @@ import { Colors } from '../../constants/theme';
 export default function CultureScreen() {
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>Culture Component</Text>
+            <Text style={styles.text}>Culture Component Anjali</Text>
         </View>
     );
 }
