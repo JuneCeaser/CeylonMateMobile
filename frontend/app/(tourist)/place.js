@@ -5,10 +5,9 @@ import {
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '../../constants/theme';
 import axios from 'axios';
 
-// REPLACE WITH YOUR ACTUAL LOCAL IP ADDRESS (Run 'ipconfig' or 'ifconfig')
+// REPLACE WITH YOUR ACTUAL LOCAL IP ADDRESS
 const API_URL = 'http://192.168.8.100:5000/api/places'; 
 
 const { width } = Dimensions.get('window');
@@ -25,6 +24,7 @@ export default function PlaceScreen() {
   const detectLocation = async () => {
     setLoading(true);
     try {
+      // 1. Request Permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Allow location access to find nearby places.');
@@ -32,26 +32,37 @@ export default function PlaceScreen() {
         return;
       }
 
+      // 2. Get User's REAL Current Location
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      // Temporarily force Sigiriya coordinates
-fetchNearbyPlace(7.9570, 80.7603);
+      
+      // 3. Extract the real coordinates
+      const { latitude, longitude } = location.coords;
+      console.log("📍 Detected Real Location:", latitude, longitude);
+
+      // 4. Send REAL coordinates to Backend
+      fetchNearbyPlace(latitude, longitude);
+
     } catch (error) {
-      console.error(error);
+      console.error("Location Error:", error);
+      Alert.alert("GPS Error", "Make sure your location is turned on.");
       setLoading(false);
     }
   };
 
   const fetchNearbyPlace = async (lat, lng) => {
     try {
+      console.log(`📡 Checking Backend for place near: ${lat}, ${lng}`);
       const response = await axios.get(`${API_URL}/nearby`, {
         params: { lat, lng }
       });
 
       if (response.data.message) {
         // No place found logic
-        Alert.alert("No Site Detected", "You are not near a supported historical site.");
+        console.log("Backend Response:", response.data.message);
         setPlace(null);
       } else {
+        // Place found!
+        console.log("✅ Place Found:", response.data.name);
         setPlace(response.data);
       }
     } catch (error) {
@@ -75,9 +86,16 @@ fetchNearbyPlace(7.9570, 80.7603);
      return (
         <View style={styles.center}>
             <Ionicons name="location-outline" size={60} color="#ccc" />
-            <Text style={{marginTop: 10, color: '#555'}}>Go to a historical site to activate.</Text>
+            <Text style={{marginTop: 10, color: '#555'}}>No historical site detected nearby.</Text>
+            <Text style={{fontSize: 12, color: '#999', marginTop: 5}}>(Try simulating location in Emulator)</Text>
+            
             <TouchableOpacity onPress={detectLocation} style={styles.retryBtn}>
-                <Text style={{color: '#fff', fontWeight: 'bold'}}>Retry</Text>
+                <Text style={{color: '#fff', fontWeight: 'bold'}}>Retry GPS</Text>
+            </TouchableOpacity>
+
+            {/* Back Button for safety */}
+            <TouchableOpacity onPress={() => router.back()} style={{marginTop: 20}}>
+                <Text style={{color: '#007BFF'}}>Go Back</Text>
             </TouchableOpacity>
         </View>
      );
@@ -114,7 +132,9 @@ fetchNearbyPlace(7.9570, 80.7603);
         <Text style={styles.placeTitle}>{place.name}</Text>
         <View style={styles.locationRow}>
             <Ionicons name="location-sharp" size={16} color="#888" />
-            <Text style={styles.locationText}>{place.description.substring(0, 30)}...</Text>
+            <Text style={styles.locationText}>
+                {place.description ? place.description.substring(0, 40) + "..." : "Historical Site"}
+            </Text>
         </View>
       </View>
 
@@ -138,7 +158,7 @@ fetchNearbyPlace(7.9570, 80.7603);
             <Text style={styles.cardSub}>Interactive</Text>
         </TouchableOpacity>
 
-        {/* History (Renamed to About Place -> Links to Chatbot) */}
+        {/* About Place -> Chatbot Link */}
         <TouchableOpacity 
             style={styles.card}
             onPress={() => router.push({
@@ -171,7 +191,7 @@ fetchNearbyPlace(7.9570, 80.7603);
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9F9F9', padding: 20 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 30, marginBottom: 20 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   imageCard: { position: 'relative', borderRadius: 25, overflow: 'hidden', height: 250, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
