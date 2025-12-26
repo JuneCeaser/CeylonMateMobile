@@ -24,17 +24,25 @@ exports.createExperience = async (req, res) => {
 };
 
 /**
- * @desc    Get all experiences for the marketplace
- * @route   GET /api/experiences
+ * @desc    Get all experiences with optional category filtering
+ * @route   GET /api/experiences?category=Cooking
  * @access  Public
  */
 exports.getAllExperiences = async (req, res) => {
     try {
-        // Find all documents and use 'populate' to join with the User model to get host details
-        const experiences = await Experience.find().populate('host', 'name email');
+        let query = {};
+
+        // If 'category' is provided in the URL, add it to the search query
+        if (req.query.category) {
+            query.category = req.query.category;
+        }
+
+        // Find experiences based on the query (filter or all)
+        const experiences = await Experience.find(query).populate('host', 'name email');
+        
         res.status(200).json(experiences);
     } catch (err) {
-        console.error("Get All Experiences Error:", err.message);
+        console.error("Get Experiences Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
