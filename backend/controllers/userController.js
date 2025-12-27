@@ -15,6 +15,7 @@ const transporter = nodemailer.createTransport({
 
 // Helper: Send OTP
 const sendOTP = async (email, otp) => {
+  console.log(`DEBUG: The OTP for ${email} is: ${otp}`); // This line helps you see the OTP in your terminal while testing
   console.log("Sending OTP to:", email);
   const mailOptions = {
     from: process.env.GMAIL_USER,
@@ -35,7 +36,7 @@ const sendOTP = async (email, otp) => {
 
 // Signup function
 exports.signup = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role, phone, nicNumber } = req.body;
   
   try {
     let user = await User.findOne({ email });
@@ -49,6 +50,9 @@ exports.signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role: role || 'tourist',
+      phone,
+      nicNumber,
       otp,
       otpExpires,
       isVerified: false,
@@ -107,17 +111,22 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: "Email not verified" });
 
     // Token expires in 7 days (safer than 1000h)
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d", 
-    });
+    const token = jwt.sign(
+      { 
+        id: user._id,
+        role: user.role
+       }, 
+       process.env.JWT_SECRET, 
+       {expiresIn: "7d", }
+      );
 
     res.status(200).json({ 
         token, 
         user: { 
             id: user._id,
             name: user.name, 
-            email: user.email 
-        } 
+            email: user.email,
+            role: user.role        } 
     });
   } catch (err) {
     console.error("Login error:", err.message);
