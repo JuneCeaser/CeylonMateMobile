@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
-// Import controllers
+
+// Import controller functions
 const { 
     createExperience, 
     getAllExperiences, 
-    getExperienceById 
+    getExperienceById,
+    updateExperience,
+    deleteExperience,
+    getMyExperiences
 } = require('../controllers/experienceController');
 
 // Import authentication middlewares
@@ -12,24 +16,17 @@ const auth = require('../middleware/auth');
 const roleAuth = require('../middleware/roleAuth');
 
 /**
- * ROUTE: GET /api/experiences
- * DESC: Fetches all listed experiences for tourists
- * ACCESS: Public
+ * PUBLIC ROUTES (For Tourists)
  */
-router.get('/', getAllExperiences);
+router.get('/', getAllExperiences); // List all or search/filter
+router.get('/:id', getExperienceById); // View single details
 
 /**
- * ROUTE: GET /api/experiences/:id
- * DESC: Fetches full details of a single experience using its unique ID
- * ACCESS: Public
+ * PRIVATE ROUTES (For Hosts Only)
  */
-router.get('/:id', getExperienceById);
-
-/**
- * ROUTE: POST /api/experiences/add
- * DESC: Allows a registered villager (Host) to add a new service
- * ACCESS: Private (Requires valid JWT token + 'host' role)
- */
-router.post('/add', auth, roleAuth('host'), createExperience);
+router.get('/my/list', auth, roleAuth('host'), getMyExperiences); // View own dashboard
+router.post('/add', auth, roleAuth('host'), createExperience); // Create new
+router.put('/update/:id', auth, roleAuth('host'), updateExperience); // Edit existing
+router.delete('/delete/:id', auth, roleAuth('host'), deleteExperience); // Delete existing
 
 module.exports = router;

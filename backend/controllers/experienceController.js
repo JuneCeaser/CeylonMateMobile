@@ -1,74 +1,110 @@
 const Experience = require('../models/experience');
 
 /**
- * @desc    Create a new experience
+ * @desc    Create a new experience (Host Only)
  * @route   POST /api/experiences/add
- * @access  Private (Host only)
  */
 exports.createExperience = async (req, res) => {
     try {
-        // Create new experience instance with spread data from request body
-        // The 'host' field is automatically populated using the user ID from the 'auth' middleware
         const newExperience = new Experience({
             ...req.body,
-            host: req.user.id 
+            host: req.user.id // Taken from the 'auth' middleware
         });
 
-        // Save to MongoDB
         await newExperience.save();
         res.status(201).json({ msg: "Experience added successfully!", experience: newExperience });
     } catch (err) {
-        console.error("Create Experience Error:", err.message); //Anjali
         res.status(500).json({ error: err.message });
     }
 };
 
 /**
- * @desc    Get all experiences with optional category filtering
- * @route   GET /api/experiences?category=Cooking
- * @access  Public
+ * @desc    Update an existing experience (Host Only - Owner check included)
+ * @route   PUT /api/experiences/update/:id
+ */
+exports.updateExperience = async (req, res) => {
+    try {
+        let experience = await Experience.findById(req.params.id);
+        if (!experience) return res.status(404).json({ error: "Experience not found" });
+
+        // Security check: Only the owner (host) can update this
+        if (experience.host.toString() !== req.user.id) {
+            return res.status(401).json({ error: "Unauthorized: You can only edit your own experiences" });
+        }
+
+        experience = await Experience.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json({ msg: "Experience updated successfully", experience });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+/**
+ * @desc    Delete an experience (Host Only - Owner check included)
+ * @route   DELETE /api/experiences/delete/:id
+ */
+exports.deleteExperience = async (req, res) => {
+    try {
+        const experience = await Experience.findById(req.params.id);
+        if (!experience) return res.status(404).json({ error: "Experience not found" });
+
+        // Security check: Only the owner (host) can delete this
+        if (experience.host.toString() !== req.user.id) {
+            return res.status(401).json({ error: "Unauthorized: You can only delete your own experiences" });
+        }
+
+        await experience.deleteOne();
+        res.json({ msg: "Experience deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+/**
+ * @desc    Get all experiences with filters (Tourist Search)
+ * @route   GET /api/experiences?category=Cooking&search=Curry
  */
 exports.getAllExperiences = async (req, res) => {
     try {
+        const { category, search } = req.query;
         let query = {};
 
-        // If 'category' is provided in the URL, add it to the search query
-        if (req.query.category) {
-            query.category = req.query.category;
-        }
-
-        // Find experiences based on the query (filter or all)
-        const experiences = await Experience.find(query).populate('host', 'name email');
+        // Filter by category if provided
+        if (category) query.category = category;
         
-        res.status(200).json(experiences);
+        // Search by title using regex (case-insensitive)
+        if (search) query.title = { $regex: search, $options: 'i' };
+
+        const experiences = await Experience.find(query).populate('host', 'name email phone');
+        res.json(experiences);
     } catch (err) {
-        console.error("Get Experiences Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
 
 /**
- * @desc    Get a single experience by its ID
+ * @desc    Get list of experiences added by the logged-in Host
+ * @route   GET /api/experiences/my/list
+ */
+exports.getMyExperiences = async (req, res) => {
+    try {
+        const experiences = await Experience.find({ host: req.user.id });
+        res.json(experiences);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+/**
+ * @desc    Get full details of a single experience by ID
  * @route   GET /api/experiences/:id
- * @access  Public
  */
 exports.getExperienceById = async (req, res) => {
     try {
-        // Find a specific experience by its MongoDB _id
-        const experience = await Experience.findById(req.params.id).populate('host', 'name email');
-        
-        // If no experience is found, return 404
-        if (!experience) {
-            return res.status(404).json({ error: "Experience not found" });
-        }
-        
+        const experience = await Experience.findById(req.params.id).populate('host', 'name email phone');
+        if (!experience) return res.status(404).json({ error: "Experience not found" });
         res.status(200).json(experience);
     } catch (err) {
-        // Handle invalid MongoDB ObjectIDs to avoid server crash
-        if (err.kind === 'ObjectId') {
-            return res.status(404).json({ error: "Experience not found" });
-        }
-        console.error("Get Single Experience Error:", err.message);
         res.status(500).json({ error: "Server error" });
     }
 };
