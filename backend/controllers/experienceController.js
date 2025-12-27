@@ -18,7 +18,7 @@ exports.createExperience = async (req, res) => {
         await newExperience.save();
         res.status(201).json({ msg: "Experience added successfully!", experience: newExperience });
     } catch (err) {
-        console.error("Create Experience Error:", err.message);
+        console.error("Create Experience Error:", err.message); //Anjali
         res.status(500).json({ error: err.message });
     }
 };
