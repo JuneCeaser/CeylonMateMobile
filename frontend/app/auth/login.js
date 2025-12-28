@@ -5,7 +5,6 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,32 +17,48 @@ import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme
 
 export default function LoginScreen() {
     const router = useRouter();
-    const { login } = useAuth();
+    
+    // Custom hook to access authentication functions from the AuthProvider
+    const { login } = useAuth(); 
+
+    // Local state variables for form handling and UI feedback
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
+    /**
+     * handleLogin:
+     * 1. Validates that the user has entered both email and password.
+     * 2. Calls the login function from AuthContext.
+     * 3. Redirects to the root screen if successful.
+     * 4. Displays an alert if an error occurs during authentication.
+     */
     const handleLogin = async () => {
+        // Form validation
         if (!email || !password) {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
 
+        // Activate loading state to disable buttons and show progress
         setLoading(true);
+        
         try {
-            // This will throw if email/password are wrong
+            // Attempt to authenticate with Firebase
             await login(email, password);
 
             setLoading(false);
 
-            // Go to root – your app/index.js will then redirect based on userProfile.userType
-            router.replace('/');
+            // Navigate to root index; index.js logic will then handle 
+            // role-based redirection (Tourist, Hotel, or Host)
+            router.replace('/'); 
+            
         } catch (error) {
             setLoading(false);
+            // Handle Firebase Auth errors (e.g., user not found, wrong password)
             Alert.alert('Login Failed', error.message || 'Something went wrong');
         }
     };
-
 
     return (
         <KeyboardAvoidingView
@@ -60,7 +75,7 @@ export default function LoginScreen() {
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    {/* Logo Section */}
+                    {/* Brand/Logo Header Section */}
                     <View style={styles.logoContainer}>
                         <View style={styles.logoCircle}>
                             <Text style={styles.logoText}>🇱🇰</Text>
@@ -69,11 +84,12 @@ export default function LoginScreen() {
                         <Text style={styles.appSubtitle}>Your Smart Tourism Companion</Text>
                     </View>
 
-                    {/* Login Form */}
+                    {/* Main Content Area: Login Form */}
                     <View style={styles.formContainer}>
                         <Text style={styles.welcomeText}>Welcome Back!</Text>
                         <Text style={styles.instructionText}>Login to continue your journey</Text>
 
+                        {/* Email Entry Field */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Email</Text>
                             <TextInput
@@ -88,6 +104,7 @@ export default function LoginScreen() {
                             />
                         </View>
 
+                        {/* Password Entry Field */}
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>Password</Text>
                             <TextInput
@@ -101,10 +118,12 @@ export default function LoginScreen() {
                             />
                         </View>
 
+                        {/* Password Recovery Option */}
                         <TouchableOpacity style={styles.forgotPassword}>
                             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                         </TouchableOpacity>
 
+                        {/* Submit Action Button */}
                         <TouchableOpacity
                             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
                             onPress={handleLogin}
@@ -115,14 +134,16 @@ export default function LoginScreen() {
                             </Text>
                         </TouchableOpacity>
 
+                        {/* Visual Divider */}
                         <View style={styles.divider}>
                             <View style={styles.dividerLine} />
                             <Text style={styles.dividerText}>OR</Text>
                             <View style={styles.dividerLine} />
                         </View>
 
+                        {/* Link to Registration Screen */}
                         <View style={styles.signupContainer}>
-                            <Text style={styles.signupText}>Don&#39;t have an account? </Text>
+                            <Text style={styles.signupText}>Do not have an account? </Text>
                             <TouchableOpacity onPress={() => router.push('/auth/register')}>
                                 <Text style={styles.signupLink}>Sign Up</Text>
                             </TouchableOpacity>
@@ -157,11 +178,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: Spacing.md,
+        elevation: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
-        elevation: 8,
     },
     logoText: {
         fontSize: 50,
