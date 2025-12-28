@@ -59,8 +59,13 @@ export default function CultureScreen() {
         >
             {/* Display the first image or a placeholder */}
             <Image 
-                source={{ uri: item.images?.[0] || 'https://via.placeholder.com/150' }} 
+                source={{ 
+                    uri: item.images && item.images.length > 0 
+                        ? item.images[0] 
+                        : 'https://via.placeholder.com/300x200?text=CeylonMate+Culture' 
+                }} 
                 style={styles.image} 
+                resizeMode="cover"
             />
             
             <View style={styles.cardContent}>
