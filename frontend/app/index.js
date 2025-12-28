@@ -9,15 +9,26 @@ export default function Index() {
   const { user, userProfile, loading } = useAuth();
 
   useEffect(() => {
+    // Wait until the loading state is finished
     if (!loading) {
       if (user && userProfile) {
-        // Route based on user type
+        
+        // 1. Route for Tourist
         if (userProfile.userType === 'tourist') {
           router.replace('/(tourist)/dashboard');
-        } else if (userProfile.userType === 'hotel') {
+        } 
+        // 2. Route for Hotel Owner
+        else if (userProfile.userType === 'hotel') {
           router.replace('/(hotel)/dashboard');
         }
+        // 3. Route for Local Villager (Host) - ADDED THIS
+        else if (userProfile.userType === 'host') {
+          // If your host dashboard is inside (host) folder, use this path:
+          router.replace('/(host)/manage-culture');
+        }
+        
       } else {
+        // If no user is logged in, or profile is missing, go to Login
         router.replace('/auth/login');
       }
     }
