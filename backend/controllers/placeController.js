@@ -5,7 +5,7 @@ const Groq = require("groq-sdk");
 // Initialize Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// 1. Find a place near the user
+// 1. Find a place near the user historical place
 exports.getNearbyPlace = async (req, res) => {
   const { lat, lng } = req.query;
 
