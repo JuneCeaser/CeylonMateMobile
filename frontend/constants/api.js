@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Your machine's local IP address
+// YOUR COMPUTER IP (Ensure this matches the Metro Bundler log)
 const API_URL = 'http://192.168.8.100:5000/api'; 
 
 const api = axios.create({
@@ -9,11 +9,6 @@ const api = axios.create({
     timeout: 10000,
 });
 
-/**
- * Request Interceptor:
- * Automatically attaches the JWT token from AsyncStorage 
- * to the 'x-auth-token' header for every outgoing request.
- */
 api.interceptors.request.use(async (config) => {
     const token = await AsyncStorage.getItem('userToken');
     if (token) {

@@ -10,47 +10,35 @@ const experienceRoutes = require("./routes/experienceRoutes");
 
 const app = express();
 
-// Database Connection: Establish connection to MongoDB Atlas
+// Database Connection
 connectDB();
 
 // Global Middlewares
-app.use(cors({ origin: "*" })); // Enable Cross-Origin Resource Sharing for mobile/web frontend
-app.use(express.json()); // Middleware to parse incoming JSON payloads
+app.use(cors({ origin: "*" })); 
+app.use(express.json());
 
-// Health Check Route: To verify if the server is live
+// Health Check
 app.get("/", (req, res) => res.send("Ceylon Mate API Running Successfully"));
 
-/**
- * Main API Routes
- */
-
-// User Authentication & Profile Management (Signup, Login, OTP)
+// Routes
 app.use("/api/users", userRoutes);
-
-// Destination & Place Information Routes
 app.use("/api/places", placeRoutes);
-
-// Cultural Experience Marketplace (Add, Get, Filter Experiences)
 app.use("/api/experiences", experienceRoutes);
 
-
-/**
- * Error Handling Middlewares
- */
-
-// Catch-all Middleware for 404 - Handle undefined routes
+// Error Handling
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// Global Error Handler - Catches any internal server errors
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Something went wrong on the server!" });
 });
 
-// Server Initialization
 const PORT = process.env.PORT || 5000;
+
+// Listen on 0.0.0.0 to allow access from mobile phone
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Network access via: http://192.168.8.100:${PORT}`);
 });
