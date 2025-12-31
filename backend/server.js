@@ -40,5 +40,5 @@ const PORT = process.env.PORT || 5000;
 // Listen on 0.0.0.0 to allow access from mobile phone
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Network access via: http://192.168.8.100:${PORT}`);
+  console.log(`📡 Network access via: http://192.168.8.195:${PORT}`);
 });
