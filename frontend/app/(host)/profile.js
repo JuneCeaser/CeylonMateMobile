@@ -19,26 +19,34 @@ export default function ProfileScreen() {
     const router = useRouter();
 
     const handleLogout = () => {
-        Alert.alert(
-            "Logout", 
-            "Are you sure you want to sign out?", 
-            [
-                { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Logout", 
-                    style: "destructive", 
-                    onPress: async () => {
-                        try {
-                            await logout();
-                            // logout() function එකේ සාමාන්‍යයෙන් router.replace('/login') ඇති
-                        } catch (error) {
-                            Alert.alert("Error", "Logout failed");
-                        }
-                    } 
-                }
-            ]
-        );
-    };
+    Alert.alert(
+        "Logout", 
+        "Are you sure you want to sign out?", 
+        [
+            { text: "Cancel", style: "cancel" },
+            { 
+                text: "Logout", 
+                style: "destructive", 
+                onPress: async () => {
+                    try {
+                        // 1. Clear the session in AuthContext
+                        await logout();
+
+                        /** * 2. Navigate to Login page
+                         * Since your file is at app/auth/login.js, 
+                         * the route is exactly '/auth/login'
+                         */
+                        router.replace('/auth/login'); 
+
+                    } catch (error) {
+                        console.error("Logout Error:", error);
+                        Alert.alert("Error", "Logout failed. Please try again.");
+                    }
+                } 
+            }
+        ]
+    );
+};
 
     return (
         <ScrollView style={styles.container}>
