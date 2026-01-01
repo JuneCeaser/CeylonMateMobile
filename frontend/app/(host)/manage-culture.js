@@ -17,11 +17,11 @@ import api from '../../constants/api';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
 export default function ManageCultureScreen() {
-    // Destructure userProfile to get the actual name saved in Firestore
     const { user, userProfile } = useAuth(); 
     const router = useRouter();
     
     const [myListings, setMyListings] = useState([]);
+    const [bookings, setBookings] = useState([]); // State for real-time booking requests
     const [loading, setLoading] = useState(true);
 
     /**
@@ -34,38 +34,57 @@ export default function ManageCultureScreen() {
             const response = await api.get('/experiences/my/list');
             setMyListings(response.data);
         } catch (_err) {
-            console.error("Fetch error occurred");
+            console.error("Fetch listings error occurred");
         } finally {
             setLoading(false);
         }
     }, [user?.uid]);
 
     /**
-     * Re-fetch data every time the screen comes into focus
+     * Fetch all booking requests assigned to this host
+     */
+    const fetchBookings = useCallback(async () => {
+        try {
+            const response = await api.get('/bookings/host/list');
+            setBookings(response.data);
+        } catch (err) {
+            console.error("Booking fetch error:", err.message);
+        }
+    }, []);
+
+    /**
+     * Handle the Accept or Decline action for a booking
+     */
+    const handleBookingAction = async (id, status) => {
+        try {
+            await api.patch(`/bookings/update-status/${id}`, { status });
+            Alert.alert("Success", `Booking has been ${status}`);
+            fetchBookings(); // Refresh the list after action
+        } catch (err) {
+            Alert.alert("Error", "Could not update booking status");
+        }
+    };
+
+    /**
+     * Refresh all data when screen comes into focus
      */
     useFocusEffect(
         useCallback(() => {
             fetchMyListings();
-        }, [fetchMyListings])
+            fetchBookings();
+        }, [fetchMyListings, fetchBookings])
     );
 
-    /**
-     * Show a confirmation alert before deleting an experience
-     */
     const confirmDelete = (id) => {
-        Alert.alert("Delete Experience", "This will permanently remove this listing from the platform.", [
+        Alert.alert("Delete Experience", "This will permanently remove this listing.", [
             { text: "Cancel", style: "cancel" }, 
             { text: "Delete", style: "destructive", onPress: () => handleDelete(id) }
         ]);
     };
 
-    /**
-     * Handle the API call to delete the experience
-     */
     const handleDelete = async (id) => {
         try {
             await api.delete(`/experiences/delete/${id}`);
-            // Update local state to remove the item immediately
             setMyListings(prev => prev.filter(item => item._id !== id));
             Alert.alert("Success", "Experience removed.");
         } catch (_err) {
@@ -74,8 +93,49 @@ export default function ManageCultureScreen() {
     };
 
     /**
-     * Component to render each experience card in the list
+     * Component for the Booking Request Card
      */
+    const renderBookingCard = (booking) => (
+        <View key={booking._id} style={styles.bookingCard}>
+            <View style={styles.bookingInfo}>
+                <Text style={styles.touristName}>{booking.touristName}</Text>
+                <Text style={styles.bookingDetail} numberOfLines={1}>
+                    {booking.experience?.title || "Deleted Experience"}
+                </Text>
+                <Text style={styles.bookingDetail}>
+                    📅 {new Date(booking.bookingDate).toLocaleDateString()} • 👥 {booking.guests} Guests
+                </Text>
+                
+                {/* Dynamic Status Badge */}
+                <View style={[
+                    styles.statusBadge, 
+                    { backgroundColor: booking.status === 'pending' ? '#FFA000' : 
+                                     booking.status === 'confirmed' ? Colors.success : Colors.danger }
+                ]}>
+                    <Text style={styles.statusText}>{booking.status.toUpperCase()}</Text>
+                </View>
+            </View>
+
+            {/* Action Buttons: Show only if Pending */}
+            {booking.status === 'pending' && (
+                <View style={styles.bookingActions}>
+                    <TouchableOpacity 
+                        style={[styles.miniBtn, { backgroundColor: Colors.success }]} 
+                        onPress={() => handleBookingAction(booking._id, 'confirmed')}
+                    >
+                        <Ionicons name="checkmark" size={20} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.miniBtn, { backgroundColor: Colors.danger }]} 
+                        onPress={() => handleBookingAction(booking._id, 'cancelled')}
+                    >
+                        <Ionicons name="close" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
+            )}
+        </View>
+    );
+
     const renderExperienceCard = ({ item }) => (
         <View style={styles.card}>
             <Image 
@@ -88,14 +148,12 @@ export default function ManageCultureScreen() {
                 <Text style={styles.price}>LKR {item.price.toLocaleString()}</Text>
             </View>
             <View style={styles.actions}>
-                {/* Edit Button */}
                 <TouchableOpacity 
                     style={styles.actionBtn} 
                     onPress={() => router.push({ pathname: '/(host)/add-culture', params: { editId: item._id } })}
                 >
                     <Ionicons name="pencil" size={18} color={Colors.primary} />
                 </TouchableOpacity>
-                {/* Delete Button */}
                 <TouchableOpacity 
                     style={styles.actionBtn} 
                     onPress={() => confirmDelete(item._id)}
@@ -108,13 +166,11 @@ export default function ManageCultureScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Header Section with Gradient Background */}
             <LinearGradient colors={[Colors.primary, '#1B5E20']} style={styles.headerArea}>
                 <View style={styles.headerTopRow}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.welcomeLabel}>Ayubowan! 🙏</Text>
                         <View style={{ height: Spacing.xs }} /> 
-                        {/* Display actual host name from userProfile (Firestore) */}
                         <Text style={styles.hostName} numberOfLines={1}>
                             {userProfile?.name || "Our Local Host"}
                         </Text>
@@ -132,7 +188,6 @@ export default function ManageCultureScreen() {
                 <Text style={styles.headerSubtitle}>Your Heritage Dashboard 🇱🇰</Text>
             </LinearGradient>
 
-            {/* Quick Stats Overlap (Showing 2 stats for better spacing) */}
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{myListings.length}</Text>
@@ -149,17 +204,26 @@ export default function ManageCultureScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 
-                {/* Booking Requests Placeholder */}
+                {/* 1. Real-Time Booking Requests Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Booking Requests</Text>
-                    <TouchableOpacity><Text style={styles.viewAll}>View All</Text></TouchableOpacity>
+                    <Text style={styles.sectionCount}>
+                        {bookings.filter(b => b.status === 'pending').length} Pending
+                    </Text>
                 </View>
-                <View style={styles.placeholderCard}>
-                    <Ionicons name="calendar-outline" size={24} color={Colors.textSecondary} />
-                    <Text style={styles.placeholderText}>No pending bookings for today</Text>
+                
+                <View style={{ paddingHorizontal: Spacing.lg }}>
+                    {bookings.length > 0 ? (
+                        bookings.map(booking => renderBookingCard(booking))
+                    ) : (
+                        <View style={styles.placeholderCard}>
+                            <Ionicons name="calendar-outline" size={24} color={Colors.textSecondary} />
+                            <Text style={styles.placeholderText}>No booking requests found</Text>
+                        </View>
+                    )}
                 </View>
 
-                {/* Experiences List Section */}
+                {/* 2. My Experiences Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>My Experiences</Text>
                     <Text style={styles.sectionCount}>{myListings.length} total</Text>
@@ -181,16 +245,6 @@ export default function ManageCultureScreen() {
                     </View>
                 )}
 
-                {/* Reviews Placeholder */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Recent Reviews</Text>
-                </View>
-                <View style={styles.placeholderCard}>
-                    <Ionicons name="chatbubble-ellipses-outline" size={24} color={Colors.textSecondary} />
-                    <Text style={styles.placeholderText}>No reviews received yet</Text>
-                </View>
-
-                {/* Support Button */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Quick Support</Text>
                 </View>
@@ -201,7 +255,6 @@ export default function ManageCultureScreen() {
 
             </ScrollView>
 
-            {/* Floating Action Button (FAB) to Add New Experience */}
             <TouchableOpacity 
                 style={styles.fabContainer} 
                 activeOpacity={0.9}
@@ -260,5 +313,26 @@ const styles = StyleSheet.create({
     fabGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25, paddingVertical: 15, borderRadius: BorderRadius.round, gap: 8 },
     fabText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
     emptyContainer: { padding: 20, alignItems: 'center' },
-    emptyText: { color: Colors.textSecondary, fontSize: 13 }
+    emptyText: { color: Colors.textSecondary, fontSize: 13 },
+    
+    // NEW BOOKING STYLES
+    bookingCard: {
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.md,
+        padding: 15,
+        marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        elevation: 2,
+        borderLeftWidth: 5,
+        borderLeftColor: Colors.primary
+    },
+    bookingInfo: { flex: 1 },
+    touristName: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
+    bookingDetail: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+    statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 5, marginTop: 8 },
+    statusText: { fontSize: 10, color: 'white', fontWeight: 'bold' },
+    bookingActions: { flexDirection: 'row', gap: 8 },
+    miniBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', elevation: 2 },
 });
