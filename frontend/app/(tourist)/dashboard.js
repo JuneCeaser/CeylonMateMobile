@@ -21,6 +21,8 @@ const { width } = Dimensions.get('window');
 export default function TouristDashboard() {
     const router = useRouter();
     const { userProfile } = useAuth();
+    
+    // Dashboard States
     const [stats, setStats] = useState({
         totalItineraries: 0,
         savedAttractions: 0,
@@ -31,6 +33,9 @@ export default function TouristDashboard() {
         loadStats();
     }, []);
 
+    /**
+     * Load statistics from Firebase Firestore
+     */
     const loadStats = async () => {
         try {
             const itinerariesQuery = query(
@@ -49,51 +54,28 @@ export default function TouristDashboard() {
         }
     };
 
-    // Helper to navigate
     const handleNavigation = (path) => {
         router.push(path);
     };
 
+    // Dummy data for destinations
     const featuredDestinations = [
-        {
-            id: 1,
-            name: 'Sigiriya Rock',
-            category: 'Historical',
-            image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
-            rating: 4.8,
-        },
-        {
-            id: 2,
-            name: 'Mirissa Beach',
-            category: 'Beach',
-            image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800',
-            rating: 4.9,
-        },
-        {
-            id: 3,
-            name: 'Yala National Park',
-            category: 'Wildlife',
-            image: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800',
-            rating: 4.7,
-        },
+        { id: 1, name: 'Sigiriya Rock', category: 'Historical', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800', rating: 4.8 },
+        { id: 2, name: 'Mirissa Beach', category: 'Beach', image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800', rating: 4.9 },
+        { id: 3, name: 'Yala National Park', category: 'Wildlife', image: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800', rating: 4.7 },
     ];
 
     return (
         <View style={styles.container}>
-            {/* Header */}
-            <LinearGradient
-                colors={[Colors.primary, Colors.accent]}
-                style={styles.header}
-            >
+            {/* --- 1. HEADER SECTION --- */}
+            <LinearGradient colors={[Colors.primary, Colors.accent]} style={styles.header}>
                 <View style={styles.headerContent}>
-                    {/* Make the greeting clickable to go to Profile */}
                     <TouchableOpacity onPress={() => handleNavigation('/(tourist)/profile')}>
                         <Text style={styles.greeting}>Welcome back,</Text>
                         <Text style={styles.userName}>{userProfile?.name || 'Traveler'}!</Text>
                     </TouchableOpacity>
                     
-                    <View style={{flexDirection: 'row', gap: 15}}>
-                        {/* Added Profile Icon explicitly here since it's not in the tab bar */}
+                    <View style={styles.headerIcons}>
                         <TouchableOpacity onPress={() => handleNavigation('/(tourist)/profile')}>
                             <Ionicons name="person-circle-outline" size={32} color={Colors.surface} />
                         </TouchableOpacity>
@@ -107,7 +89,7 @@ export default function TouristDashboard() {
                     </View>
                 </View>
 
-                {/* Quick Stats */}
+                {/* Stat Cards Row */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
                         <Ionicons name="map-outline" size={24} color={Colors.primary} />
@@ -127,104 +109,73 @@ export default function TouristDashboard() {
                 </View>
             </LinearGradient>
 
-            <ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}
+            <ScrollView 
+                style={styles.content} 
+                showsVerticalScrollIndicator={false} 
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Main Action Cards */}
+                {/* --- 2. QUICK ACTIONS SECTION --- */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Quick Actions</Text>
 
-                    <TouchableOpacity
-                        style={[styles.actionCard, { backgroundColor: Colors.primary }]}
-                        onPress={() => handleNavigation('/(tourist)/itinerary')}
-                    >
-                        <LinearGradient
-                            colors={[Colors.primary, Colors.accent]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.actionCardGradient}
-                        >
+                    {/* Plan Your Trip Action Card */}
+                    <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigation('/(tourist)/itinerary')}>
+                        <LinearGradient colors={[Colors.primary, Colors.accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionCardGradient}>
                             <View style={styles.actionCardContent}>
-                                <View>
+                                <View style={styles.actionTextContainer}>
                                     <Text style={styles.actionCardTitle}>Plan Your Trip</Text>
-                                    <Text style={styles.actionCardSubtitle}>
-                                        Generate personalized itineraries
-                                    </Text>
+                                    <Text style={styles.actionCardSubtitle}>Generate personalized itineraries</Text>
                                 </View>
                                 <Ionicons name="map" size={48} color={Colors.surface} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.actionCard, { backgroundColor: Colors.danger }]}
-                        onPress={() => handleNavigation('/(tourist)/risk')}
-                    >
-                        <LinearGradient
-                            colors={[Colors.danger, Colors.warning]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.actionCardGradient}
-                        >
+                    {/* Discover Culture Action Card */}
+                    <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigation('/(tourist)/culture')}>
+                        <LinearGradient colors={['#1B5E20', '#4CAF50']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionCardGradient}>
                             <View style={styles.actionCardContent}>
-                                <View>
+                                <View style={styles.actionTextContainer}>
+                                    <Text style={styles.actionCardTitle}>Discover Culture</Text>
+                                    <Text style={styles.actionCardSubtitle}>Explore authentic local traditions</Text>
+                                </View>
+                                <Ionicons name="people" size={48} color={Colors.surface} />
+                            </View>
+                        </LinearGradient>
+                    </TouchableOpacity>
+
+                    {/* Check Safety Action Card */}
+                    <TouchableOpacity style={styles.actionCard} onPress={() => handleNavigation('/(tourist)/risk')}>
+                        <LinearGradient colors={[Colors.danger, Colors.warning]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionCardGradient}>
+                            <View style={styles.actionCardContent}>
+                                <View style={styles.actionTextContainer}>
                                     <Text style={styles.actionCardTitle}>Check Safety</Text>
-                                    <Text style={styles.actionCardSubtitle}>
-                                        View real-time risk zones
-                                    </Text>
+                                    <Text style={styles.actionCardSubtitle}>View real-time risk zones</Text>
                                 </View>
                                 <Ionicons name="alert-circle" size={48} color={Colors.surface} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
 
-                    {/* Navigation Buttons for Place and Culture (Alternative to Tabs) */}
-                    <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
-                         <TouchableOpacity
-                            style={{flex: 1, backgroundColor: Colors.surface, padding: 15, borderRadius: 10, alignItems: 'center', elevation: 2}}
-                            onPress={() => handleNavigation('/(tourist)/place')}
-                        >
-                            <Ionicons name="location" size={24} color={Colors.primary} />
-                            <Text style={{fontWeight: 'bold', marginTop: 5, color: Colors.text}}>Places</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={{flex: 1, backgroundColor: Colors.surface, padding: 15, borderRadius: 10, alignItems: 'center', elevation: 2}}
-                            onPress={() => handleNavigation('/(tourist)/culture')}
-                        >
-                            <Ionicons name="people" size={24} color={Colors.primary} />
-                            <Text style={{fontWeight: 'bold', marginTop: 5, color: Colors.text}}>Culture</Text>
-                        </TouchableOpacity>
-                    </View>
-
+                    {/* Simple Button for Places */}
+                    <TouchableOpacity style={styles.placesButton} onPress={() => handleNavigation('/(tourist)/place')}>
+                        <Ionicons name="location" size={24} color={Colors.primary} />
+                        <Text style={styles.placesButtonText}>Explore Places</Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Featured Destinations */}
+                {/* --- 3. FEATURED DESTINATIONS --- */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Featured Destinations</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeAllText}>See All →</Text>
-                        </TouchableOpacity>
+                        <TouchableOpacity><Text style={styles.seeAllText}>See All →</Text></TouchableOpacity>
                     </View>
 
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.destinationsScroll}
-                    >
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.destinationsScroll}>
                         {featuredDestinations.map((destination) => (
                             <TouchableOpacity key={destination.id} style={styles.destinationCard}>
-                                <Image
-                                    source={{ uri: destination.image }}
-                                    style={styles.destinationImage}
-                                />
-                                <LinearGradient
-                                    colors={['transparent', 'rgba(0,0,0,0.8)']}
-                                    style={styles.destinationGradient}
-                                >
+                                <Image source={{ uri: destination.image }} style={styles.destinationImage} />
+                                <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.destinationGradient}>
                                     <View style={styles.destinationInfo}>
                                         <Text style={styles.destinationName}>{destination.name}</Text>
                                         <View style={styles.destinationMeta}>
@@ -242,197 +193,255 @@ export default function TouristDashboard() {
                         ))}
                     </ScrollView>
                 </View>
+
+                {/* --- 4. CULTURAL BOOKINGS SECTION (Bottom Style) --- */}
+                <View style={styles.section}>
+                    <TouchableOpacity 
+                        style={styles.bottomBookingBtn}
+                        onPress={() => handleNavigation('/(tourist)/my-bookings')}
+                    >
+                        <Ionicons name="calendar" size={24} color="white" />
+                        <Text style={styles.bottomBookingText}>View Cultural Bookings</Text>
+                        <Ionicons name="chevron-forward" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
+
             </ScrollView>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.background,
+    // Main Containers
+    container: { 
+        flex: 1, 
+        backgroundColor: Colors.background 
     },
-    header: {
-        paddingTop: 60,
-        paddingBottom: Spacing.xl,
-        paddingHorizontal: Spacing.lg,
+    content: { 
+        flex: 1 
     },
-    headerContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.lg,
+    scrollContent: { 
+        paddingBottom: Spacing.xl * 2 
     },
-    greeting: {
-        fontSize: 16,
-        color: Colors.surface,
-        opacity: 0.9,
+    section: { 
+        paddingHorizontal: Spacing.lg, 
+        marginTop: Spacing.lg 
     },
-    userName: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: Colors.surface,
+
+    // Header & Greeting
+    header: { 
+        paddingTop: 60, 
+        paddingBottom: Spacing.xl, 
+        paddingHorizontal: Spacing.lg 
     },
-    notificationButton: {
-        position: 'relative',
+    headerContent: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: Spacing.lg 
     },
-    notificationBadge: {
-        position: 'absolute',
-        top: -4,
-        right: -4,
-        backgroundColor: Colors.danger,
-        borderRadius: 10,
-        width: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
+    headerIcons: { 
+        flexDirection: 'row', 
+        gap: 15 
     },
-    notificationBadgeText: {
-        color: Colors.surface,
-        fontSize: 10,
-        fontWeight: 'bold',
+    greeting: { 
+        fontSize: 16, 
+        color: Colors.surface, 
+        opacity: 0.9 
     },
-    statsContainer: {
-        flexDirection: 'row',
-        gap: Spacing.sm,
+    userName: { 
+        fontSize: 28, 
+        fontWeight: 'bold', 
+        color: Colors.surface 
     },
-    statCard: {
-        flex: 1,
-        backgroundColor: Colors.surface,
+
+    // Notification UI
+    notificationButton: { 
+        position: 'relative' 
+    },
+    notificationBadge: { 
+        position: 'absolute', 
+        top: -4, 
+        right: -4, 
+        backgroundColor: Colors.danger, 
+        borderRadius: 10, 
+        width: 20, 
+        height: 20, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    notificationBadgeText: { 
+        color: Colors.surface, 
+        fontSize: 10, 
+        fontWeight: 'bold' 
+    },
+
+    // Stat Row Styles
+    statsContainer: { 
+        flexDirection: 'row', 
+        gap: Spacing.sm 
+    },
+    statCard: { 
+        flex: 1, 
+        backgroundColor: Colors.surface, 
+        borderRadius: BorderRadius.md, 
+        padding: Spacing.md, 
+        alignItems: 'center', 
+        elevation: 2 
+    },
+    statNumber: { 
+        fontSize: 22, 
+        fontWeight: 'bold', 
+        color: Colors.text, 
+        marginTop: Spacing.xs 
+    },
+    statLabel: { 
+        fontSize: 12, 
+        color: Colors.textSecondary, 
+        marginTop: 2 
+    },
+
+    // Action Cards (Gradients)
+    actionCard: { 
+        borderRadius: BorderRadius.lg, 
+        marginBottom: Spacing.md, 
+        overflow: 'hidden', 
+        elevation: 4 
+    },
+    actionCardGradient: { 
+        padding: Spacing.lg 
+    },
+    actionCardContent: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center' 
+    },
+    actionTextContainer: { 
+        flex: 1, 
+        marginRight: 15 
+    },
+    actionCardTitle: { 
+        fontSize: 20, 
+        fontWeight: 'bold', 
+        color: Colors.surface, 
+        marginBottom: Spacing.xs 
+    },
+    actionCardSubtitle: { 
+        fontSize: 14, 
+        color: Colors.surface, 
+        opacity: 0.9 
+    },
+
+    // Section Header Style
+    sectionHeader: { 
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: Spacing.md 
+    },
+    sectionTitle: { 
+        ...Typography.h3, 
+        color: Colors.text 
+    },
+    seeAllText: { 
+        fontSize: 14, 
+        color: Colors.primary, 
+        fontWeight: '600' 
+    },
+
+    // Places Button (Simple Style)
+    placesButton: { 
+        backgroundColor: Colors.surface, 
+        padding: 18, 
+        borderRadius: BorderRadius.md, 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        elevation: 2, 
+        gap: 10,
+        marginTop: 10
+    },
+    placesButtonText: { 
+        fontWeight: 'bold', 
+        color: Colors.text, 
+        fontSize: 16 
+    },
+
+    // Bottom Booking Button Style
+    bottomBookingBtn: {
+        backgroundColor: Colors.secondary,
+        padding: 20,
         borderRadius: BorderRadius.md,
-        padding: Spacing.md,
+        flexDirection: 'row',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        justifyContent: 'space-between',
+        elevation: 3,
+        marginBottom: 30
     },
-    statNumber: {
-        fontSize: 24,
+    bottomBookingText: {
+        color: 'white',
         fontWeight: 'bold',
-        color: Colors.text,
-        marginTop: Spacing.xs,
-    },
-    statLabel: {
-        fontSize: 12,
-        color: Colors.textSecondary,
-        marginTop: 2,
-        textAlign: 'center',
-    },
-    content: {
+        fontSize: 16,
         flex: 1,
+        marginLeft: 15
     },
-    scrollContent: {
-        paddingBottom: Spacing.xl * 2,
+
+    // Horizontal Scrolling Destinations
+    destinationsScroll: { 
+        gap: Spacing.md 
     },
-    section: {
-        paddingHorizontal: Spacing.lg,
-        marginTop: Spacing.lg,
+    destinationCard: { 
+        width: width * 0.7, 
+        height: 200, 
+        borderRadius: BorderRadius.lg, 
+        overflow: 'hidden', 
+        elevation: 4 
     },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: Spacing.md,
+    destinationImage: { 
+        width: '100%', 
+        height: '100%' 
     },
-    sectionTitle: {
-        ...Typography.h3,
-        color: Colors.text,
+    destinationGradient: { 
+        position: 'absolute', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        height: '50%', 
+        justifyContent: 'flex-end', 
+        padding: Spacing.md 
     },
-    seeAllText: {
-        fontSize: 14,
-        color: Colors.primary,
-        fontWeight: '600',
+    destinationInfo: { 
+        gap: Spacing.xs 
     },
-    actionCard: {
-        borderRadius: BorderRadius.lg,
-        marginBottom: Spacing.md,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
+    destinationName: { 
+        fontSize: 18, 
+        fontWeight: 'bold', 
+        color: Colors.surface 
     },
-    actionCardGradient: {
-        padding: Spacing.lg,
+    destinationMeta: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: Spacing.sm 
     },
-    actionCardContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+    categoryBadge: { 
+        backgroundColor: Colors.primary, 
+        paddingHorizontal: Spacing.sm, 
+        paddingVertical: 4, 
+        borderRadius: BorderRadius.sm 
     },
-    actionCardTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: Colors.surface,
-        marginBottom: Spacing.xs,
+    categoryText: { 
+        fontSize: 12, 
+        color: Colors.surface, 
+        fontWeight: '600' 
     },
-    actionCardSubtitle: {
-        fontSize: 14,
-        color: Colors.surface,
-        opacity: 0.9,
+    ratingContainer: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 4 
     },
-    destinationsScroll: {
-        gap: Spacing.md,
-    },
-    destinationCard: {
-        width: width * 0.7,
-        height: 200,
-        borderRadius: BorderRadius.lg,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    destinationImage: {
-        width: '100%',
-        height: '100%',
-    },
-    destinationGradient: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '50%',
-        justifyContent: 'flex-end',
-        padding: Spacing.md,
-    },
-    destinationInfo: {
-        gap: Spacing.xs,
-    },
-    destinationName: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: Colors.surface,
-    },
-    destinationMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-    },
-    categoryBadge: {
-        backgroundColor: Colors.primary,
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
-    },
-    categoryText: {
-        fontSize: 12,
-        color: Colors.surface,
-        fontWeight: '600',
-    },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    ratingText: {
-        fontSize: 12,
-        color: Colors.surface,
-        fontWeight: '600',
+    ratingText: { 
+        fontSize: 12, 
+        color: Colors.surface, 
+        fontWeight: '600' 
     },
 });
