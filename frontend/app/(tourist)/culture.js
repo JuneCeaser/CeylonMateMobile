@@ -10,9 +10,10 @@ import {
     ActivityIndicator, 
     ScrollView 
 } from 'react-native';
-import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../constants/api'; // Centralized Axios instance with your IP
+import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import api from '../../constants/api';
 
 export default function CultureScreen() {
     const [experiences, setExperiences] = useState([]);
@@ -20,10 +21,8 @@ export default function CultureScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
-    // Available categories for filtering
     const categories = ['Cooking', 'Farming', 'Handicraft', 'Fishing', 'Dancing'];
 
-    // Fetch data from MongoDB via Node.js backend
     useEffect(() => {
         fetchExperiences();
     }, [searchQuery, selectedCategory]);
@@ -31,7 +30,6 @@ export default function CultureScreen() {
     const fetchExperiences = async () => {
         try {
             setLoading(true);
-            // Constructing the URL with query parameters for Search and Category
             let url = `/experiences?search=${searchQuery}`;
             if (selectedCategory) url += `&category=${selectedCategory}`;
             
@@ -44,51 +42,48 @@ export default function CultureScreen() {
         }
     };
 
-    /**
-     * Component for each Cultural Experience Card
-     */
     const renderExperienceCard = ({ item }) => (
         <TouchableOpacity 
             style={styles.card}
-            onPress={() => {
-                /* NEXT STEP: Navigate to a detailed screen 
-                   where the Voice Assistant can be activated 
-                */
-                console.log("Selected Experience ID:", item._id);
-            }}
+            activeOpacity={0.9}
+            onPress={() => console.log("Experience ID:", item._id)}
         >
-            {/* Display the first image or a placeholder */}
             <Image 
                 source={{ 
                     uri: item.images && item.images.length > 0 
                         ? item.images[0] 
-                        : 'https://via.placeholder.com/300x200?text=CeylonMate+Culture' 
+                        : 'https://via.placeholder.com/400x250?text=CeylonMate+Culture' 
                 }} 
-                style={styles.image} 
-                resizeMode="cover"
+                style={styles.cardImage} 
             />
             
-            <View style={styles.cardContent}>
-                <View style={styles.headerRow}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <View style={styles.ratingBox}>
-                        <Ionicons name="star" size={14} color={Colors.warning} />
-                        <Text style={styles.ratingText}>{item.rating || 'N/A'}</Text>
+            <View style={styles.priceTag}>
+                <Text style={styles.priceText}>LKR {item.price}</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+                <View style={styles.categoryRow}>
+                    <Text style={styles.categoryLabel}>{item.category}</Text>
+                    <View style={styles.ratingBadge}>
+                        <Ionicons name="star" size={12} color={Colors.warning} />
+                        <Text style={styles.ratingValue}>{item.rating || '5.0'}</Text>
                     </View>
                 </View>
 
-                <Text style={styles.categoryBadge}>{item.category}</Text>
-                
-                <Text style={styles.description} numberOfLines={2}>
-                    {item.description}
-                </Text>
+                <Text style={styles.experienceTitle}>{item.title}</Text>
+                <Text style={styles.experienceDesc} numberOfLines={2}>{item.description}</Text>
 
-                <View style={styles.footerRow}>
-                    <Text style={styles.price}>LKR {item.price}</Text>
-                    <View style={styles.hostSection}>
-                        <Ionicons name="person-outline" size={14} color={Colors.textSecondary} />
-                        <Text style={styles.hostName}>{item.host?.name || 'Local Guide'}</Text>
+                <View style={styles.cardFooter}>
+                    <View style={styles.hostInfo}>
+                        <View style={styles.hostAvatar}>
+                            <Ionicons name="person" size={12} color={Colors.primary} />
+                        </View>
+                        <Text style={styles.hostLabel}>Local Host</Text>
                     </View>
+                    <TouchableOpacity style={styles.exploreBtn}>
+                        <Text style={styles.exploreBtnText}>Explore</Text>
+                        <Ionicons name="arrow-forward" size={14} color={Colors.surface} />
+                    </TouchableOpacity>
                 </View>
             </View>
         </TouchableOpacity>
@@ -96,26 +91,43 @@ export default function CultureScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Header with Search Bar */}
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color={Colors.textSecondary} />
-                <TextInput 
-                    style={styles.searchInput}
-                    placeholder="Search traditional arts & crafts..."
-                    placeholderTextColor="#999"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
-            </View>
+            {/* Square-bottomed Green Gradient Header */}
+            <LinearGradient
+                colors={[Colors.primary, '#1B5E20']} // Richer green gradient
+                style={styles.header}
+            >
+                <View style={styles.headerTopRow}>
+                    <View>
+                        <Text style={styles.headerTitle}>Culture Hub</Text>
+                        <Text style={styles.headerSubtitle}>
+                            Discover authentic Sri Lankan traditions 🇱🇰
+                        </Text>
+                    </View>
+                    <TouchableOpacity style={styles.notificationBtn}>
+                        <Ionicons name="notifications-outline" size={26} color={Colors.surface} />
+                        <View style={styles.notificationDot} />
+                    </TouchableOpacity>
+                </View>
 
-            {/* Horizontal Filter for Categories */}
-            <View style={styles.categoryBar}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.searchBox}>
+                    <Ionicons name="search" size={20} color={Colors.textSecondary} />
+                    <TextInput 
+                        style={styles.searchInput}
+                        placeholder="Find 'Cooking','Dancing'..."
+                        placeholderTextColor={Colors.textSecondary}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                </View>
+            </LinearGradient>
+
+            <View style={styles.filterSection}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
                     <TouchableOpacity 
                         style={[styles.chip, !selectedCategory && styles.activeChip]}
                         onPress={() => setSelectedCategory('')}
                     >
-                        <Text style={!selectedCategory ? styles.activeChipText : styles.chipText}>All</Text>
+                        <Text style={[styles.chipText, !selectedCategory && styles.activeChipText]}>All</Text>
                     </TouchableOpacity>
                     
                     {categories.map(cat => (
@@ -124,7 +136,7 @@ export default function CultureScreen() {
                             style={[styles.chip, selectedCategory === cat && styles.activeChip]}
                             onPress={() => setSelectedCategory(cat)}
                         >
-                            <Text style={selectedCategory === cat ? styles.activeChipText : styles.chipText}>
+                            <Text style={[styles.chipText, selectedCategory === cat && styles.activeChipText]}>
                                 {cat}
                             </Text>
                         </TouchableOpacity>
@@ -132,24 +144,17 @@ export default function CultureScreen() {
                 </ScrollView>
             </View>
 
-            {/* Data Display Logic */}
             {loading ? (
-                <View style={styles.center}>
+                <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={Colors.primary} />
-                    <Text style={styles.loadingText}>Discovering Cultural Experiences...</Text>
                 </View>
             ) : (
                 <FlatList
                     data={experiences}
                     keyExtractor={(item) => item._id}
                     renderItem={renderExperienceCard}
-                    contentContainerStyle={styles.listPadding}
-                    ListEmptyComponent={
-                        <View style={styles.center}>
-                            <Ionicons name="alert-circle-outline" size={50} color="#ccc" />
-                            <Text style={styles.emptyMsg}>No cultural experiences found for this search.</Text>
-                        </View>
-                    }
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
         </View>
@@ -157,72 +162,106 @@ export default function CultureScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background, paddingTop: 50 },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
-    searchContainer: { 
-        flexDirection: 'row', 
-        backgroundColor: Colors.surface, 
-        marginHorizontal: 15, 
-        marginVertical: 10, 
-        padding: 12, 
-        borderRadius: 12, 
-        alignItems: 'center', 
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5
+    container: { flex: 1, backgroundColor: Colors.background },
+    header: {
+        paddingTop: 60,
+        paddingBottom: 25,
+        paddingHorizontal: Spacing.lg,
     },
-    searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: Colors.text },
-    categoryBar: { paddingLeft: 15, marginBottom: 15 },
-    chip: { 
-        paddingHorizontal: 18, 
-        paddingVertical: 8, 
-        borderRadius: 25, 
-        marginRight: 10, 
-        backgroundColor: '#e0e0e0',
+    headerTopRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: Spacing.md,
+    },
+    headerTitle: { ...Typography.h1, color: Colors.surface },
+    headerSubtitle: { ...Typography.body, color: Colors.surface, opacity: 0.9, fontSize: 14 },
+    notificationBtn: {
+        padding: 5,
+        position: 'relative',
+    },
+    notificationDot: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        width: 10,
+        height: 10,
+        backgroundColor: Colors.secondary,
+        borderRadius: 5,
+        borderWidth: 1.5,
+        borderColor: Colors.primary,
+    },
+    searchBox: {
+        flexDirection: 'row',
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.md,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: 10,
+        alignItems: 'center',
+        elevation: 5,
+    },
+    searchInput: { flex: 1, marginLeft: Spacing.sm, fontSize: 16, color: Colors.text },
+    filterSection: { marginVertical: Spacing.md },
+    chipScroll: { paddingHorizontal: Spacing.lg },
+    chip: {
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: BorderRadius.round,
+        backgroundColor: Colors.surface,
+        marginRight: 10,
         borderWidth: 1,
-        borderColor: '#d0d0d0'
+        borderColor: Colors.border,
     },
     activeChip: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-    chipText: { color: Colors.text, fontWeight: '500' },
-    activeChipText: { color: '#fff', fontWeight: 'bold' },
-    listPadding: { paddingHorizontal: 15, paddingBottom: 20 },
-    card: { 
-        backgroundColor: Colors.surface, 
-        borderRadius: 15, 
-        marginBottom: 20, 
-        overflow: 'hidden', 
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 10
+    chipText: { color: Colors.text, fontWeight: '600' },
+    activeChipText: { color: Colors.surface },
+    listContainer: { paddingHorizontal: Spacing.lg, paddingBottom: 30 },
+    card: {
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        marginBottom: Spacing.lg,
+        overflow: 'hidden',
+        elevation: 4,
     },
-    image: { width: '100%', height: 190 },
-    cardContent: { padding: 15 },
-    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    title: { fontSize: 20, fontWeight: 'bold', color: Colors.text, flex: 1 },
-    ratingBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    ratingText: { fontSize: 14, fontWeight: 'bold', color: Colors.text },
-    categoryBadge: { 
-        color: Colors.primary, 
-        fontSize: 14, 
-        fontWeight: '700', 
-        marginTop: 5, 
-        textTransform: 'uppercase' 
+    cardImage: { width: '100%', height: 200 },
+    priceTag: {
+        position: 'absolute',
+        top: 15,
+        right: 0,
+        backgroundColor: Colors.secondary,
+        paddingHorizontal: 15,
+        paddingVertical: 6,
+        borderTopLeftRadius: BorderRadius.md,
+        borderBottomLeftRadius: BorderRadius.md,
     },
-    description: { color: Colors.textSecondary, marginTop: 8, lineHeight: 20 },
-    footerRow: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginTop: 15,
-        borderTopWidth: 0.5,
-        borderTopColor: '#eee',
-        paddingTop: 10
+    priceText: { color: Colors.surface, fontWeight: 'bold', fontSize: 14 },
+    cardBody: { padding: Spacing.md },
+    categoryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing.xs },
+    categoryLabel: { color: Colors.primary, fontWeight: 'bold', textTransform: 'uppercase', fontSize: 12 },
+    ratingBadge: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+    ratingValue: { fontSize: 12, fontWeight: 'bold', color: Colors.text },
+    experienceTitle: { ...Typography.h3, color: Colors.text, marginBottom: 5 },
+    experienceDesc: { ...Typography.caption, lineHeight: 20, marginBottom: Spacing.md },
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: Colors.background,
+        paddingTop: Spacing.sm,
     },
-    price: { fontSize: 18, color: Colors.secondary, fontWeight: 'bold' },
-    hostSection: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    hostName: { fontSize: 13, color: Colors.textSecondary },
-    loadingText: { marginTop: 10, color: Colors.primary, fontWeight: '500' },
-    emptyMsg: { marginTop: 10, color: '#999', textAlign: 'center', paddingHorizontal: 40 }
+    hostInfo: { flexDirection: 'row', alignItems: 'center' },
+    hostAvatar: { width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center', marginRight: 8 },
+    hostLabel: { fontSize: 13, color: Colors.textSecondary },
+    exploreBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primary,
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: BorderRadius.md,
+        gap: 5,
+    },
+    exploreBtnText: { color: Colors.surface, fontWeight: 'bold', fontSize: 14 },
+    loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 },
 });
