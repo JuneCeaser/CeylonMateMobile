@@ -7,12 +7,14 @@ import {
     TouchableOpacity, 
     ScrollView, 
     Alert, 
-    ActivityIndicator 
+    ActivityIndicator, 
+    KeyboardAvoidingView, 
+    Platform 
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Dropdown } from 'react-native-element-dropdown'; // Import Dropdown component
+import { Dropdown } from 'react-native-element-dropdown';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../constants/api';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
@@ -20,18 +22,16 @@ import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme
 export default function AddCultureScreen() {
     const { user } = useAuth();
     const router = useRouter();
-    const { editId } = useLocalSearchParams(); 
-    
+    const { editId } = useLocalSearchParams();
     const [loading, setLoading] = useState(false);
-    const [isFocus, setIsFocus] = useState(false); // State for dropdown focus styling
+    const [isFocus, setIsFocus] = useState(false);
 
-    // Category options matching the Tourist filter
     const categories = [
         { label: 'Cooking', value: 'Cooking' },
         { label: 'Farming', value: 'Farming' },
         { label: 'Handicraft', value: 'Handicraft' },
         { label: 'Fishing', value: 'Fishing' },
-        { label: 'Dancing', value: 'Dancing' },
+        { label: 'Dancing', value: 'Dancing' }
     ];
 
     const [formData, setFormData] = useState({
@@ -39,226 +39,258 @@ export default function AddCultureScreen() {
         category: '',
         description: '',
         price: '',
-        location: '',
+        location: ''
     });
 
-    // Fetch existing details if in Edit Mode
     useEffect(() => {
         if (editId) {
-            fetchExperienceDetails();
+            const fetchDetails = async () => {
+                try {
+                    const res = await api.get(`/experiences/${editId}`);
+                    setFormData({
+                        title: res.data.title,
+                        category: res.data.category,
+                        description: res.data.description,
+                        price: res.data.price.toString(),
+                        location: res.data.location || ''
+                    });
+                } catch (e) {
+                    Alert.alert("Error", "Details fetch failed");
+                }
+            };
+            fetchDetails();
         }
     }, [editId]);
 
-    const fetchExperienceDetails = async () => {
-        try {
-            const response = await api.get(`/experiences/${editId}`);
-            const data = response.data;
-            setFormData({
-                title: data.title,
-                category: data.category,
-                description: data.description,
-                price: data.price.toString(),
-                location: data.location || '',
-            });
-        } catch (error) {
-            Alert.alert("Error", "Could not fetch experience details");
-        }
-    };
-
-    /**
-     * handleSave: Handles both creation and update logic
-     */
     const handleSave = async () => {
         if (!formData.title || !formData.category || !formData.price || !formData.description) {
-            Alert.alert("Error", "Please fill in all required fields.");
+            Alert.alert("Error", "Required fields missing");
             return;
         }
-
         try {
             setLoading(true);
-            const dataToSend = {
-                ...formData,
+            const body = { 
+                ...formData, 
                 price: Number(formData.price), 
                 host: user.uid, 
                 images: [], 
-                rating: 5.0, 
+                rating: 5.0 
             };
             
             if (editId) {
-                await api.put(`/experiences/update/${editId}`, dataToSend);
-                Alert.alert("Success", "Experience updated successfully!");
+                await api.put(`/experiences/update/${editId}`, body);
+                Alert.alert("Success", "Updated Successfully!");
             } else {
-                await api.post('/experiences/add', dataToSend);
-                Alert.alert("Success", "Experience added successfully!");
+                await api.post('/experiences/add', body);
+                Alert.alert("Success", "Published Successfully!");
             }
-            router.back(); 
-        } catch (error) {
-            const errorMessage = error.response?.data?.error || "Could not save data";
-            Alert.alert("Error", errorMessage);
+            router.back();
+        } catch (err) {
+            Alert.alert("Error", "Save failed");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <View style={styles.container}>
-            {/* Header with Green Gradient */}
+        <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+            style={styles.container}
+        >
+            {/* Header with Square Corners */}
             <LinearGradient colors={[Colors.primary, '#1B5E20']} style={styles.header}>
-                <Text style={styles.headerTitle}>{editId ? "Edit Tradition" : "Host a Tradition"}</Text>
-                <Text style={styles.headerSubtitle}>Showcase Sri Lankan culture to the world 🇱🇰</Text>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+                        <Ionicons name="arrow-back" size={24} color={Colors.surface} />
+                    </TouchableOpacity>
+                    
+                    <Text style={styles.headerTitle}>
+                        {editId ? "Edit Experience" : "Bring Your Culture to Life"}
+                    </Text>
+                    
+                    <View style={{ width: 34 }} /> 
+                </View>
+                {/* Centered Subtitle */}
+                <Text style={styles.headerSubtitle}>Add a cultural activity and connect travelers with authentic local experiences 🇱🇰</Text>
             </LinearGradient>
 
             <ScrollView 
                 style={styles.content} 
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={styles.scrollContent} 
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.card}>
-                    {/* Title Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Experience Title *</Text>
+                    <Text style={styles.sectionTitle}>General Information</Text>
+
+                    <Text style={styles.label}>Experience Title *</Text>
+                    <View style={styles.inputContainer}>
+                        <Ionicons name="pencil-outline" size={18} color={Colors.primary} style={styles.inputIcon} />
                         <TextInput 
                             style={styles.input} 
-                            placeholder="e.g. Traditional Cooking"
+                            placeholder="e.g. Traditional Pottery Making" 
+                            placeholderTextColor="#999"
                             value={formData.title} 
-                            onChangeText={(text) => setFormData({...formData, title: text})} 
+                            onChangeText={(t) => setFormData({...formData, title: t})} 
                         />
                     </View>
+                    
+                    <Text style={styles.label}>Category *</Text>
+                    <Dropdown 
+                        style={[styles.dropdown, isFocus && { borderColor: Colors.primary }]} 
+                        placeholderStyle={styles.placeholderStyle}
+                        selectedTextStyle={styles.selectedTextStyle}
+                        data={categories} 
+                        labelField="label" 
+                        valueField="value" 
+                        placeholder="Select Category"
+                        value={formData.category} 
+                        onFocus={() => setIsFocus(true)} 
+                        onBlur={() => setIsFocus(false)} 
+                        onChange={i => { 
+                            setFormData({...formData, category: i.value}); 
+                            setIsFocus(false); 
+                        }}
+                        renderLeftIcon={() => (
+                            <Ionicons name="grid-outline" size={18} color={Colors.primary} style={styles.inputIcon} />
+                        )}
+                    />
 
-                    {/* Category Dropdown */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Category *</Text>
-                        <Dropdown
-                            style={[styles.dropdown, isFocus && { borderColor: Colors.primary }]}
-                            placeholderStyle={styles.placeholderStyle}
-                            selectedTextStyle={styles.selectedTextStyle}
-                            data={categories}
-                            maxHeight={300}
-                            labelField="label"
-                            valueField="value"
-                            placeholder={!isFocus ? 'Select Category' : '...'}
-                            value={formData.category}
-                            onFocus={() => setIsFocus(true)}
-                            onBlur={() => setIsFocus(false)}
-                            onChange={item => {
-                                setFormData({...formData, category: item.value});
-                                setIsFocus(false);
-                            }}
-                            renderLeftIcon={() => (
-                                <Ionicons
-                                    style={styles.icon}
-                                    color={isFocus ? Colors.primary : Colors.textSecondary}
-                                    name="grid-outline"
-                                    size={20}
-                                />
-                            )}
-                        />
-                    </View>
-
-                    {/* Description Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description *</Text>
+                    <Text style={styles.label}>Detailed Description *</Text>
+                    <View style={[styles.inputContainer, styles.textAreaContainer]}>
                         <TextInput 
-                            style={[styles.input, styles.textArea]} 
-                            placeholder="Details about the cultural significance..."
-                            multiline={true}
-                            numberOfLines={4}
+                            style={styles.textArea} 
+                            multiline 
+                            numberOfLines={5}
+                            placeholder="Tell tourists about the steps, cultural history, and what they will experience..."
+                            placeholderTextColor="#999"
                             value={formData.description} 
-                            onChangeText={(text) => setFormData({...formData, description: text})} 
+                            onChangeText={(t) => setFormData({...formData, description: t})} 
                         />
                     </View>
 
-                    {/* Price Input */}
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Price (LKR) *</Text>
+                    <Text style={styles.label}>Price (LKR) *</Text>
+                    <View style={styles.inputContainer}>
+                        <Ionicons name="cash-outline" size={18} color={Colors.primary} style={styles.inputIcon} />
                         <TextInput 
                             style={styles.input} 
-                            keyboardType="numeric"
-                            placeholder="e.g. 2500"
+                            keyboardType="numeric" 
+                            placeholder="2500"
+                            placeholderTextColor="#999"
                             value={formData.price} 
-                            onChangeText={(text) => setFormData({...formData, price: text})} 
+                            onChangeText={(t) => setFormData({...formData, price: t})} 
                         />
                     </View>
                 </View>
 
-                {/* Submit Button */}
                 <TouchableOpacity 
-                    style={styles.generateButton} 
-                    onPress={handleSave}
+                    onPress={handleSave} 
                     disabled={loading}
+                    activeOpacity={0.8}
                 >
-                    <LinearGradient
-                        colors={[Colors.primary, Colors.success]}
-                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                        style={styles.generateButtonGradient}
+                    <LinearGradient 
+                        colors={[Colors.primary, '#388E3C']} 
+                        style={styles.btn}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
                     >
                         {loading ? (
-                            <ActivityIndicator color={Colors.surface} />
+                            <ActivityIndicator color="#fff" />
                         ) : (
                             <>
-                                <Ionicons name="sparkles" size={24} color={Colors.surface} />
-                                <Text style={styles.generateButtonText}>
+                                <Ionicons name="checkmark-circle-outline" size={22} color="#fff" style={{ marginRight: 8 }} />
+                                <Text style={styles.btnText}>
                                     {editId ? "Update Experience" : "Publish Experience"}
                                 </Text>
                             </>
                         )}
                     </LinearGradient>
                 </TouchableOpacity>
+
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+                    <Text style={styles.cancelBtnText}>Discard Changes</Text>
+                </TouchableOpacity>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background },
-    header: {
-        paddingTop: 60,
-        paddingBottom: 25,
-        paddingHorizontal: Spacing.lg,
+    container: { flex: 1, backgroundColor: '#F8F9FA' },
+    header: { 
+        paddingTop: 60, 
+        paddingBottom: 30, 
+        paddingHorizontal: 20,
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
     },
-    headerTitle: { ...Typography.h1, color: Colors.surface },
-    headerSubtitle: { ...Typography.body, color: Colors.surface, opacity: 0.9, fontSize: 14 },
+    headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+    headerSubtitle: { 
+        color: '#fff', 
+        fontSize: 14, 
+        marginTop: 12, 
+        opacity: 0.9,
+        textAlign: 'center', 
+        width: '100%' 
+    },
+    iconButton: { padding: 5 },
     content: { flex: 1 },
-    scrollContent: { padding: Spacing.lg, paddingBottom: 50 },
-    card: {
-        backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        marginBottom: Spacing.md,
-        elevation: 3,
+    scrollContent: { padding: 20 },
+    card: { 
+        backgroundColor: '#fff', 
+        borderRadius: BorderRadius.lg, 
+        padding: 20, 
+        elevation: 4,
         shadowColor: '#000',
         shadowOpacity: 0.1,
-        shadowRadius: 5,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+        marginBottom: 20,
+        marginTop: 10 
     },
-    inputGroup: { marginBottom: Spacing.md },
-    label: { ...Typography.body, fontWeight: '600', marginBottom: Spacing.xs, color: Colors.text },
-    input: {
-        borderWidth: 1,
-        borderColor: Colors.border,
-        borderRadius: BorderRadius.md,
-        padding: Spacing.md,
+    sectionTitle: {
         fontSize: 16,
-        backgroundColor: Colors.background,
+        fontWeight: 'bold',
+        color: Colors.text,
+        marginBottom: 15,
+        borderLeftWidth: 4,
+        borderLeftColor: Colors.primary,
+        paddingLeft: 10
     },
-    textArea: { height: 100, textAlignVertical: 'top' },
-    dropdown: {
-        height: 55,
-        borderColor: Colors.border,
-        borderWidth: 1,
-        borderRadius: BorderRadius.md,
-        paddingHorizontal: 8,
-        backgroundColor: Colors.background,
-    },
-    icon: { marginRight: 5 },
-    placeholderStyle: { fontSize: 16, color: Colors.textSecondary },
-    selectedTextStyle: { fontSize: 16, color: Colors.text },
-    generateButton: { borderRadius: BorderRadius.md, overflow: 'hidden', marginTop: Spacing.md },
-    generateButtonGradient: {
+    label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 8, marginTop: 15 },
+    inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: Spacing.md,
-        gap: Spacing.sm,
+        backgroundColor: '#F1F3F5',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#E9ECEF'
     },
-    generateButtonText: { color: Colors.surface, fontSize: 18, fontWeight: 'bold' },
+    inputIcon: { marginRight: 10 },
+    input: { flex: 1, paddingVertical: 12, fontSize: 15, color: Colors.text },
+    textAreaContainer: { alignItems: 'flex-start', paddingTop: 12 },
+    textArea: { flex: 1, fontSize: 15, color: Colors.text, minHeight: 100, textAlignVertical: 'top' },
+    dropdown: { 
+        height: 50, 
+        backgroundColor: '#F1F3F5', 
+        borderRadius: 10, 
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#E9ECEF'
+    },
+    placeholderStyle: { fontSize: 15, color: '#999' },
+    selectedTextStyle: { fontSize: 15, color: Colors.text },
+    btn: { 
+        flexDirection: 'row',
+        marginTop: 10, 
+        padding: 16, 
+        borderRadius: 12, 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        elevation: 3
+    },
+    btnText: { color: '#fff', fontWeight: 'bold', fontSize: 17 },
+    cancelBtn: { marginTop: 20, alignItems: 'center', marginBottom: 40 },
+    cancelBtnText: { color: Colors.danger, fontWeight: '600', fontSize: 15 }
 });
