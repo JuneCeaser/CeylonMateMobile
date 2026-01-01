@@ -17,11 +17,11 @@ import api from '../../constants/api';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
 export default function ManageCultureScreen() {
-    const { user, userProfile } = useAuth(); 
+    const { user, userProfile, authToken } = useAuth(); 
     const router = useRouter();
     
     const [myListings, setMyListings] = useState([]);
-    const [bookings, setBookings] = useState([]); // State for real-time booking requests
+    const [bookings, setBookings] = useState([]); 
     const [loading, setLoading] = useState(true);
 
     /**
@@ -44,13 +44,31 @@ export default function ManageCultureScreen() {
      * Fetch all booking requests assigned to this host
      */
     const fetchBookings = useCallback(async () => {
+        if (!authToken) {
+            console.warn("Auth token not available yet");
+            return;
+        }
         try {
             const response = await api.get('/bookings/host/list');
             setBookings(response.data);
         } catch (err) {
             console.error("Booking fetch error:", err.message);
         }
-    }, []);
+    }, [authToken]);
+
+    /**
+     * 🟢 LOGIC: Calculate total earnings from confirmed bookings
+     */
+    const calculateEarnings = () => {
+        return bookings
+            .filter(b => b.status === 'confirmed')
+            .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    };
+
+    /**
+     * 🟢 LOGIC: Get count of pending requests
+     */
+    const pendingCount = bookings.filter(b => b.status === 'pending').length;
 
     /**
      * Handle the Accept or Decline action for a booking
@@ -59,15 +77,12 @@ export default function ManageCultureScreen() {
         try {
             await api.patch(`/bookings/update-status/${id}`, { status });
             Alert.alert("Success", `Booking has been ${status}`);
-            fetchBookings(); // Refresh the list after action
+            fetchBookings(); 
         } catch (err) {
             Alert.alert("Error", "Could not update booking status");
         }
     };
 
-    /**
-     * Refresh all data when screen comes into focus
-     */
     useFocusEffect(
         useCallback(() => {
             fetchMyListings();
@@ -92,9 +107,6 @@ export default function ManageCultureScreen() {
         }
     };
 
-    /**
-     * Component for the Booking Request Card
-     */
     const renderBookingCard = (booking) => (
         <View key={booking._id} style={styles.bookingCard}>
             <View style={styles.bookingInfo}>
@@ -106,7 +118,6 @@ export default function ManageCultureScreen() {
                     📅 {new Date(booking.bookingDate).toLocaleDateString()} • 👥 {booking.guests} Guests
                 </Text>
                 
-                {/* Dynamic Status Badge */}
                 <View style={[
                     styles.statusBadge, 
                     { backgroundColor: booking.status === 'pending' ? '#FFA000' : 
@@ -116,7 +127,6 @@ export default function ManageCultureScreen() {
                 </View>
             </View>
 
-            {/* Action Buttons: Show only if Pending */}
             {booking.status === 'pending' && (
                 <View style={styles.bookingActions}>
                     <TouchableOpacity 
@@ -188,27 +198,32 @@ export default function ManageCultureScreen() {
                 <Text style={styles.headerSubtitle}>Your Heritage Dashboard 🇱🇰</Text>
             </LinearGradient>
 
+            {/* 🟢 UPDATED: Live Stats Row */}
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{myListings.length}</Text>
-                    <Text style={styles.statLabel}>Active Experiences</Text>
+                    <Text style={styles.statLabel}>My Listings</Text>
                 </View>
+                
                 <View style={[styles.statItem, styles.statBorder]}>
-                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <Ionicons name="star" size={16} color={Colors.warning} />
-                        <Text style={styles.statNumber}> 4.9</Text>
-                    </View>
-                    <Text style={styles.statLabel}>Host Rating</Text>
+                    <Text style={[styles.statNumber, { color: Colors.secondary }]}>
+                        LKR {calculateEarnings().toLocaleString()}
+                    </Text>
+                    <Text style={styles.statLabel}>Total Earnings</Text>
+                </View>
+
+                <View style={[styles.statItem, styles.statBorder]}>
+                    <Text style={[styles.statNumber, { color: '#FFA000' }]}>{pendingCount}</Text>
+                    <Text style={styles.statLabel}>Pending</Text>
                 </View>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 
-                {/* 1. Real-Time Booking Requests Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Booking Requests</Text>
                     <Text style={styles.sectionCount}>
-                        {bookings.filter(b => b.status === 'pending').length} Pending
+                        {pendingCount} Pending
                     </Text>
                 </View>
                 
@@ -223,7 +238,6 @@ export default function ManageCultureScreen() {
                     )}
                 </View>
 
-                {/* 2. My Experiences Section */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>My Experiences</Text>
                     <Text style={styles.sectionCount}>{myListings.length} total</Text>
@@ -291,8 +305,8 @@ const styles = StyleSheet.create({
     },
     statItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     statBorder: { borderLeftWidth: 1, borderLeftColor: Colors.border },
-    statNumber: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
-    statLabel: { fontSize: 11, color: Colors.textSecondary, marginTop: 4, textTransform: 'uppercase' },
+    statNumber: { fontSize: 16, fontWeight: 'bold', color: Colors.primary },
+    statLabel: { fontSize: 10, color: Colors.textSecondary, marginTop: 4, textTransform: 'uppercase', textAlign: 'center' },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, marginTop: 25, marginBottom: 12 },
     sectionTitle: { ...Typography.h3, fontSize: 18, color: Colors.text },
     sectionCount: { fontSize: 12, color: Colors.textSecondary },
@@ -314,8 +328,6 @@ const styles = StyleSheet.create({
     fabText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
     emptyContainer: { padding: 20, alignItems: 'center' },
     emptyText: { color: Colors.textSecondary, fontSize: 13 },
-    
-    // NEW BOOKING STYLES
     bookingCard: {
         backgroundColor: Colors.surface,
         borderRadius: BorderRadius.md,
