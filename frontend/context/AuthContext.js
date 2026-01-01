@@ -4,7 +4,8 @@ import {
     createUserWithEmailAndPassword,
     signOut as firebaseSignOut,
     onAuthStateChanged,
-    getIdToken 
+    getIdToken,
+    updateProfile 
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -14,53 +15,58 @@ import { Alert } from 'react-native';
 const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [userProfile, setUserProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [authToken, setAuthToken] = useState(null);
+    const [user, setUser] = useState(null); // Stores the raw Firebase Auth user object
+    const [userProfile, setUserProfile] = useState(null); // Stores extra user data from Firestore
+    const [loading, setLoading] = useState(true); // Tracks global loading state
+    const [authToken, setAuthToken] = useState(null); // Stores the ID token for API requests
 
     useEffect(() => {
+        /**
+         * Listen for authentication state changes (Login/Logout/App Refresh)
+         */
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            setLoading(true); // Start loading when auth state changes
+            setLoading(true); 
             
             if (firebaseUser) {
-                console.log("User detected in Firebase Auth:", firebaseUser.uid);
+                // User is signed in
                 setUser(firebaseUser);
                 
                 try {
+                    // Fetch the latest ID token for backend authentication
                     const token = await getIdToken(firebaseUser);
                     setAuthToken(token);
                     await AsyncStorage.setItem('userToken', token);
 
-                    // Fetch user profile from Firestore
+                    // Fetch additional user details from Firestore (Role, Village, etc.)
                     const docRef = doc(db, 'users', firebaseUser.uid);
                     const docSnap = await getDoc(docRef);
 
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        console.log("Profile data loaded from Firestore:", data.userType);
                         setUserProfile({ uid: firebaseUser.uid, ...data });
                     } else {
-                        console.warn("No profile document found in Firestore for this user!");
                         setUserProfile(null);
                     }
                 } catch (error) {
                     console.error('Error loading user profile or token:', error);
                 }
             } else {
-                console.log("No user signed in.");
+                // User is signed out, clear all states
                 setUser(null);
                 setUserProfile(null);
                 setAuthToken(null);
                 await AsyncStorage.removeItem('userToken');
             }
             
-            setLoading(false); // Only set loading to false after profile attempt is finished
+            setLoading(false);
         });
 
         return unsubscribe;
     }, []);
 
+    /**
+     * Sign in existing users with Email and Password
+     */
     const login = async (email, password) => {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -70,13 +76,22 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    /**
+     * Register new users and create their profile in Firestore
+     */
     const register = async (email, password, userData) => {
         try {
-            // 1. Create Firebase Auth account
+            // 1. Create account in Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
 
-            // 2. Prepare Profile Document
+            // 2. Set the Display Name in Firebase Auth Profile 
+            // (Crucial for showing the name in the dashboard immediately)
+            await updateProfile(firebaseUser, {
+                displayName: userData.name
+            });
+
+            // 3. Prepare the Profile Document for Firestore
             const userDoc = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -86,7 +101,7 @@ export const AuthProvider = ({ children }) => {
                 createdAt: new Date().toISOString(),
             };
 
-            // Role-specific field mapping
+            // Mapping role-specific data based on User Type
             if (userData.userType === 'tourist') {
                 userDoc.country = userData.country || "";
                 userDoc.preferences = userData.preferences || {
@@ -97,7 +112,7 @@ export const AuthProvider = ({ children }) => {
                 userDoc.hotelName = userData.hotelName || "";
                 userDoc.hotelAddress = userData.hotelAddress || "";
                 userDoc.hotelCity = userData.hotelCity || "";
-                userDoc.approved = false; 
+                userDoc.approved = false; // Hotel accounts require admin approval
             } else if (userData.userType === 'host') {
                 userDoc.villageName = userData.villageName || "";
                 userDoc.expertise = userData.expertise || ""; 
@@ -105,17 +120,11 @@ export const AuthProvider = ({ children }) => {
                 userDoc.isVerifiedHost = true;
             }
 
-            // 3. Save to Firestore with a secondary check for Rules errors
-            try {
-                await setDoc(doc(db, 'users', firebaseUser.uid), userDoc);
-                console.log("Firestore profile created successfully for:", userData.userType);
-            } catch (dbError) {
-                console.error("Firestore Save Failed. Check Security Rules:", dbError);
-                Alert.alert(
-                    "Database Error", 
-                    "Your account was created, but we couldn't save your profile settings. Please contact support."
-                );
-            }
+            // 4. Save the user document to Firestore 'users' collection
+            await setDoc(doc(db, 'users', firebaseUser.uid), userDoc);
+            
+            // 5. Update local state so UI reflects the new user data without needing a refresh
+            setUserProfile(userDoc);
 
             return firebaseUser;
         } catch (error) {
@@ -123,6 +132,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    /**
+     * Sign out user and clean up local storage
+     */
     const logout = async () => {
         try {
             await firebaseSignOut(auth);
@@ -135,6 +147,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Shared values accessible via useAuth() hook
     const value = {
         user,
         userProfile,
@@ -148,6 +161,9 @@ export const AuthProvider = ({ children }) => {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+/**
+ * Custom hook to easily consume Auth context throughout the app
+ */
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {
