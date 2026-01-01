@@ -9,8 +9,10 @@ import {
     Alert, 
     ActivityIndicator, 
     KeyboardAvoidingView, 
-    Platform 
+    Platform,
+    Image
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,8 +25,10 @@ export default function AddCultureScreen() {
     const { user } = useAuth();
     const router = useRouter();
     const { editId } = useLocalSearchParams();
+    
     const [loading, setLoading] = useState(false);
     const [isFocus, setIsFocus] = useState(false);
+    const [image, setImage] = useState(null); 
 
     const categories = [
         { label: 'Cooking', value: 'Cooking' },
@@ -39,7 +43,6 @@ export default function AddCultureScreen() {
         category: '',
         description: '',
         price: '',
-        location: ''
     });
 
     useEffect(() => {
@@ -52,8 +55,10 @@ export default function AddCultureScreen() {
                         category: res.data.category,
                         description: res.data.description,
                         price: res.data.price.toString(),
-                        location: res.data.location || ''
                     });
+                    if (res.data.images && res.data.images.length > 0) {
+                        setImage(res.data.images[0]); 
+                    }
                 } catch (e) {
                     Alert.alert("Error", "Details fetch failed");
                 }
@@ -62,61 +67,123 @@ export default function AddCultureScreen() {
         }
     }, [editId]);
 
-    const handleSave = async () => {
-    if (!formData.title || !formData.category || !formData.price || !formData.description) {
-        Alert.alert("Error", "Required fields missing");
-        return;
-    }
-
-    try {
-        setLoading(true);
-        
-        // Create a clean data object
-        const dataToSend = {
-            title: formData.title,
-            category: formData.category,
-            description: formData.description,
-            price: Number(formData.price),
-            host: user.uid,
-            // Only send location if you actually have coordinates
-            // For now, we omit it to avoid the GeoJSON error
-        };
-
-        if (editId) {
-            await api.put(`/experiences/update/${editId}`, dataToSend);
-            Alert.alert("Success", "Updated Successfully!");
-        } else {
-            await api.post('/experiences/add', dataToSend);
-            Alert.alert("Success", "Published Successfully!");
+    const pickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert("Permission Denied", "We need camera roll permissions to upload photos.");
+            return;
         }
-        router.back();
-    } catch (err) {
-        Alert.alert("Error", "Update failed: " + err.message);
-    } finally {
-        setLoading(false);
-    }
-};
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            // Updated to the new array format to remove the warning
+            mediaTypes: ['images'], 
+            allowsEditing: true,
+            aspect: [16, 9],
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            setImage(result.assets[0].uri);
+        }
+    };
+
+    const uploadImageToCloudinary = async (fileUri) => {
+        if (!fileUri || fileUri.startsWith('http')) return fileUri;
+
+        const data = new FormData();
+        data.append('file', {
+            uri: Platform.OS === 'android' ? fileUri : fileUri.replace('file://', ''),
+            type: 'image/jpeg',
+            name: 'upload.jpg',
+        });
+        
+        data.append('upload_preset', 'ceylon_mate_preset'); 
+
+        try {
+            const response = await fetch('https://api.cloudinary.com/v1_1/dvradstnd/image/upload', {
+                method: 'POST',
+                body: data,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            const result = await response.json();
+            
+            if (result.secure_url) {
+                return result.secure_url;
+            } else {
+                console.error("Cloudinary Error Response:", result);
+                return null;
+            }
+        } catch (error) {
+            console.error("Network Error Details:", error);
+            throw new Error("Cloudinary connection failed. Check your internet.");
+        }
+    };
+
+    const handleSave = async () => {
+        if (!formData.title || !formData.category || !formData.price || !formData.description) {
+            Alert.alert("Error", "Required fields missing");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            
+            let finalImageUrl = image;
+            if (image && !image.startsWith('http')) {
+                const cloudUrl = await uploadImageToCloudinary(image);
+                if (cloudUrl) {
+                    finalImageUrl = cloudUrl;
+                } else {
+                    throw new Error("Image upload failed. Please try again.");
+                }
+            }
+
+            const dataToSend = {
+                title: formData.title,
+                category: formData.category,
+                description: formData.description,
+                price: Number(formData.price),
+                host: user.uid,
+                images: finalImageUrl ? [finalImageUrl] : [],
+                rating: 5.0 
+            };
+
+            if (editId) {
+                await api.put(`/experiences/update/${editId}`, dataToSend);
+                Alert.alert("Success", "Updated Successfully!");
+            } else {
+                await api.post('/experiences/add', dataToSend);
+                Alert.alert("Success", "Published Successfully!");
+            }
+            router.back();
+        } catch (err) {
+            Alert.alert("Error", err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
             style={styles.container}
         >
-            {/* Header with Square Corners */}
             <LinearGradient colors={[Colors.primary, '#1B5E20']} style={styles.header}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
                         <Ionicons name="arrow-back" size={24} color={Colors.surface} />
                     </TouchableOpacity>
-                    
                     <Text style={styles.headerTitle}>
-                        {editId ? "Edit Experience" : "Bring Your Culture to Life"}
+                        {editId ? "Edit Experience" : "Create New Experience"}
                     </Text>
-                    
                     <View style={{ width: 34 }} /> 
                 </View>
-                {/* Centered Subtitle */}
-                <Text style={styles.headerSubtitle}>Add a cultural activity and connect travelers with authentic local experiences 🇱🇰</Text>
+                {/* Ayubowan removed from here */}
+                <Text style={styles.headerSubtitle}>Share your authentic Sri Lankan cultural experience 🇱🇰</Text>
             </LinearGradient>
 
             <ScrollView 
@@ -125,14 +192,26 @@ export default function AddCultureScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>General Information</Text>
+                    <Text style={styles.sectionTitle}>Experience Image</Text>
+                    <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                        {image ? (
+                            <Image source={{ uri: image }} style={styles.previewImage} />
+                        ) : (
+                            <View style={styles.placeholderBox}>
+                                <Ionicons name="camera-outline" size={40} color="#999" />
+                                <Text style={styles.placeholderText}>Select a Cover Photo</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    <Text style={[styles.sectionTitle, {marginTop: 25}]}>Experience Details</Text>
 
                     <Text style={styles.label}>Experience Title *</Text>
                     <View style={styles.inputContainer}>
                         <Ionicons name="pencil-outline" size={18} color={Colors.primary} style={styles.inputIcon} />
                         <TextInput 
                             style={styles.input} 
-                            placeholder="e.g. Traditional Pottery Making" 
+                            placeholder="Pottery Workshop" 
                             placeholderTextColor="#999"
                             value={formData.title} 
                             onChangeText={(t) => setFormData({...formData, title: t})} 
@@ -160,13 +239,13 @@ export default function AddCultureScreen() {
                         )}
                     />
 
-                    <Text style={styles.label}>Detailed Description *</Text>
+                    <Text style={styles.label}>Description *</Text>
                     <View style={[styles.inputContainer, styles.textAreaContainer]}>
                         <TextInput 
                             style={styles.textArea} 
                             multiline 
                             numberOfLines={5}
-                            placeholder="Tell tourists about the steps, cultural history, and what they will experience..."
+                            placeholder="Share the story and steps of this experience..."
                             placeholderTextColor="#999"
                             value={formData.description} 
                             onChangeText={(t) => setFormData({...formData, description: t})} 
@@ -210,10 +289,6 @@ export default function AddCultureScreen() {
                         )}
                     </LinearGradient>
                 </TouchableOpacity>
-
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-                    <Text style={styles.cancelBtnText}>Discard Changes</Text>
-                </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -221,81 +296,28 @@ export default function AddCultureScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8F9FA' },
-    header: { 
-        paddingTop: 60, 
-        paddingBottom: 30, 
-        paddingHorizontal: 20,
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
-    },
+    header: { paddingTop: 60, paddingBottom: 25, paddingHorizontal: 20 },
     headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-    headerSubtitle: { 
-        color: '#fff', 
-        fontSize: 14, 
-        marginTop: 12, 
-        opacity: 0.9,
-        textAlign: 'center', 
-        width: '100%' 
-    },
+    headerSubtitle: { color: '#fff', fontSize: 13, marginTop: 8, opacity: 0.9, textAlign: 'center' },
     iconButton: { padding: 5 },
     content: { flex: 1 },
     scrollContent: { padding: 20 },
-    card: { 
-        backgroundColor: '#fff', 
-        borderRadius: BorderRadius.lg, 
-        padding: 20, 
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 5 },
-        marginBottom: 20,
-        marginTop: 10 
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: Colors.text,
-        marginBottom: 15,
-        borderLeftWidth: 4,
-        borderLeftColor: Colors.primary,
-        paddingLeft: 10
-    },
+    card: { backgroundColor: '#fff', borderRadius: 15, padding: 20, elevation: 4, marginBottom: 20 },
+    sectionTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.text, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: Colors.primary, paddingLeft: 10 },
     label: { fontSize: 14, fontWeight: '600', color: '#444', marginBottom: 8, marginTop: 15 },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F1F3F5',
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: '#E9ECEF'
-    },
+    imagePicker: { height: 180, backgroundColor: '#F1F3F5', borderRadius: 15, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderStyle: 'dashed', borderWidth: 1, borderColor: '#ccc' },
+    previewImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+    placeholderBox: { alignItems: 'center' },
+    placeholderText: { color: '#999', marginTop: 5, fontSize: 12 },
+    inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F3F5', borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E9ECEF' },
     inputIcon: { marginRight: 10 },
     input: { flex: 1, paddingVertical: 12, fontSize: 15, color: Colors.text },
     textAreaContainer: { alignItems: 'flex-start', paddingTop: 12 },
     textArea: { flex: 1, fontSize: 15, color: Colors.text, minHeight: 100, textAlignVertical: 'top' },
-    dropdown: { 
-        height: 50, 
-        backgroundColor: '#F1F3F5', 
-        borderRadius: 10, 
-        paddingHorizontal: 12,
-        borderWidth: 1,
-        borderColor: '#E9ECEF'
-    },
+    dropdown: { height: 50, backgroundColor: '#F1F3F5', borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#E9ECEF' },
     placeholderStyle: { fontSize: 15, color: '#999' },
     selectedTextStyle: { fontSize: 15, color: Colors.text },
-    btn: { 
-        flexDirection: 'row',
-        marginTop: 10, 
-        padding: 16, 
-        borderRadius: 12, 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        elevation: 3
-    },
+    btn: { flexDirection: 'row', marginTop: 10, padding: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center', elevation: 3 },
     btnText: { color: '#fff', fontWeight: 'bold', fontSize: 17 },
-    cancelBtn: { marginTop: 20, alignItems: 'center', marginBottom: 40 },
-    cancelBtnText: { color: Colors.danger, fontWeight: '600', fontSize: 15 }
 });
