@@ -73,8 +73,8 @@ export default function TouristLayout() {
             <Tabs.Screen name="profile" options={{ href: null }} />
             <Tabs.Screen name="itinerary-results" options={{ href: null }} />
             <Tabs.Screen name="risk-alternatives" options={{ href: null }} />
-            // ... existing tabs ...
-<Tabs.Screen name="place-chat" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+            <Tabs.Screen name="place-chat" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+            <Tabs.Screen name="my-bookings" options={{ href: null }} />
         </Tabs>
     );
 }
