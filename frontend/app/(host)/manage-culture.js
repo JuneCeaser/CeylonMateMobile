@@ -11,109 +11,72 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../constants/api';
-import { Colors } from '../../constants/theme';
+import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
 export default function ManageCultureScreen() {
-    // Access authenticated user data and logout function from AuthContext
     const { user, logout } = useAuth(); 
     const router = useRouter();
     
-    // State to store the list of experiences created by the host
     const [myListings, setMyListings] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    /**
-     * fetchMyListings: Retrieves all cultural experiences belonging 
-     * to the currently logged-in host from the MongoDB backend.
-     */
     const fetchMyListings = useCallback(async () => {
         if (!user?.uid) return;
         try {
             setLoading(true);
-            // Updated endpoint to match your backend route structure
             const response = await api.get('/experiences/my/list');
             setMyListings(response.data);
         } catch (_err) {
-            console.error("Fetch error occurred: Check backend connection or IP address");
+            console.error("Fetch error occurred: Check backend connection");
         } finally {
             setLoading(false);
         }
     }, [user?.uid]);
 
-    /**
-     * useFocusEffect: Refreshes the list every time the user 
-     * navigates back to this screen.
-     */
     useFocusEffect(
         useCallback(() => {
             fetchMyListings();
         }, [fetchMyListings])
     );
 
-    /**
-     * handleLogout: Signs the user out of Firebase and 
-     * clears local session storage.
-     */
     const handleLogout = () => {
-        Alert.alert(
-            "Logout",
-            "Are you sure you want to sign out?",
-            [
-                { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Logout", 
-                    style: "destructive", 
-                    onPress: async () => {
-                        try {
-                            await logout();
-                            // Redirect to login screen after successful sign-out
-                            router.replace('/auth/login');
-                        } catch (error) {
-                            Alert.alert("Error", "Logout failed. Please try again.");
-                        }
-                    } 
-                }
-            ]
-        );
+        Alert.alert("Logout", "Are you sure you want to sign out?", [
+            { text: "Cancel", style: "cancel" },
+            { 
+                text: "Logout", 
+                style: "destructive", 
+                onPress: async () => {
+                    try {
+                        await logout();
+                        router.replace('/auth/login');
+                    } catch (error) {
+                        Alert.alert("Error", "Logout failed.");
+                    }
+                } 
+            }
+        ]);
     };
 
-    /**
-     * confirmDelete: Triggers a confirmation dialog before 
-     * deleting an experience listing.
-     */
     const confirmDelete = (id) => {
-        Alert.alert(
-            "Delete Tradition", 
-            "Are you sure you want to permanently delete this experience?", 
-            [
-                { text: "Cancel", style: "cancel" }, 
-                { 
-                    text: "Delete", 
-                    style: "destructive", 
-                    onPress: () => handleDelete(id) 
-                }
-            ]
-        );
+        Alert.alert("Delete Tradition", "This will permanently remove this listing.", [
+            { text: "Cancel", style: "cancel" }, 
+            { text: "Delete", style: "destructive", onPress: () => handleDelete(id) }
+        ]);
     };
 
-    /**
-     * handleDelete: Calls the backend API to remove an experience 
-     * from the MongoDB database.
-     */
     const handleDelete = async (id) => {
         try {
-            // Updated endpoint to match your backend delete route
             await api.delete(`/experiences/delete/${id}`);
             setMyListings(prev => prev.filter(item => item._id !== id));
             Alert.alert("Success", "Experience deleted successfully");
         } catch (_err) {
-            Alert.alert("Error", "Could not delete listing. Please try again.");
+            Alert.alert("Error", "Could not delete listing.");
         }
     };
 
-    // UI Component for each individual experience card
     const renderItem = ({ item }) => (
         <View style={styles.card}>
             <Image 
@@ -122,26 +85,24 @@ export default function ManageCultureScreen() {
             />
             
             <View style={styles.info}>
+                <Text style={styles.categoryBadge}>{item.category}</Text>
                 <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.category}>{item.category}</Text>
-                <Text style={styles.price}>LKR {item.price}</Text>
+                <Text style={styles.price}>LKR {item.price.toLocaleString()}</Text>
             </View>
 
             <View style={styles.actions}>
-                {/* Navigation to Edit Screen */}
                 <TouchableOpacity 
                     style={styles.actionBtn} 
                     onPress={() => router.push({ pathname: '/(host)/add-culture', params: { editId: item._id } })}
                 >
-                    <Ionicons name="create-outline" size={22} color={Colors.primary} />
+                    <Ionicons name="pencil" size={20} color={Colors.primary} />
                 </TouchableOpacity>
 
-                {/* Delete Button */}
                 <TouchableOpacity 
                     style={styles.actionBtn} 
                     onPress={() => confirmDelete(item._id)}
                 >
-                    <Ionicons name="trash-outline" size={22} color="#FF4444" />
+                    <Ionicons name="trash-outline" size={20} color={Colors.danger} />
                 </TouchableOpacity>
             </View>
         </View>
@@ -149,91 +110,167 @@ export default function ManageCultureScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Header Section with Refresh and Logout Actions */}
-            <View style={styles.headerRow}>
-                <Text style={styles.header}>My Dashboard</Text>
-                <View style={styles.headerActions}>
-                    <TouchableOpacity onPress={fetchMyListings} style={styles.headerIcon}>
-                        <Ionicons name="refresh" size={24} color="#333" />
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity onPress={handleLogout} style={styles.headerIcon}>
-                        <Ionicons name="log-out-outline" size={24} color="#FF4444" />
-                    </TouchableOpacity>
+            {/* 1. Header with Branding & Identity */}
+            <LinearGradient
+                colors={[Colors.primary, '#1B5E20']}
+                style={styles.headerArea}
+            >
+                <View style={styles.headerTopRow}>
+                    <View>
+                        <Text style={styles.welcomeText}>Ayubowan, Host! 🙏</Text>
+                        <Text style={styles.headerTitle}>Host Dashboard</Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity onPress={fetchMyListings} style={styles.headerIcon}>
+                            <Ionicons name="refresh" size={24} color={Colors.surface} />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleLogout} style={styles.headerIcon}>
+                            <Ionicons name="log-out-outline" size={24} color="#FFCDD2" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <Text style={styles.headerSubtitle}>Manage your Sri Lankan traditions 🇱🇰</Text>
+            </LinearGradient>
+
+            {/* 2. Quick Stats Row */}
+            <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                    <Text style={styles.statNumber}>{myListings.length}</Text>
+                    <Text style={styles.statLabel}>Active Listings</Text>
+                </View>
+                <View style={[styles.statItem, styles.statBorder]}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <Ionicons name="star" size={16} color={Colors.warning} />
+                        <Text style={styles.statNumber}> 5.0</Text>
+                    </View>
+                    <Text style={styles.statLabel}>Avg Rating</Text>
+                </View>
+                <View style={[styles.statItem, styles.statBorder]}>
+                    <Text style={styles.statNumber}>0</Text>
+                    <Text style={styles.statLabel}>Bookings</Text>
                 </View>
             </View>
 
-            {/* Display loading indicator or the list of items */}
+            {/* 3. Experience Management List */}
             {loading ? (
-                <ActivityIndicator size="large" color={Colors.primary} style={{marginTop: 50}} />
+                <View style={styles.loader}>
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
             ) : (
                 <FlatList 
                     data={myListings}
                     keyExtractor={(item) => item._id.toString()}
                     renderItem={renderItem}
-                    contentContainerStyle={{ paddingBottom: 100 }}
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
+                            <Ionicons name="leaf-outline" size={60} color={Colors.border} />
                             <Text style={styles.emptyText}>You have not listed any experiences yet.</Text>
-                            <Text style={styles.emptySubText}>Tap the + button to start sharing your culture!</Text>
+                            <TouchableOpacity 
+                                style={styles.emptyButton}
+                                onPress={() => router.push('/(host)/add-culture')}
+                            >
+                                <Text style={styles.emptyButtonText}>Publish Your First Tradition</Text>
+                            </TouchableOpacity>
                         </View>
                     }
                 />
             )}
 
-            {/* Floating Action Button (FAB) to navigate to Add Experience screen */}
+            {/* 4. FAB to Add New Experience */}
             <TouchableOpacity 
                 style={styles.fab} 
+                activeOpacity={0.8}
                 onPress={() => router.push('/(host)/add-culture')}
             >
-                <Ionicons name="add" size={32} color="white" />
+                <LinearGradient
+                    colors={[Colors.primary, Colors.success]}
+                    style={styles.fabGradient}
+                >
+                    <Ionicons name="add" size={32} color="white" />
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F5F5F5', padding: 20, paddingTop: 50 },
-    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-    header: { fontSize: 28, fontWeight: 'bold', color: '#333' },
-    headerActions: { flexDirection: 'row', alignItems: 'center' },
-    headerIcon: { marginLeft: 15 },
+    container: { flex: 1, backgroundColor: Colors.background },
+    headerArea: {
+        paddingTop: 60,
+        paddingBottom: 40, // Increased to make room for stats overlap
+        paddingHorizontal: Spacing.lg,
+    },
+    headerTopRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    welcomeText: { color: Colors.surface, opacity: 0.8, fontSize: 14 },
+    headerTitle: { ...Typography.h1, color: Colors.surface, fontSize: 26 },
+    headerSubtitle: { color: Colors.surface, opacity: 0.9, fontSize: 13, marginTop: 4 },
+    headerActions: { flexDirection: 'row', gap: 15 },
+    headerIcon: { padding: 5 },
+    statsRow: {
+        flexDirection: 'row',
+        backgroundColor: Colors.surface,
+        marginHorizontal: Spacing.lg,
+        marginTop: -25, // Overlap effect
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        elevation: 6,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+    },
+    statItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    statBorder: { borderLeftWidth: 1, borderLeftColor: Colors.border },
+    statNumber: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
+    statLabel: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+    listContainer: { padding: Spacing.lg, paddingBottom: 120 },
     card: { 
         flexDirection: 'row', 
-        backgroundColor: '#FFF', 
-        borderRadius: 16, 
+        backgroundColor: Colors.surface, 
+        borderRadius: BorderRadius.lg, 
         padding: 12, 
         marginBottom: 15, 
         alignItems: 'center', 
-        elevation: 3
+        elevation: 2,
     },
-    img: { width: 70, height: 70, borderRadius: 12, backgroundColor: '#eee' },
-    info: { flex: 1, marginLeft: 15, justifyContent: 'center' },
-    title: { fontWeight: 'bold', fontSize: 16, color: '#333', marginBottom: 4 },
-    category: { fontSize: 12, color: '#888', textTransform: 'uppercase', fontWeight: 'bold' },
-    price: { color: '#4CAF50', fontWeight: 'bold', marginTop: 4 },
+    img: { width: 75, height: 75, borderRadius: BorderRadius.md, backgroundColor: '#eee' },
+    info: { flex: 1, marginLeft: 15 },
+    categoryBadge: { fontSize: 10, fontWeight: 'bold', color: Colors.primary, textTransform: 'uppercase' },
+    title: { fontWeight: 'bold', fontSize: 16, color: Colors.text, marginVertical: 2 },
+    price: { color: Colors.secondary, fontWeight: 'bold', fontSize: 14 },
     actions: { 
-        flexDirection: 'column', 
-        gap: 12, 
+        flexDirection: 'row', 
+        gap: 8,
         paddingLeft: 10,
         borderLeftWidth: 1,
-        borderLeftColor: '#F0F0F0',
-        marginLeft: 5
+        borderLeftColor: Colors.border,
     },
-    actionBtn: { padding: 4 },
+    actionBtn: { 
+        padding: 8, 
+        backgroundColor: Colors.background, 
+        borderRadius: BorderRadius.sm 
+    },
     fab: { 
         position: 'absolute', 
         bottom: 30, 
         right: 30, 
-        backgroundColor: '#4CAF50', 
+        elevation: 8,
+    },
+    fabGradient: {
         width: 65, 
         height: 65, 
-        borderRadius: 35, 
+        borderRadius: 33, 
         justifyContent: 'center', 
-        alignItems: 'center', 
-        elevation: 8
+        alignItems: 'center',
     },
-    emptyContainer: { alignItems: 'center', marginTop: 60 },
-    emptyText: { fontSize: 18, fontWeight: 'bold', color: '#555', marginBottom: 10 },
-    emptySubText: { fontSize: 14, color: '#999', textAlign: 'center', paddingHorizontal: 40 }
+    loader: { flex: 1, justifyContent: 'center' },
+    emptyContainer: { alignItems: 'center', marginTop: 80 },
+    emptyText: { fontSize: 15, color: Colors.textSecondary, marginTop: 15, textAlign: 'center' },
+    emptyButton: { marginTop: 15, backgroundColor: Colors.primary + '15', padding: 12, borderRadius: BorderRadius.md },
+    emptyButtonText: { color: Colors.primary, fontWeight: 'bold' }
 });

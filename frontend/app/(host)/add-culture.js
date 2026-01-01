@@ -63,34 +63,39 @@ export default function AddCultureScreen() {
     }, [editId]);
 
     const handleSave = async () => {
-        if (!formData.title || !formData.category || !formData.price || !formData.description) {
-            Alert.alert("Error", "Required fields missing");
-            return;
+    if (!formData.title || !formData.category || !formData.price || !formData.description) {
+        Alert.alert("Error", "Required fields missing");
+        return;
+    }
+
+    try {
+        setLoading(true);
+        
+        // Create a clean data object
+        const dataToSend = {
+            title: formData.title,
+            category: formData.category,
+            description: formData.description,
+            price: Number(formData.price),
+            host: user.uid,
+            // Only send location if you actually have coordinates
+            // For now, we omit it to avoid the GeoJSON error
+        };
+
+        if (editId) {
+            await api.put(`/experiences/update/${editId}`, dataToSend);
+            Alert.alert("Success", "Updated Successfully!");
+        } else {
+            await api.post('/experiences/add', dataToSend);
+            Alert.alert("Success", "Published Successfully!");
         }
-        try {
-            setLoading(true);
-            const body = { 
-                ...formData, 
-                price: Number(formData.price), 
-                host: user.uid, 
-                images: [], 
-                rating: 5.0 
-            };
-            
-            if (editId) {
-                await api.put(`/experiences/update/${editId}`, body);
-                Alert.alert("Success", "Updated Successfully!");
-            } else {
-                await api.post('/experiences/add', body);
-                Alert.alert("Success", "Published Successfully!");
-            }
-            router.back();
-        } catch (err) {
-            Alert.alert("Error", "Save failed");
-        } finally {
-            setLoading(false);
-        }
-    };
+        router.back();
+    } catch (err) {
+        Alert.alert("Error", "Update failed: " + err.message);
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <KeyboardAvoidingView 

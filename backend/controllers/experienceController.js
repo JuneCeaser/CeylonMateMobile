@@ -21,13 +21,27 @@ exports.updateExperience = async (req, res) => {
         let experience = await Experience.findById(req.params.id);
         if (!experience) return res.status(404).json({ error: "Experience not found" });
 
-        if (experience.host !== req.user.id) {
-            return res.status(401).json({ error: "Unauthorized" });
+        if (experience.host.toString() !== req.user.id.toString()) {
+            return res.status(401).json({ error: "Unauthorized access" });
         }
 
-        experience = await Experience.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        // Prepare the update data
+        let updateData = { ...req.body };
+
+        // FIX: If location is present but invalid (missing coordinates), remove it from update
+        if (updateData.location && (!updateData.location.coordinates || updateData.location.coordinates.length !== 2)) {
+            delete updateData.location; 
+        }
+
+        experience = await Experience.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        );
+
         res.json({ msg: "Experience updated successfully", experience });
     } catch (err) {
+        console.error("Update Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
