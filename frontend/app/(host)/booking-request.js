@@ -11,66 +11,77 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../constants/api';
-import { Colors, Spacing, BorderRadius } from '../../constants/theme';
+import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
 /**
- * BookingRequestsScreen: Host view to manage pending, confirmed, and cancelled requests.
+ * BookingRequestsScreen: Host-side interface to manage incoming cultural experience requests.
+ * Features: Tab-based filtering (Pending, Confirmed, History), Accept/Decline actions.
  */
 export default function BookingRequestsScreen() {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('pending'); // Options: 'pending', 'confirmed', 'cancelled'
+    const [activeTab, setActiveTab] = useState('pending'); // Current active filter
     const router = useRouter();
 
+    /**
+     * fetchBookings: Retrieves all booking requests assigned to the logged-in Host.
+     */
     const fetchBookings = async () => {
         try {
             setLoading(true);
             const response = await api.get('/bookings/host/list');
             setBookings(response.data);
         } catch (err) {
-            Alert.alert("Error", "Failed to fetch bookings");
+            console.error("Fetch Error:", err);
+            Alert.alert("Error", "Failed to fetch bookings. Please try again.");
         } finally {
             setLoading(false);
         }
     };
 
+    // Load data on initial mount
     useEffect(() => { fetchBookings(); }, []);
 
     /**
-     * Filter Logic: 
-     * 'cancelled' tab now includes both 'cancelled_by_host' and 'cancelled_by_tourist'
+     * filteredBookings: Memoized list filtered by the active tab status.
+     * Note: 'History' tab merges all cancellation variations.
      */
     const filteredBookings = useMemo(() => {
         if (activeTab === 'cancelled') {
-            return bookings.filter(b => b.status === 'cancelled_by_host' || b.status === 'cancelled_by_tourist' || b.status === 'cancelled');
+            return bookings.filter(b => 
+                b.status === 'cancelled_by_host' || 
+                b.status === 'cancelled_by_tourist' || 
+                b.status === 'cancelled'
+            );
         }
         return bookings.filter(b => b.status === activeTab);
     }, [bookings, activeTab]);
 
     /**
-     * handleAction: Updates status. 
-     * Backend automatically maps 'cancelled' to 'cancelled_by_host' because the Host is logged in.
+     * handleAction: Updates booking status via API.
+     * Confirmation alert prevents accidental Accept/Decline taps.
      */
     const handleAction = async (id, status) => {
         const actionLabel = status === 'confirmed' ? 'Accept' : 'Decline';
         
         Alert.alert(
-            `${actionLabel} Booking`,
-            `Are you sure you want to ${actionLabel.toLowerCase()} this request?`,
+            `${actionLabel} Request`,
+            `Are you sure you want to ${actionLabel.toLowerCase()} this booking request?`,
             [
-                { text: "No", style: "cancel" },
+                { text: "Cancel", style: "cancel" },
                 { 
-                    text: "Yes", 
+                    text: "Confirm", 
                     onPress: async () => {
                         try {
                             await api.patch(`/bookings/update-status/${id}`, { status });
-                            Alert.alert("Success", `Booking ${status === 'confirmed' ? 'Accepted' : 'Declined'}`);
-                            fetchBookings(); 
+                            Alert.alert("Success", `Booking request ${actionLabel}ed successfully.`);
+                            fetchBookings(); // Refresh data from server
                         } catch (err) {
-                            Alert.alert("Error", "Failed to update status");
+                            Alert.alert("Error", "Could not update status. Please check your connection.");
                         }
                     }
                 }
@@ -79,83 +90,102 @@ export default function BookingRequestsScreen() {
     };
 
     /**
-     * getStatusStyle: Helper to provide correct labels and colors for the Host view
+     * getStatusTheme: Returns visual properties (colors, icons) based on booking status.
      */
-    const getStatusStyle = (status) => {
+    const getStatusTheme = (status) => {
         switch (status) {
-            case 'confirmed': return { label: 'Accepted', color: Colors.success, icon: 'checkmark-circle' };
-            case 'cancelled_by_host': return { label: 'Declined by You', color: Colors.danger, icon: 'close-circle' };
-            case 'cancelled_by_tourist': return { label: 'Cancelled by Tourist', color: '#757575', icon: 'person-remove' };
-            default: return { label: 'Cancelled', color: Colors.danger, icon: 'close-circle' };
+            case 'confirmed': 
+                return { color: '#2E7D32', icon: 'checkmark-circle', bg: '#E8F5E9', label: 'Accepted' };
+            case 'cancelled_by_host': 
+                return { color: '#D32F2F', icon: 'close-circle', bg: '#FFEBEE', label: 'Declined by You' };
+            case 'cancelled_by_tourist': 
+                return { color: '#546E7A', icon: 'person-remove', bg: '#ECEFF1', label: 'Cancelled by Tourist' };
+            default: 
+                return { color: '#757575', icon: 'help-circle', bg: '#F5F5F5', label: 'Cancelled' };
         }
     };
 
+    /**
+     * renderItem: Renders individual booking request cards.
+     */
     const renderItem = ({ item }) => {
-        const statusStyle = getStatusStyle(item.status);
+        const theme = getStatusTheme(item.status);
 
         return (
-            <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                    <View style={styles.touristInfo}>
-                        <View style={styles.avatarPlaceholder}>
-                            <Text style={styles.avatarText}>{item.touristName?.charAt(0) || 'T'}</Text>
+            <View style={styles.cardContainer}>
+                <View style={styles.card}>
+                    {/* Header: Tourist Profile and Booking Price */}
+                    <View style={styles.cardHeader}>
+                        <View style={styles.touristInfo}>
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>{item.touristName?.charAt(0) || 'T'}</Text>
+                            </View>
+                            <View>
+                                <Text style={styles.touristName}>{item.touristName}</Text>
+                                <Text style={styles.requestDate}>Requested on {new Date(item.createdAt).toLocaleDateString('en-GB')}</Text>
+                            </View>
                         </View>
-                        <View>
-                            <Text style={styles.touristName}>{item.touristName}</Text>
-                            <Text style={styles.timeAgo}>Requested on {new Date(item.createdAt).toLocaleDateString()}</Text>
+                        <Text style={styles.priceText}>LKR {item.totalPrice?.toLocaleString()}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    {/* Body: Experience Title and Details */}
+                    <View style={styles.cardBody}>
+                        <Text style={styles.expTitle}>{item.experience?.title || "Experience Heritage"}</Text>
+                        <View style={styles.detailsRow}>
+                            <View style={styles.detailItem}>
+                                <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
+                                <Text style={styles.detailText}>{new Date(item.bookingDate).toLocaleDateString('en-GB')}</Text>
+                            </View>
+                            <View style={styles.verticalDivider} />
+                            <View style={styles.detailItem}>
+                                <Ionicons name="people-outline" size={14} color={Colors.textSecondary} />
+                                <Text style={styles.detailText}>{item.guests} Guests</Text>
+                            </View>
                         </View>
                     </View>
-                    <Text style={styles.priceText}>LKR {item.totalPrice?.toLocaleString()}</Text>
+
+                    {/* Footer Actions: Shown only for Pending status */}
+                    {item.status === 'pending' && (
+                        <View style={styles.actionsContainer}>
+                            <TouchableOpacity 
+                                style={[styles.actionBtn, styles.declineBtn]} 
+                                onPress={() => handleAction(item._id, 'cancelled')}
+                            >
+                                <Text style={styles.declineBtnText}>Decline</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                                style={[styles.actionBtn, styles.acceptBtn]} 
+                                onPress={() => handleAction(item._id, 'confirmed')}
+                            >
+                                <Text style={styles.acceptBtnText}>Accept Request</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    
+                    {/* Status Footer: Shown for Confirmed/History statuses */}
+                    {item.status !== 'pending' && (
+                        <View style={[styles.statusFooter, { backgroundColor: theme.bg }]}>
+                            <Ionicons name={theme.icon} size={16} color={theme.color} />
+                            <Text style={[styles.statusFooterText, { color: theme.color }]}>
+                                {theme.label}
+                            </Text>
+                        </View>
+                    )}
                 </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.cardBody}>
-                    <Text style={styles.expTitle}>{item.experience?.title || "Experience Details N/A"}</Text>
-                    <View style={styles.detailRow}>
-                        <Ionicons name="calendar-outline" size={14} color="#666" />
-                        <Text style={styles.details}> {new Date(item.bookingDate).toLocaleDateString()}</Text>
-                        <View style={styles.dot} />
-                        <Ionicons name="people-outline" size={14} color="#666" />
-                        <Text style={styles.details}> {item.guests} Guests</Text>
-                    </View>
-                </View>
-
-                {/* SHOW ACTION BUTTONS ONLY IN PENDING TAB */}
-                {item.status === 'pending' && (
-                    <View style={styles.actions}>
-                        <TouchableOpacity 
-                            style={[styles.actionBtn, styles.declineBtn]} 
-                            onPress={() => handleAction(item._id, 'cancelled')}
-                        >
-                            <Text style={styles.declineBtnText}>Decline</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            style={[styles.actionBtn, styles.confirmBtn]} 
-                            onPress={() => handleAction(item._id, 'confirmed')}
-                        >
-                            <Text style={styles.confirmBtnText}>Accept Request</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-                
-                {/* SHOW FOOTER STATUS FOR CONFIRMED/CANCELLED TABS */}
-                {item.status !== 'pending' && (
-                    <View style={[styles.statusFooter, { backgroundColor: statusStyle.color + '15' }]}>
-                        <Ionicons name={statusStyle.icon} size={16} color={statusStyle.color} />
-                        <Text style={[styles.statusFooterText, { color: statusStyle.color }]}>
-                            {statusStyle.label}
-                        </Text>
-                    </View>
-                )}
             </View>
         );
     };
 
+    /**
+     * TabButton: Reusable sub-component for the status filter bar.
+     */
     const TabButton = ({ title, type }) => (
         <TouchableOpacity 
             style={[styles.tab, activeTab === type && styles.activeTab]}
             onPress={() => setActiveTab(type)}
+            activeOpacity={0.7}
         >
             <Text style={[styles.tabText, activeTab === type && styles.activeTabText]}>{title}</Text>
             {activeTab === type && <View style={styles.tabIndicator} />}
@@ -164,24 +194,30 @@ export default function BookingRequestsScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Custom Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Ionicons name="chevron-back" size={24} color={Colors.text} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Booking Requests</Text>
-                <TouchableOpacity onPress={fetchBookings}>
-                    <Ionicons name="refresh" size={22} color={Colors.primary} />
-                </TouchableOpacity>
-            </View>
+            {/* Main Premium Header with Green Gradient */}
+            <LinearGradient colors={[Colors.primary, '#08320A']} style={styles.header}>
+                <View style={styles.headerInner}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={24} color="white" />
+                    </TouchableOpacity>
+                    <View style={styles.headerTitleContainer}>
+                        <Text style={styles.headerTitle}>Booking Requests</Text>
+                        <Text style={styles.headerSubtitle}>Manage incoming experiences</Text>
+                    </View>
+                    <TouchableOpacity onPress={fetchBookings} style={styles.refreshBtn}>
+                        <Ionicons name="refresh" size={22} color="rgba(255,255,255,0.7)" />
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
 
-            {/* Tabs Section */}
+            {/* Filter Navigation Bar */}
             <View style={styles.tabBar}>
                 <TabButton title="Pending" type="pending" />
                 <TabButton title="Confirmed" type="confirmed" />
                 <TabButton title="History" type="cancelled" />
             </View>
 
+            {/* Data Display Area */}
             {loading ? (
                 <View style={styles.center}>
                     <ActivityIndicator size="large" color={Colors.primary} />
@@ -192,10 +228,13 @@ export default function BookingRequestsScreen() {
                     keyExtractor={item => item._id}
                     renderItem={renderItem}
                     contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
-                            <Ionicons name="calendar-outline" size={60} color="#ccc" />
-                            <Text style={styles.emptyText}>No {activeTab} bookings found</Text>
+                            <View style={styles.emptyIconCircle}>
+                                <Ionicons name="calendar-outline" size={60} color={Colors.border} />
+                            </View>
+                            <Text style={styles.emptyText}>No {activeTab} requests found</Text>
                         </View>
                     }
                 />
@@ -205,55 +244,255 @@ export default function BookingRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F0F2F5' },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    // --- MAIN LAYOUT ---
+    container: { 
+        flex: 1, 
+        backgroundColor: '#F8F9FA' 
+    },
+    center: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    
+    // --- HEADER STYLES (GRADIENT) ---
     header: { 
+        paddingTop: 60, 
+        paddingBottom: 25, 
+        paddingHorizontal: 20 
+    },
+    headerInner: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'space-between' 
+    },
+    headerTitleContainer: { 
+        flex: 1, 
+        marginLeft: 15 
+    },
+    headerTitle: { 
+        fontSize: 24, 
+        fontWeight: 'bold', 
+        color: 'white' 
+    },
+    headerSubtitle: { 
+        fontSize: 13, 
+        color: 'rgba(255,255,255,0.7)', 
+        marginTop: 2 
+    },
+    backBtn: { 
+        width: 40, 
+        height: 40, 
+        borderRadius: 20, 
+        backgroundColor: 'rgba(255,255,255,0.15)', 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    refreshBtn: { 
+        padding: 5 
+    },
+    
+    // --- TAB BAR STYLES ---
+    tabBar: { 
+        flexDirection: 'row', 
+        backgroundColor: 'white', 
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 5
+    },
+    tab: { 
+        flex: 1, 
+        alignItems: 'center', 
+        paddingVertical: 16, 
+        position: 'relative' 
+    },
+    tabText: { 
+        fontSize: 14, 
+        color: '#9E9E9E', 
+        fontWeight: '600' 
+    },
+    activeTabText: { 
+        color: Colors.primary, 
+        fontWeight: 'bold' 
+    },
+    tabIndicator: { 
+        position: 'absolute', 
+        bottom: 0, 
+        width: '40%', 
+        height: 3, 
+        backgroundColor: Colors.primary, 
+        borderRadius: 3 
+    },
+
+    // --- CARD CONTAINER & SHADOWS ---
+    listContent: { 
+        padding: 16, 
+        paddingBottom: 40 
+    },
+    cardContainer: {
+        marginBottom: 16,
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05, 
+        shadowRadius: 8, 
+        elevation: 3,
+    },
+    card: { 
+        backgroundColor: 'white', 
+        borderRadius: 16, 
+        overflow: 'hidden',
+        borderWidth: 1, 
+        borderColor: '#F1F1F1'
+    },
+
+    // --- CARD CONTENT ELEMENTS ---
+    cardHeader: { 
         flexDirection: 'row', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        paddingHorizontal: 20, 
-        paddingTop: 60, 
-        paddingBottom: 15,
-        backgroundColor: 'white' 
+        padding: 16 
     },
-    headerTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.text },
-    backBtn: { padding: 5 },
-    
-    // Tab Styles
-    tabBar: { flexDirection: 'row', backgroundColor: 'white', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 2 },
-    tab: { flex: 1, alignItems: 'center', paddingVertical: 15, position: 'relative' },
-    tabText: { fontSize: 14, color: '#888', fontWeight: '500' },
-    activeTabText: { color: Colors.primary, fontWeight: 'bold' },
-    tabIndicator: { position: 'absolute', bottom: 0, width: '60%', height: 3, backgroundColor: Colors.primary, borderRadius: 3 },
+    touristInfo: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 12 
+    },
+    avatar: { 
+        width: 44, 
+        height: 44, 
+        borderRadius: 22, 
+        backgroundColor: Colors.primary + '20', 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    avatarText: { 
+        color: Colors.primary, 
+        fontWeight: 'bold', 
+        fontSize: 18 
+    },
+    touristName: { 
+        fontSize: 16, 
+        fontWeight: 'bold', 
+        color: Colors.text 
+    },
+    requestDate: { 
+        fontSize: 12, 
+        color: '#9E9E9E', 
+        marginTop: 2 
+    },
+    priceText: { 
+        fontSize: 15, 
+        fontWeight: 'bold', 
+        color: Colors.secondary 
+    },
+    divider: { 
+        height: 1, 
+        backgroundColor: '#F5F5F5', 
+        marginHorizontal: 16 
+    },
+    cardBody: { 
+        padding: 16 
+    },
+    expTitle: { 
+        fontSize: 15, 
+        fontWeight: 'bold', 
+        color: '#424242', 
+        marginBottom: 8 
+    },
+    detailsRow: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 12 
+    },
+    detailItem: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 4 
+    },
+    detailText: { 
+        fontSize: 13, 
+        color: '#616161', 
+        fontWeight: '500' 
+    },
+    verticalDivider: { 
+        width: 1, 
+        height: 12, 
+        backgroundColor: '#E0E0E0' 
+    },
 
-    listContent: { padding: 15, paddingBottom: 30 },
-    card: { backgroundColor: 'white', borderRadius: 15, marginBottom: 15, overflow: 'hidden', elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15 },
-    touristInfo: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
-    avatarText: { color: 'white', fontWeight: 'bold', fontSize: 18 },
-    touristName: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
-    timeAgo: { fontSize: 11, color: '#999' },
-    priceText: { fontSize: 15, fontWeight: 'bold', color: Colors.secondary },
-    
-    divider: { height: 1, backgroundColor: '#F0F0F0', marginHorizontal: 15 },
-    
-    cardBody: { padding: 15 },
-    expTitle: { fontSize: 15, fontWeight: '600', color: '#444', marginBottom: 6 },
-    detailRow: { flexDirection: 'row', alignItems: 'center' },
-    details: { fontSize: 13, color: '#666' },
-    dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#ccc', marginHorizontal: 8 },
+    // --- ACTION BUTTONS (PENDING ONLY) ---
+    actionsContainer: { 
+        flexDirection: 'row', 
+        padding: 16, 
+        gap: 12, 
+        backgroundColor: '#FAFAFA',
+        borderTopWidth: 1, 
+        borderTopColor: '#F5F5F5'
+    },
+    actionBtn: { 
+        flex: 1, 
+        paddingVertical: 12, 
+        borderRadius: 10, 
+        alignItems: 'center' 
+    },
+    acceptBtn: { 
+        backgroundColor: Colors.primary 
+    },
+    declineBtn: { 
+        backgroundColor: 'white', 
+        borderWidth: 1, 
+        borderColor: '#E0E0E0' 
+    },
+    acceptBtnText: { 
+        color: 'white', 
+        fontWeight: 'bold', 
+        fontSize: 14 
+    },
+    declineBtnText: { 
+        color: '#757575', 
+        fontWeight: 'bold', 
+        fontSize: 14 
+    },
 
-    actions: { flexDirection: 'row', padding: 15, gap: 10, backgroundColor: '#F9F9F9' },
-    actionBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-    confirmBtn: { backgroundColor: Colors.primary },
-    declineBtn: { backgroundColor: 'white', borderWidth: 1, borderColor: '#DDD' },
-    confirmBtnText: { color: 'white', fontWeight: 'bold' },
-    declineBtnText: { color: '#666', fontWeight: 'bold' },
+    // --- STATUS FOOTER (CONFIRMED/HISTORY) ---
+    statusFooter: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        paddingVertical: 14, 
+        gap: 8 
+    },
+    statusFooterText: { 
+        fontSize: 13, 
+        fontWeight: 'bold', 
+        textTransform: 'uppercase', 
+        letterSpacing: 0.5 
+    },
 
-    statusFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 8 },
-    statusFooterText: { fontSize: 13, fontWeight: 'bold' },
-
-    emptyContainer: { alignItems: 'center', marginTop: 100 },
-    emptyText: { marginTop: 15, color: '#999', fontSize: 16 }
+    // --- EMPTY STATE STYLES ---
+    emptyContainer: { 
+        alignItems: 'center', 
+        marginTop: 100, 
+        paddingHorizontal: 40 
+    },
+    emptyIconCircle: {
+        width: 100, 
+        height: 100, 
+        borderRadius: 50, 
+        backgroundColor: 'white',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginBottom: 20,
+        borderWidth: 1, 
+        borderColor: '#E0E0E0'
+    },
+    emptyText: { 
+        fontSize: 16, 
+        color: '#9E9E9E', 
+        fontWeight: '500', 
+        textAlign: 'center' 
+    }
 });
