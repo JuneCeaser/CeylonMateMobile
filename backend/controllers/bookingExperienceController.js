@@ -24,47 +24,39 @@ const getHostBookings = async (req, res) => {
  */
 const updateStatus = async (req, res) => {
     try {
-        const { status } = req.body; // Expecting 'confirmed' or 'cancelled'
+        const { status } = req.body;
         const bookingId = req.params.id;
         const userId = req.user.id;
 
-        // 1. Find the booking first to check who is trying to update it
+        // 1. Fetch booking to check permissions
         const booking = await BookingExperience.findById(bookingId);
+        if (!booking) return res.status(404).json({ error: "Booking not found" });
 
-        if (!booking) {
-            return res.status(404).json({ error: "Booking request not found" });
-        }
-
-        /**
-         * 2. Permission Logic:
-         * - If status is 'confirmed', ONLY the Host can do it.
-         * - If status is 'cancelled', EITHER the Host OR the Tourist can do it.
-         */
         const isHost = booking.host === userId;
         const isTourist = booking.tourist === userId;
 
+        // 2. Permission logic
         if (status === 'confirmed' && !isHost) {
-            return res.status(403).json({ error: "Only the host can confirm this booking" });
+            return res.status(403).json({ error: "Only the host can confirm" });
         }
-
         if (status === 'cancelled' && !isHost && !isTourist) {
-            return res.status(403).json({ error: "Unauthorized to cancel this booking" });
+            return res.status(403).json({ error: "Unauthorized" });
         }
 
-        // 3. Perform the update
-        booking.status = status;
-        await booking.save();
-
-        // Optional: Populate experience details before sending back to frontend
-        await booking.populate('experience', 'title images');
+        // 3. Use findByIdAndUpdate to bypass validation of other required fields (like hostName)
+        const updatedBooking = await BookingExperience.findByIdAndUpdate(
+            bookingId,
+            { status: status },
+            { new: true, runValidators: false } // runValidators: false is key here
+        ).populate('experience', 'title images');
 
         res.status(200).json({ 
-            msg: `Booking has been ${status} successfully`, 
-            booking 
+            msg: `Booking ${status} successfully`, 
+            booking: updatedBooking 
         });
     } catch (err) {
         console.error("Update Status Error:", err.message);
-        res.status(500).json({ error: "Server error during status update" });
+        res.status(500).json({ error: "Server error during update" });
     }
 };
 

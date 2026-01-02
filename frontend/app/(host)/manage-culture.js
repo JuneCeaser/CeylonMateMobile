@@ -16,16 +16,20 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../constants/api';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
+/**
+ * ManageCultureScreen: Host Dashboard to manage cultural listings and booking requests.
+ */
 export default function ManageCultureScreen() {
     const { user, userProfile, authToken } = useAuth(); 
     const router = useRouter();
     
+    // --- State Management ---
     const [myListings, setMyListings] = useState([]);
     const [bookings, setBookings] = useState([]); 
     const [loading, setLoading] = useState(true);
 
     /**
-     * Fetch experiences created by the logged-in host
+     * fetchMyListings: Fetches all cultural experiences created by this host.
      */
     const fetchMyListings = useCallback(async () => {
         if (!user?.uid) return;
@@ -34,55 +38,60 @@ export default function ManageCultureScreen() {
             const response = await api.get('/experiences/my/list');
             setMyListings(response.data);
         } catch (_err) {
-            console.error("Fetch listings error occurred");
+            console.error("Error fetching host listings");
         } finally {
             setLoading(false);
         }
     }, [user?.uid]);
 
     /**
-     * Fetch all booking requests assigned to this host
+     * fetchBookings: Fetches all incoming booking requests for this host.
      */
     const fetchBookings = useCallback(async () => {
-        if (!authToken) {
-            console.warn("Auth token not available yet");
-            return;
-        }
+        if (!authToken) return;
         try {
             const response = await api.get('/bookings/host/list');
             setBookings(response.data);
         } catch (err) {
-            console.error("Booking fetch error:", err.message);
+            console.error("Error fetching bookings:", err.message);
         }
     }, [authToken]);
 
     /**
-     * 🟢 LOGIC: Calculate total earnings from confirmed bookings
+     * calculateEarnings: Logic to sum up revenue from 'confirmed' bookings only.
      */
     const calculateEarnings = () => {
         return bookings
             .filter(b => b.status === 'confirmed')
-            .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+            .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     };
 
     /**
-     * 🟢 LOGIC: Get count of pending requests
+     * pendingCount: Helper to count active 'pending' requests.
      */
     const pendingCount = bookings.filter(b => b.status === 'pending').length;
 
     /**
-     * Handle the Accept or Decline action for a booking
+     * handleBookingAction: Updates a booking status (Accept/Decline).
+     * @param {string} id - Booking ID
+     * @param {string} status - New status ('confirmed' or 'cancelled')
      */
     const handleBookingAction = async (id, status) => {
         try {
-            await api.patch(`/bookings/update-status/${id}`, { status });
-            Alert.alert("Success", `Booking has been ${status}`);
-            fetchBookings(); 
+            // PATCH request to backend controller
+            const response = await api.patch(`/bookings/update-status/${id}`, { status });
+            
+            if (response.status === 200) {
+                Alert.alert("Success", `Booking has been ${status}`);
+                fetchBookings(); // Refresh booking list and stats
+            }
         } catch (err) {
-            Alert.alert("Error", "Could not update booking status");
+            console.error("Action Error:", err.response?.data || err.message);
+            Alert.alert("Error", "Could not update booking status. Please check backend validation.");
         }
     };
 
+    // Refresh data whenever the host navigates back to this screen
     useFocusEffect(
         useCallback(() => {
             fetchMyListings();
@@ -90,6 +99,9 @@ export default function ManageCultureScreen() {
         }, [fetchMyListings, fetchBookings])
     );
 
+    /**
+     * confirmDelete: Shows an alert before permanently removing a listing.
+     */
     const confirmDelete = (id) => {
         Alert.alert("Delete Experience", "This will permanently remove this listing.", [
             { text: "Cancel", style: "cancel" }, 
@@ -97,6 +109,9 @@ export default function ManageCultureScreen() {
         ]);
     };
 
+    /**
+     * handleDelete: Deletes a specific experience from the DB.
+     */
     const handleDelete = async (id) => {
         try {
             await api.delete(`/experiences/delete/${id}`);
@@ -107,26 +122,31 @@ export default function ManageCultureScreen() {
         }
     };
 
+    /**
+     * renderBookingCard: Individual component for each booking request.
+     */
     const renderBookingCard = (booking) => (
         <View key={booking._id} style={styles.bookingCard}>
             <View style={styles.bookingInfo}>
                 <Text style={styles.touristName}>{booking.touristName}</Text>
                 <Text style={styles.bookingDetail} numberOfLines={1}>
-                    {booking.experience?.title || "Deleted Experience"}
+                    {booking.experience?.title || "Experience Details N/A"}
                 </Text>
                 <Text style={styles.bookingDetail}>
                     📅 {new Date(booking.bookingDate).toLocaleDateString()} • 👥 {booking.guests} Guests
                 </Text>
                 
+                {/* Status Indicator */}
                 <View style={[
                     styles.statusBadge, 
                     { backgroundColor: booking.status === 'pending' ? '#FFA000' : 
-                                     booking.status === 'confirmed' ? Colors.success : Colors.danger }
+                                       booking.status === 'confirmed' ? Colors.success : Colors.danger }
                 ]}>
                     <Text style={styles.statusText}>{booking.status.toUpperCase()}</Text>
                 </View>
             </View>
 
+            {/* Action Buttons: Only show if pending */}
             {booking.status === 'pending' && (
                 <View style={styles.bookingActions}>
                     <TouchableOpacity 
@@ -146,6 +166,9 @@ export default function ManageCultureScreen() {
         </View>
     );
 
+    /**
+     * renderExperienceCard: Component for host's own created listings.
+     */
     const renderExperienceCard = ({ item }) => (
         <View style={styles.card}>
             <Image 
@@ -176,13 +199,14 @@ export default function ManageCultureScreen() {
 
     return (
         <View style={styles.container}>
+            {/* --- HEADER --- */}
             <LinearGradient colors={[Colors.primary, '#1B5E20']} style={styles.headerArea}>
                 <View style={styles.headerTopRow}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.welcomeLabel}>Ayubowan! 🙏</Text>
                         <View style={{ height: Spacing.xs }} /> 
                         <Text style={styles.hostName} numberOfLines={1}>
-                            {userProfile?.name || "Our Local Host"}
+                            {userProfile?.name || "Host"}
                         </Text>
                     </View>
                     <View style={styles.headerIcons}>
@@ -195,14 +219,14 @@ export default function ManageCultureScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
-                <Text style={styles.headerSubtitle}>Your Heritage Dashboard 🇱🇰</Text>
+                <Text style={styles.headerSubtitle}>Manage your authentic cultural experiences</Text>
             </LinearGradient>
 
-            {/* 🟢 UPDATED: Live Stats Row */}
+            {/* --- KPI STATS ROW --- */}
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{myListings.length}</Text>
-                    <Text style={styles.statLabel}>My Listings</Text>
+                    <Text style={styles.statLabel}>Active Listings</Text>
                 </View>
                 
                 <View style={[styles.statItem, styles.statBorder]}>
@@ -214,17 +238,16 @@ export default function ManageCultureScreen() {
 
                 <View style={[styles.statItem, styles.statBorder]}>
                     <Text style={[styles.statNumber, { color: '#FFA000' }]}>{pendingCount}</Text>
-                    <Text style={styles.statLabel}>Pending</Text>
+                    <Text style={styles.statLabel}>New Requests</Text>
                 </View>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 
+                {/* --- BOOKING REQUESTS SECTION --- */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Booking Requests</Text>
-                    <Text style={styles.sectionCount}>
-                        {pendingCount} Pending
-                    </Text>
+                    <Text style={styles.sectionCount}>{pendingCount} Action Required</Text>
                 </View>
                 
                 <View style={{ paddingHorizontal: Spacing.lg }}>
@@ -233,14 +256,15 @@ export default function ManageCultureScreen() {
                     ) : (
                         <View style={styles.placeholderCard}>
                             <Ionicons name="calendar-outline" size={24} color={Colors.textSecondary} />
-                            <Text style={styles.placeholderText}>No booking requests found</Text>
+                            <Text style={styles.placeholderText}>No current booking requests</Text>
                         </View>
                     )}
                 </View>
 
+                {/* --- MY LISTINGS SECTION --- */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>My Experiences</Text>
-                    <Text style={styles.sectionCount}>{myListings.length} total</Text>
+                    <Text style={styles.sectionCount}>{myListings.length} Experiences</Text>
                 </View>
 
                 {loading ? (
@@ -253,22 +277,24 @@ export default function ManageCultureScreen() {
                             ))
                         ) : (
                             <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>No experiences added yet.</Text>
+                                <Text style={styles.emptyText}>No experiences published yet.</Text>
                             </View>
                         )}
                     </View>
                 )}
 
+                {/* --- SUPPORT SECTION --- */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Quick Support</Text>
+                    <Text style={styles.sectionTitle}>Support</Text>
                 </View>
                 <TouchableOpacity style={styles.supportBtn}>
                     <Ionicons name="help-buoy-outline" size={20} color={Colors.primary} />
-                    <Text style={styles.supportBtnText}>Contact Support</Text>
+                    <Text style={styles.supportBtnText}>Help Center & Support</Text>
                 </TouchableOpacity>
 
             </ScrollView>
 
+            {/* --- ADD NEW LISTING FAB --- */}
             <TouchableOpacity 
                 style={styles.fabContainer} 
                 activeOpacity={0.9}
@@ -283,8 +309,13 @@ export default function ManageCultureScreen() {
     );
 }
 
+/**
+ * Optimized Component Styles
+ */
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
+    
+    // Header Styles
     headerArea: { paddingTop: 60, paddingBottom: 60, paddingHorizontal: Spacing.lg },
     headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 15 },
@@ -293,6 +324,8 @@ const styles = StyleSheet.create({
     welcomeLabel: { color: Colors.surface, opacity: 0.85, fontSize: 16, fontWeight: '500' },
     hostName: { ...Typography.h1, color: Colors.surface, fontSize: 26 },
     headerSubtitle: { color: Colors.surface, opacity: 0.9, fontSize: 13, marginTop: 10 },
+    
+    // Stats KPI Styles
     statsRow: {
         flexDirection: 'row',
         backgroundColor: Colors.surface,
@@ -307,10 +340,13 @@ const styles = StyleSheet.create({
     statBorder: { borderLeftWidth: 1, borderLeftColor: Colors.border },
     statNumber: { fontSize: 16, fontWeight: 'bold', color: Colors.primary },
     statLabel: { fontSize: 10, color: Colors.textSecondary, marginTop: 4, textTransform: 'uppercase', textAlign: 'center' },
+    
+    // Section Layouts
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, marginTop: 25, marginBottom: 12 },
     sectionTitle: { ...Typography.h3, fontSize: 18, color: Colors.text },
     sectionCount: { fontSize: 12, color: Colors.textSecondary },
-    viewAll: { fontSize: 12, color: Colors.primary, fontWeight: 'bold' },
+    
+    // Experience Card Styles
     card: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: 12, marginBottom: 12, alignItems: 'center', elevation: 2 },
     img: { width: 60, height: 60, borderRadius: BorderRadius.md, backgroundColor: '#eee' },
     info: { flex: 1, marginLeft: 12 },
@@ -319,15 +355,8 @@ const styles = StyleSheet.create({
     price: { color: Colors.secondary, fontWeight: 'bold', fontSize: 13 },
     actions: { flexDirection: 'row', gap: 10, paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: Colors.border },
     actionBtn: { padding: 5 },
-    placeholderCard: { marginHorizontal: Spacing.lg, padding: 20, backgroundColor: Colors.surface, borderRadius: BorderRadius.md, borderStyle: 'dashed', borderWidth: 1, borderColor: Colors.border, alignItems: 'center', gap: 10 },
-    placeholderText: { fontSize: 13, color: Colors.textSecondary },
-    supportBtn: { marginHorizontal: Spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, backgroundColor: Colors.primary + '10', borderRadius: BorderRadius.md, gap: 10, marginBottom: 20 },
-    supportBtnText: { color: Colors.primary, fontWeight: 'bold', fontSize: 14 },
-    fabContainer: { position: 'absolute', bottom: 30, alignSelf: 'center', elevation: 8, shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 10 },
-    fabGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25, paddingVertical: 15, borderRadius: BorderRadius.round, gap: 8 },
-    fabText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
-    emptyContainer: { padding: 20, alignItems: 'center' },
-    emptyText: { color: Colors.textSecondary, fontSize: 13 },
+    
+    // Booking Specific Card
     bookingCard: {
         backgroundColor: Colors.surface,
         borderRadius: BorderRadius.md,
@@ -347,4 +376,17 @@ const styles = StyleSheet.create({
     statusText: { fontSize: 10, color: 'white', fontWeight: 'bold' },
     bookingActions: { flexDirection: 'row', gap: 8 },
     miniBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+    
+    // Empty & Placeholder States
+    placeholderCard: { marginHorizontal: Spacing.lg, padding: 20, backgroundColor: Colors.surface, borderRadius: BorderRadius.md, borderStyle: 'dashed', borderWidth: 1, borderColor: Colors.border, alignItems: 'center', gap: 10 },
+    placeholderText: { fontSize: 13, color: Colors.textSecondary },
+    emptyContainer: { padding: 20, alignItems: 'center' },
+    emptyText: { color: Colors.textSecondary, fontSize: 13 },
+
+    // Misc UI
+    supportBtn: { marginHorizontal: Spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, backgroundColor: Colors.primary + '10', borderRadius: BorderRadius.md, gap: 10, marginBottom: 20 },
+    supportBtnText: { color: Colors.primary, fontWeight: 'bold', fontSize: 14 },
+    fabContainer: { position: 'absolute', bottom: 30, alignSelf: 'center', elevation: 8, shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 10 },
+    fabGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25, paddingVertical: 15, borderRadius: BorderRadius.round, gap: 8 },
+    fabText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
 });

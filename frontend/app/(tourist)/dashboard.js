@@ -193,19 +193,6 @@ export default function TouristDashboard() {
                         ))}
                     </ScrollView>
                 </View>
-
-                {/* --- 4. CULTURAL BOOKINGS SECTION (Bottom Style) --- */}
-                <View style={styles.section}>
-                    <TouchableOpacity 
-                        style={styles.bottomBookingBtn}
-                        onPress={() => handleNavigation('/(tourist)/my-bookings')}
-                    >
-                        <Ionicons name="calendar" size={24} color="white" />
-                        <Text style={styles.bottomBookingText}>View Cultural Bookings</Text>
-                        <Ionicons name="chevron-forward" size={20} color="white" />
-                    </TouchableOpacity>
-                </View>
-
             </ScrollView>
         </View>
     );
@@ -365,25 +352,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold', 
         color: Colors.text, 
         fontSize: 16 
-    },
-
-    // Bottom Booking Button Style
-    bottomBookingBtn: {
-        backgroundColor: Colors.secondary,
-        padding: 20,
-        borderRadius: BorderRadius.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        elevation: 3,
-        marginBottom: 30
-    },
-    bottomBookingText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
-        flex: 1,
-        marginLeft: 15
     },
 
     // Horizontal Scrolling Destinations
