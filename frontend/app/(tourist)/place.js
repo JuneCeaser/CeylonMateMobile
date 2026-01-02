@@ -179,14 +179,21 @@ export default function PlaceScreen() {
             <Text style={styles.cardSub}>AI Guide</Text>
         </TouchableOpacity>
 
-        {/* Facts */}
-        <TouchableOpacity style={styles.card}>
-            <View style={styles.iconCircle}>
-                 <Ionicons name="bar-chart-outline" size={24} color="#000" />
-            </View>
-            <Text style={styles.cardTitle}>Facts</Text>
-            <Text style={styles.cardSub}>Dimensions</Text>
-        </TouchableOpacity>
+     
+       {/* Facts - BUTTON UPDATED */}
+<TouchableOpacity 
+    style={styles.card}
+    onPress={() => router.push({
+        pathname: '/facts',
+        params: { placeData: JSON.stringify(place) } // We pass the whole object as a string
+    })}
+>
+    <View style={styles.iconCircle}>
+         <Ionicons name="bar-chart-outline" size={24} color="#000" />
+    </View>
+    <Text style={styles.cardTitle}>Facts</Text>
+    <Text style={styles.cardSub}>Dimensions</Text>
+</TouchableOpacity>
       </View>
     </View>
   );

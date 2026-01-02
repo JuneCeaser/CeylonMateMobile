@@ -75,8 +75,12 @@ export default function TouristLayout() {
             <Tabs.Screen name="risk-alternatives" options={{ href: null }} />
             <Tabs.Screen name="place-chat" options={{ href: null, tabBarStyle: { display: 'none' } }} />
             
-            {/* 👇 THIS IS THE NEW LINE FOR YOUR 3D PAGE */}
+          
             <Tabs.Screen name="3d-model" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+         
+<Tabs.Screen name="facts" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+          
+
         </Tabs>
     );
 }

@@ -3,26 +3,26 @@ const mongoose = require('mongoose');
 const placeSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
-  history: { type: String }, // Detailed historical info
+  history: { type: String },
   
-  // GeoJSON is crucial for location-based searching
+  // 👇 ADD THIS NEW SECTION
+  facts: [
+    {
+      label: { type: String }, // e.g., "Height"
+      value: { type: String }  // e.g., "122 meters"
+    }
+  ],
+  // -----------------------
+
   location: {
     type: { type: String, enum: ['Point'], default: 'Point' },
-    coordinates: { 
-      type: [Number], 
-      required: true 
-    } // Important: MongoDB expects [Longitude, Latitude]
+    coordinates: { type: [Number], required: true } 
   },
-
-  // 3D & AR Assets
-  model3DUrl: { type: String }, // URL for the .glb/.gltf file (Current state)
-  arOverlayUrl: { type: String }, // URL for the "Past/Ancient" version for AR
-  
-  images: [String], // Array of image URLs
+  model3DUrl: { type: String },
+  arOverlayUrl: { type: String },
+  images: [String],
   createdAt: { type: Date, default: Date.now }
 });
 
-// Create a geospatial index so we can search by distance
 placeSchema.index({ location: '2dsphere' });
-
 module.exports = mongoose.model('Place', placeSchema);
