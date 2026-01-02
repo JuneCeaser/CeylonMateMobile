@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 
 // REPLACE WITH YOUR ACTUAL LOCAL IP ADDRESS
-const API_URL = 'http://192.168.8.100:5000/api/places'; 
+const API_URL = 'http://192.168.8.101:5000/api/places'; 
 
 const { width } = Dimensions.get('window');
 
@@ -149,8 +149,11 @@ export default function PlaceScreen() {
             <Text style={styles.cardSubBlack}>Live Overlay</Text>
         </TouchableOpacity>
 
-        {/* 3D Model */}
-        <TouchableOpacity style={styles.card}>
+        {/* 3D Model - UPDATED LINK */}
+        <TouchableOpacity 
+            style={styles.card}
+            onPress={() => router.push('/3d-model')}
+        >
             <View style={styles.iconCircle}>
                  <Ionicons name="cube-outline" size={24} color="#000" />
             </View>
