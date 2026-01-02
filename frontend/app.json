@@ -25,7 +25,11 @@
         "googleMaps": {
           "apiKey": "AIzaSyDcd9aSiBRhT4uRZSVPBe5fj1NH_3KiXiw"
         }
-      }
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +48,12 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow CeylonMate to access your photos."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow CeylonMate to access your microphone for the cultural assistant."
         }
       ]
     ],

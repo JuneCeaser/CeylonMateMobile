@@ -8,6 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const placeRoutes = require("./routes/placeRoutes");
 const experienceRoutes = require("./routes/experienceRoutes");
 const bookingExperienceRoutes = require("./routes/bookingExperienceRoutes");
+const aiRoutes = require("./routes/aiRoutes"); // Added: Import AI routes
 
 const app = express();
 
@@ -23,15 +24,17 @@ app.use("/api/users", userRoutes);
 app.use("/api/places", placeRoutes);
 app.use("/api/experiences", experienceRoutes);
 app.use("/api/bookings", bookingExperienceRoutes); 
+app.use("/api/ai", aiRoutes); // Updated: Use AI routes for RAG
 
 // Health Check
 app.get("/", (req, res) => res.send("Ceylon Mate API Running Successfully"));
 
-// Error Handling
+// Error Handling for Undefined Routes
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Server Error:", err.stack);
   res.status(500).json({ error: "Internal Server Error" });
