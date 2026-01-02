@@ -9,7 +9,6 @@ const bookingExperienceSchema = new mongoose.Schema({
   },
   
   // The Firebase UID of the tourist making the booking
-  // Indexed to make searching for "My Bookings" faster
   tourist: { 
     type: String, 
     required: true,
@@ -46,11 +45,31 @@ const bookingExperienceSchema = new mongoose.Schema({
     required: true 
   },
   
-  // Current status of the booking lifecycle
+  /**
+   * UPDATED: Added specific cancellation statuses to the Enum.
+   * This allows the UI to show "Cancelled by Host" or "Cancelled by You".
+   */
   status: { 
     type: String, 
-    enum: ['pending', 'confirmed', 'cancelled', 'completed'], 
+    enum: [
+      'pending', 
+      'confirmed', 
+      'cancelled', 
+      'cancelled_by_host', 
+      'cancelled_by_tourist', 
+      'completed'
+    ], 
     default: 'pending' 
+  },
+
+  /**
+   * NEW FIELD: cancelledBy
+   * Explicitly stores who performed the cancellation.
+   */
+  cancelledBy: {
+    type: String,
+    enum: ['host', 'tourist', null],
+    default: null
   },
   
   // Number of people attending the experience
@@ -76,11 +95,5 @@ const bookingExperienceSchema = new mongoose.Schema({
     default: Date.now 
   }
 });
-
-/**
- * Optional: Prevent duplicate bookings for the same experience by the same user 
- * on the same day to avoid spam.
- */
-// bookingExperienceSchema.index({ experience: 1, tourist: 1, bookingDate: 1 }, { unique: true });
 
 module.exports = mongoose.model('BookingExperience', bookingExperienceSchema);

@@ -16,21 +16,14 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../constants/api';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 
-/**
- * ManageCultureScreen: Host Dashboard to manage cultural listings and booking requests.
- */
 export default function ManageCultureScreen() {
     const { user, userProfile, authToken } = useAuth(); 
     const router = useRouter();
     
-    // --- State Management ---
     const [myListings, setMyListings] = useState([]);
     const [bookings, setBookings] = useState([]); 
     const [loading, setLoading] = useState(true);
 
-    /**
-     * fetchMyListings: Fetches all cultural experiences created by this host.
-     */
     const fetchMyListings = useCallback(async () => {
         if (!user?.uid) return;
         try {
@@ -44,9 +37,6 @@ export default function ManageCultureScreen() {
         }
     }, [user?.uid]);
 
-    /**
-     * fetchBookings: Fetches all incoming booking requests for this host.
-     */
     const fetchBookings = useCallback(async () => {
         if (!authToken) return;
         try {
@@ -57,41 +47,6 @@ export default function ManageCultureScreen() {
         }
     }, [authToken]);
 
-    /**
-     * calculateEarnings: Logic to sum up revenue from 'confirmed' bookings only.
-     */
-    const calculateEarnings = () => {
-        return bookings
-            .filter(b => b.status === 'confirmed')
-            .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
-    };
-
-    /**
-     * pendingCount: Helper to count active 'pending' requests.
-     */
-    const pendingCount = bookings.filter(b => b.status === 'pending').length;
-
-    /**
-     * handleBookingAction: Updates a booking status (Accept/Decline).
-     * @param {string} id - Booking ID
-     * @param {string} status - New status ('confirmed' or 'cancelled')
-     */
-    const handleBookingAction = async (id, status) => {
-        try {
-            // PATCH request to backend controller
-            const response = await api.patch(`/bookings/update-status/${id}`, { status });
-            
-            if (response.status === 200) {
-                Alert.alert("Success", `Booking has been ${status}`);
-                fetchBookings(); // Refresh booking list and stats
-            }
-        } catch (err) {
-            console.error("Action Error:", err.response?.data || err.message);
-            Alert.alert("Error", "Could not update booking status. Please check backend validation.");
-        }
-    };
-
-    // Refresh data whenever the host navigates back to this screen
     useFocusEffect(
         useCallback(() => {
             fetchMyListings();
@@ -99,76 +54,15 @@ export default function ManageCultureScreen() {
         }, [fetchMyListings, fetchBookings])
     );
 
-    /**
-     * confirmDelete: Shows an alert before permanently removing a listing.
-     */
-    const confirmDelete = (id) => {
-        Alert.alert("Delete Experience", "This will permanently remove this listing.", [
-            { text: "Cancel", style: "cancel" }, 
-            { text: "Delete", style: "destructive", onPress: () => handleDelete(id) }
-        ]);
+    const calculateEarnings = () => {
+        return bookings
+            .filter(b => b.status === 'confirmed')
+            .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     };
 
-    /**
-     * handleDelete: Deletes a specific experience from the DB.
-     */
-    const handleDelete = async (id) => {
-        try {
-            await api.delete(`/experiences/delete/${id}`);
-            setMyListings(prev => prev.filter(item => item._id !== id));
-            Alert.alert("Success", "Experience removed.");
-        } catch (_err) {
-            Alert.alert("Error", "Could not delete listing.");
-        }
-    };
+    const pendingCount = bookings.filter(b => b.status === 'pending').length;
+    const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
 
-    /**
-     * renderBookingCard: Individual component for each booking request.
-     */
-    const renderBookingCard = (booking) => (
-        <View key={booking._id} style={styles.bookingCard}>
-            <View style={styles.bookingInfo}>
-                <Text style={styles.touristName}>{booking.touristName}</Text>
-                <Text style={styles.bookingDetail} numberOfLines={1}>
-                    {booking.experience?.title || "Experience Details N/A"}
-                </Text>
-                <Text style={styles.bookingDetail}>
-                    📅 {new Date(booking.bookingDate).toLocaleDateString()} • 👥 {booking.guests} Guests
-                </Text>
-                
-                {/* Status Indicator */}
-                <View style={[
-                    styles.statusBadge, 
-                    { backgroundColor: booking.status === 'pending' ? '#FFA000' : 
-                                       booking.status === 'confirmed' ? Colors.success : Colors.danger }
-                ]}>
-                    <Text style={styles.statusText}>{booking.status.toUpperCase()}</Text>
-                </View>
-            </View>
-
-            {/* Action Buttons: Only show if pending */}
-            {booking.status === 'pending' && (
-                <View style={styles.bookingActions}>
-                    <TouchableOpacity 
-                        style={[styles.miniBtn, { backgroundColor: Colors.success }]} 
-                        onPress={() => handleBookingAction(booking._id, 'confirmed')}
-                    >
-                        <Ionicons name="checkmark" size={20} color="white" />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[styles.miniBtn, { backgroundColor: Colors.danger }]} 
-                        onPress={() => handleBookingAction(booking._id, 'cancelled')}
-                    >
-                        <Ionicons name="close" size={20} color="white" />
-                    </TouchableOpacity>
-                </View>
-            )}
-        </View>
-    );
-
-    /**
-     * renderExperienceCard: Component for host's own created listings.
-     */
     const renderExperienceCard = ({ item }) => (
         <View style={styles.card}>
             <Image 
@@ -187,206 +81,137 @@ export default function ManageCultureScreen() {
                 >
                     <Ionicons name="pencil" size={18} color={Colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity 
-                    style={styles.actionBtn} 
-                    onPress={() => confirmDelete(item._id)}
-                >
-                    <Ionicons name="trash-outline" size={18} color={Colors.danger} />
-                </TouchableOpacity>
             </View>
         </View>
     );
 
     return (
         <View style={styles.container}>
-            {/* --- HEADER --- */}
             <LinearGradient colors={[Colors.primary, '#1B5E20']} style={styles.headerArea}>
                 <View style={styles.headerTopRow}>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.welcomeLabel}>Ayubowan! 🙏</Text>
-                        <View style={{ height: Spacing.xs }} /> 
-                        <Text style={styles.hostName} numberOfLines={1}>
-                            {userProfile?.name || "Host"}
-                        </Text>
+                        <Text style={styles.hostName}>{userProfile?.name || "Host"}</Text>
                     </View>
-                    <View style={styles.headerIcons}>
-                        <TouchableOpacity style={styles.notifBtn}>
-                            <Ionicons name="notifications-outline" size={28} color={Colors.surface} />
-                            <View style={styles.notifBadge} />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => router.push('/(host)/profile')}>
-                            <Ionicons name="person-circle" size={48} color={Colors.surface} />
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity onPress={() => router.push('/(host)/profile')}>
+                        <Ionicons name="person-circle" size={48} color={Colors.surface} />
+                    </TouchableOpacity>
                 </View>
-                <Text style={styles.headerSubtitle}>Manage your authentic cultural experiences</Text>
             </LinearGradient>
 
-            {/* --- KPI STATS ROW --- */}
+            {/* --- STATS CARD --- */}
             <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{myListings.length}</Text>
-                    <Text style={styles.statLabel}>Active Listings</Text>
+                    <Text style={styles.statLabel}>Listings</Text>
                 </View>
-                
                 <View style={[styles.statItem, styles.statBorder]}>
-                    <Text style={[styles.statNumber, { color: Colors.secondary }]}>
-                        LKR {calculateEarnings().toLocaleString()}
-                    </Text>
-                    <Text style={styles.statLabel}>Total Earnings</Text>
+                    <Text style={[styles.statNumber, { color: Colors.secondary }]}>LKR {calculateEarnings().toLocaleString()}</Text>
+                    <Text style={styles.statLabel}>Earnings</Text>
                 </View>
-
                 <View style={[styles.statItem, styles.statBorder]}>
-                    <Text style={[styles.statNumber, { color: '#FFA000' }]}>{pendingCount}</Text>
-                    <Text style={styles.statLabel}>New Requests</Text>
+                    <Text style={[styles.statNumber, { color: '#FFA000' }]}>{confirmedCount}</Text>
+                    <Text style={styles.statLabel}>Confirmed</Text>
                 </View>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
                 
-                {/* --- BOOKING REQUESTS SECTION --- */}
+                {/* --- BOOKING REQUESTS NAVIGATION --- */}
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Booking Requests</Text>
-                    <Text style={styles.sectionCount}>{pendingCount} Action Required</Text>
+                    <Text style={styles.sectionTitle}>Manage Requests</Text>
                 </View>
-                
-                <View style={{ paddingHorizontal: Spacing.lg }}>
-                    {bookings.length > 0 ? (
-                        bookings.map(booking => renderBookingCard(booking))
-                    ) : (
-                        <View style={styles.placeholderCard}>
-                            <Ionicons name="calendar-outline" size={24} color={Colors.textSecondary} />
-                            <Text style={styles.placeholderText}>No current booking requests</Text>
+                <TouchableOpacity 
+                    style={styles.requestNavBtn}
+                    onPress={() => router.push('/(host)/booking-request')}
+                >
+                    <View style={styles.requestNavInfo}>
+                        <View style={styles.iconCircle}>
+                            <Ionicons name="calendar" size={24} color={Colors.primary} />
                         </View>
-                    )}
-                </View>
+                        <View>
+                            <Text style={styles.requestNavTitle}>Booking Requests</Text>
+                            <Text style={styles.requestNavSubtitle}>{pendingCount} requests waiting for approval</Text>
+                        </View>
+                    </View>
+                    <View style={styles.badgeContainer}>
+                        {pendingCount > 0 && (
+                            <View style={styles.pendingBadge}>
+                                <Text style={styles.pendingBadgeText}>{pendingCount}</Text>
+                            </View>
+                        )}
+                        <Ionicons name="chevron-forward" size={20} color={Colors.border} />
+                    </View>
+                </TouchableOpacity>
 
-                {/* --- MY LISTINGS SECTION --- */}
+                {/* --- MY LISTINGS --- */}
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>My Experiences</Text>
-                    <Text style={styles.sectionCount}>{myListings.length} Experiences</Text>
                 </View>
 
                 {loading ? (
-                    <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
+                    <ActivityIndicator size="large" color={Colors.primary} />
                 ) : (
                     <View style={{ paddingHorizontal: Spacing.lg }}>
-                        {myListings.length > 0 ? (
-                            myListings.map((item) => (
-                                <View key={item._id}>{renderExperienceCard({ item })}</View>
-                            ))
-                        ) : (
-                            <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>No experiences published yet.</Text>
-                            </View>
-                        )}
+                        {myListings.map((item) => (
+                            <View key={item._id}>{renderExperienceCard({ item })}</View>
+                        ))}
                     </View>
                 )}
-
-                {/* --- SUPPORT SECTION --- */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Support</Text>
-                </View>
-                <TouchableOpacity style={styles.supportBtn}>
-                    <Ionicons name="help-buoy-outline" size={20} color={Colors.primary} />
-                    <Text style={styles.supportBtnText}>Help Center & Support</Text>
-                </TouchableOpacity>
-
             </ScrollView>
 
-            {/* --- ADD NEW LISTING FAB --- */}
-            <TouchableOpacity 
-                style={styles.fabContainer} 
-                activeOpacity={0.9}
-                onPress={() => router.push('/(host)/add-culture')}
-            >
-                <LinearGradient colors={[Colors.primary, Colors.success]} start={{x: 0, y: 0}} end={{x: 1, y: 0}} style={styles.fabGradient}>
-                    <Ionicons name="add" size={24} color="white" />
-                    <Text style={styles.fabText}>Add Experience</Text>
-                </LinearGradient>
+            <TouchableOpacity style={styles.fab} onPress={() => router.push('/(host)/add-culture')}>
+                <Ionicons name="add" size={30} color="white" />
             </TouchableOpacity>
         </View>
     );
 }
 
-/**
- * Optimized Component Styles
- */
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background },
-    
-    // Header Styles
-    headerArea: { paddingTop: 60, paddingBottom: 60, paddingHorizontal: Spacing.lg },
+    container: { flex: 1, backgroundColor: '#F8F9FA' },
+    headerArea: { paddingTop: 60, paddingBottom: 60, paddingHorizontal: 20 },
     headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 15 },
-    notifBtn: { position: 'relative' },
-    notifBadge: { position: 'absolute', top: 2, right: 2, width: 10, height: 10, backgroundColor: Colors.secondary, borderRadius: 5, borderWidth: 2, borderColor: Colors.primary },
-    welcomeLabel: { color: Colors.surface, opacity: 0.85, fontSize: 16, fontWeight: '500' },
-    hostName: { ...Typography.h1, color: Colors.surface, fontSize: 26 },
-    headerSubtitle: { color: Colors.surface, opacity: 0.9, fontSize: 13, marginTop: 10 },
-    
-    // Stats KPI Styles
+    welcomeLabel: { color: 'white', opacity: 0.8, fontSize: 16 },
+    hostName: { fontSize: 26, fontWeight: 'bold', color: 'white' },
     statsRow: {
         flexDirection: 'row',
-        backgroundColor: Colors.surface,
-        marginHorizontal: Spacing.lg,
+        backgroundColor: 'white',
+        marginHorizontal: 20,
         marginTop: -35,
-        borderRadius: BorderRadius.lg,
-        padding: Spacing.lg,
-        elevation: 6,
-        shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10,
+        borderRadius: 15,
+        padding: 20,
+        elevation: 5,
     },
-    statItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    statBorder: { borderLeftWidth: 1, borderLeftColor: Colors.border },
-    statNumber: { fontSize: 16, fontWeight: 'bold', color: Colors.primary },
-    statLabel: { fontSize: 10, color: Colors.textSecondary, marginTop: 4, textTransform: 'uppercase', textAlign: 'center' },
-    
-    // Section Layouts
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.lg, marginTop: 25, marginBottom: 12 },
-    sectionTitle: { ...Typography.h3, fontSize: 18, color: Colors.text },
-    sectionCount: { fontSize: 12, color: Colors.textSecondary },
-    
-    // Experience Card Styles
-    card: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: 12, marginBottom: 12, alignItems: 'center', elevation: 2 },
-    img: { width: 60, height: 60, borderRadius: BorderRadius.md, backgroundColor: '#eee' },
-    info: { flex: 1, marginLeft: 12 },
-    categoryBadge: { fontSize: 9, fontWeight: 'bold', color: Colors.primary, textTransform: 'uppercase' },
-    title: { fontWeight: 'bold', fontSize: 14, color: Colors.text },
-    price: { color: Colors.secondary, fontWeight: 'bold', fontSize: 13 },
-    actions: { flexDirection: 'row', gap: 10, paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: Colors.border },
-    actionBtn: { padding: 5 },
-    
-    // Booking Specific Card
-    bookingCard: {
-        backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.md,
-        padding: 15,
-        marginBottom: 10,
+    statItem: { flex: 1, alignItems: 'center' },
+    statBorder: { borderLeftWidth: 1, borderLeftColor: '#eee' },
+    statNumber: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
+    statLabel: { fontSize: 12, color: '#666', marginTop: 4 },
+    sectionHeader: { paddingHorizontal: 20, marginTop: 25, marginBottom: 15 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
+    requestNavBtn: {
         flexDirection: 'row',
+        backgroundColor: 'white',
+        marginHorizontal: 20,
+        padding: 15,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'space-between',
         elevation: 2,
-        borderLeftWidth: 5,
-        borderLeftColor: Colors.primary
     },
-    bookingInfo: { flex: 1 },
-    touristName: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
-    bookingDetail: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-    statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 5, marginTop: 8 },
-    statusText: { fontSize: 10, color: 'white', fontWeight: 'bold' },
-    bookingActions: { flexDirection: 'row', gap: 8 },
-    miniBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-    
-    // Empty & Placeholder States
-    placeholderCard: { marginHorizontal: Spacing.lg, padding: 20, backgroundColor: Colors.surface, borderRadius: BorderRadius.md, borderStyle: 'dashed', borderWidth: 1, borderColor: Colors.border, alignItems: 'center', gap: 10 },
-    placeholderText: { fontSize: 13, color: Colors.textSecondary },
-    emptyContainer: { padding: 20, alignItems: 'center' },
-    emptyText: { color: Colors.textSecondary, fontSize: 13 },
-
-    // Misc UI
-    supportBtn: { marginHorizontal: Spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 15, backgroundColor: Colors.primary + '10', borderRadius: BorderRadius.md, gap: 10, marginBottom: 20 },
-    supportBtnText: { color: Colors.primary, fontWeight: 'bold', fontSize: 14 },
-    fabContainer: { position: 'absolute', bottom: 30, alignSelf: 'center', elevation: 8, shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 10 },
-    fabGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25, paddingVertical: 15, borderRadius: BorderRadius.round, gap: 8 },
-    fabText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+    requestNavInfo: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+    iconCircle: { width: 45, height: 45, borderRadius: 22.5, backgroundColor: Colors.primary + '15', justifyContent: 'center', alignItems: 'center' },
+    requestNavTitle: { fontSize: 16, fontWeight: '600', color: Colors.text },
+    requestNavSubtitle: { fontSize: 12, color: '#888' },
+    badgeContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    pendingBadge: { backgroundColor: Colors.danger, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+    pendingBadgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
+    card: { flexDirection: 'row', backgroundColor: 'white', borderRadius: 12, padding: 12, marginBottom: 12, alignItems: 'center' },
+    img: { width: 60, height: 60, borderRadius: 8 },
+    info: { flex: 1, marginLeft: 12 },
+    categoryBadge: { fontSize: 10, color: Colors.primary, fontWeight: 'bold' },
+    title: { fontWeight: 'bold', fontSize: 14 },
+    price: { color: Colors.secondary, fontWeight: 'bold' },
+    actions: { paddingLeft: 10, borderLeftWidth: 1, borderLeftColor: '#eee' },
+    actionBtn: { padding: 5 },
+    fab: { position: 'absolute', bottom: 30, right: 20, width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center', elevation: 5 }
 });

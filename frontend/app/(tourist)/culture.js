@@ -26,7 +26,7 @@ import api from '../../constants/api';
  */
 export default function CultureScreen() {
     const { user, userProfile } = useAuth(); 
-    const router = useRouter(); // Initialize router for navigation
+    const router = useRouter(); // For navigating to My Bookings
     
     // --- State Management ---
     const [experiences, setExperiences] = useState([]);
@@ -42,13 +42,13 @@ export default function CultureScreen() {
 
     const categories = ['Cooking', 'Farming', 'Handicraft', 'Fishing', 'Dancing'];
 
-    // Fetch experiences whenever search or category filters change
+    // Fetch data whenever search query or category changes
     useEffect(() => {
         fetchExperiences();
     }, [searchQuery, selectedCategory]);
 
     /**
-     * Fetches cultural experiences from the backend API based on current filters.
+     * fetchExperiences: API call to get experience listings
      */
     const fetchExperiences = async () => {
         try {
@@ -66,7 +66,7 @@ export default function CultureScreen() {
     };
 
     /**
-     * Opens the booking modal and sets the selected experience.
+     * openBookingModal: Sets the context for the booking modal
      */
     const openBookingModal = (item) => {
         setSelectedExp(item);
@@ -75,7 +75,7 @@ export default function CultureScreen() {
     };
 
     /**
-     * Submits the booking request to the backend.
+     * handleConfirmBooking: Sends the booking data to the backend
      */
     const handleConfirmBooking = async () => {
         if (!user) {
@@ -85,18 +85,22 @@ export default function CultureScreen() {
 
         try {
             setIsBooking(true);
+            
+            /**
+             * FIX: We explicitly pass hostName. 
+             * Make sure your 'Experience' model in the database has a 'hostName' field.
+             */
             const bookingData = {
                 experience: selectedExp._id,
                 tourist: user.uid,
                 touristName: userProfile?.name || "Anonymous Traveler",
                 host: selectedExp.host, 
-                hostName: selectedExp.hostName || "Verified Host", 
+                hostName: selectedExp.hostName || "Verified Host", // Fallback if name is missing
                 bookingDate: new Date(),
                 guests: guestCount,
                 totalPrice: selectedExp.price * guestCount
             };
 
-            // API POST request to add the booking to the database
             await api.post('/bookings/add', bookingData);
             
             Alert.alert(
@@ -113,7 +117,7 @@ export default function CultureScreen() {
     };
 
     /**
-     * Renders an individual experience card in the list.
+     * renderExperienceCard: Layout for the listing items
      */
     const renderExperienceCard = ({ item }) => (
         <TouchableOpacity 
@@ -151,6 +155,7 @@ export default function CultureScreen() {
                         <View style={styles.hostAvatar}>
                             <Ionicons name="person" size={12} color={Colors.primary} />
                         </View>
+                        {/* Displaying host name directly from the experience object */}
                         <Text style={styles.hostLabel}>{item.hostName || 'Verified Host'}</Text>
                     </View>
                     <TouchableOpacity 
@@ -167,15 +172,15 @@ export default function CultureScreen() {
 
     return (
         <View style={styles.container}>
-            {/* --- HEADER SECTION --- */}
+            {/* --- FLAT HEADER --- */}
             <LinearGradient colors={[Colors.primary, '#1B5E20']} style={styles.header}>
                 <View style={styles.headerTopRow}>
                     <View>
                         <Text style={styles.headerTitle}>Culture Hub</Text>
                         <Text style={styles.headerSubtitle}>Discover authentic Sri Lankan traditions 🇱🇰</Text>
                     </View>
-
-                    {/* Cultural Bookings Icon: Replaced Notification Icon */}
+                    
+                    {/* Navigation to My Bookings */}
                     <TouchableOpacity 
                         style={styles.bookingIconBtn} 
                         onPress={() => router.push('/(tourist)/my-bookings')}
@@ -185,7 +190,7 @@ export default function CultureScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Search Input Box */}
+                {/* Search Bar */}
                 <View style={styles.searchBox}>
                     <Ionicons name="search" size={20} color={Colors.textSecondary} />
                     <TextInput 
@@ -198,7 +203,7 @@ export default function CultureScreen() {
                 </View>
             </LinearGradient>
 
-            {/* --- HORIZONTAL FILTER CHIPS --- */}
+            {/* --- CATEGORY FILTERS --- */}
             <View style={styles.filterSection}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
                     <TouchableOpacity 
@@ -219,7 +224,7 @@ export default function CultureScreen() {
                 </ScrollView>
             </View>
 
-            {/* --- MAIN CONTENT LIST --- */}
+            {/* --- MAIN LIST --- */}
             {loading ? (
                 <View style={styles.loaderContainer}>
                     <ActivityIndicator size="large" color={Colors.primary} />
@@ -255,7 +260,6 @@ export default function CultureScreen() {
                                 <Text style={styles.modalExpTitle}>{selectedExp.title}</Text>
                                 <Text style={styles.modalExpPrice}>LKR {selectedExp.price.toLocaleString()} / guest</Text>
 
-                                {/* Guest Count Controller */}
                                 <View style={styles.counterCard}>
                                     <Text style={styles.counterLabel}>Number of Guests</Text>
                                     <View style={styles.counterRow}>
@@ -275,7 +279,6 @@ export default function CultureScreen() {
                                     </View>
                                 </View>
 
-                                {/* Price Summary Card */}
                                 <View style={styles.summaryBox}>
                                     <View style={styles.summaryRow}>
                                         <Text style={styles.summaryLabel}>Subtotal ({guestCount} guests)</Text>
@@ -287,7 +290,6 @@ export default function CultureScreen() {
                                     </View>
                                 </View>
 
-                                {/* Confirm Button */}
                                 <TouchableOpacity 
                                     style={styles.confirmBookingBtn}
                                     onPress={handleConfirmBooking}
@@ -313,7 +315,7 @@ export default function CultureScreen() {
 }
 
 /**
- * Component Styles categorized by section
+ * Styles organized by layout hierarchy
  */
 const styles = StyleSheet.create({
     // --- Layout Containers ---
@@ -370,7 +372,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.primary 
     },
 
-    // --- Search & Filters UI ---
+    // --- Search & Filters ---
     searchBox: { 
         flexDirection: 'row', 
         backgroundColor: Colors.surface, 
@@ -413,7 +415,7 @@ const styles = StyleSheet.create({
         color: Colors.surface 
     },
 
-    // --- Experience Card UI ---
+    // --- Experience Card ---
     card: { 
         backgroundColor: Colors.surface, 
         borderRadius: BorderRadius.lg, 
@@ -514,7 +516,7 @@ const styles = StyleSheet.create({
         fontSize: 14 
     },
 
-    // --- Booking Modal UI ---
+    // --- Modal UI ---
     modalOverlay: { 
         flex: 1, 
         backgroundColor: 'rgba(0,0,0,0.6)', 
