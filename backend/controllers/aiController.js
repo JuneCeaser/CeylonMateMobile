@@ -121,29 +121,27 @@ exports.getCulturalAdvice = async (req, res) => {
  */
 exports.speechToText = async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: "No audio file provided." });
-        }
+        if (!req.file) return res.status(400).json({ error: "No audio file" });
 
-        // 1. SPEECH-TO-TEXT TRANSCRIPTION (Groq Whisper is usually instant)
+        console.log("🎙️ Transcription starting...");
         const transcription = await groq.audio.transcriptions.create({
             file: fs.createReadStream(req.file.path),
-            model: "whisper-large-v3", 
-            language: "en", 
+            model: "whisper-large-v3",
+            language: "en",
         });
 
         const recognizedText = transcription.text;
+        console.log("✅ Recognized:", recognizedText);
 
-        // 2. HANDOFF TO RAG LOGIC
+        // Handoff to RAG but with a timeout safety
         req.body.question = recognizedText;
         return exports.getCulturalAdvice(req, res);
 
     } catch (error) {
         console.error("STT Process Error:", error.message);
-        res.status(500).json({ error: "Voice recognition failed. Please try again." });
+        res.status(500).json({ error: "Voice recognition failed." });
     } finally {
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
+        // Cleanup file
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     }
 };

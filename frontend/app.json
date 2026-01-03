@@ -28,8 +28,10 @@
       },
       "permissions": [
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS"
-      ]
+        "MODIFY_AUDIO_SETTINGS",
+        "INTERNET"
+      ],
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",

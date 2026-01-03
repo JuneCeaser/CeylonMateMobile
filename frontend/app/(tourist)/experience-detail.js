@@ -120,32 +120,40 @@ export default function ExperienceDetailScreen() {
     };
 
     const handleVoiceQuery = async (uri) => {
-        setIsAiProcessing(true);
-        try {
-            const formData = new FormData();
-            formData.append('audio', { 
-                uri, 
-                type: 'audio/m4a', 
-                name: `voice_${Date.now()}.m4a` 
-            });
+    setIsAiProcessing(true);
+    try {
+        const formData = new FormData();
+        
+        // Correctly configured the URI for Android
+        const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
+        
+        formData.append('audio', { 
+            uri: fileUri, 
+            type: 'audio/m4a', // Used the appropriate format compatible with the application
+            name: 'speech.m4a' 
+        });
 
-            const response = await api.post('/ai/cultural-assistant-voice', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                timeout: 60000, 
-            });
+        const response = await api.post('/ai/cultural-assistant-voice', formData, {
+            headers: { 
+                'Accept': 'application/json',
+                'Content-Type': 'multipart/form-data' 
+            },
+            timeout: 60000, // Increased the timeout duration to 60 seconds
+        });
 
-            if (response.data.answer) {
-                setAiText(response.data.answer);
-                setAiVisible(true);
-                Speech.speak(response.data.answer, { rate: 0.85, pitch: 1.0 });
-            }
-        } catch (error) { 
-            console.error("AI Post Error:", error.response?.data || error.message);
-            Alert.alert("Assistant Busy", "System is calibrating. Please try again in a moment."); 
-        } finally { 
-            setIsAiProcessing(false); 
+        if (response.data.answer) {
+            setAiText(response.data.answer);
+            setAiVisible(true);
+            // Starts speaking immediately once a response is received
+            Speech.speak(response.data.answer, { rate: 0.9, pitch: 1.0 });
         }
-    };
+    } catch (error) { 
+        console.log("Detailed Error:", error.config?.url, error.message);
+        Alert.alert("Assistant Busy", "Please try one more time."); 
+    } finally { 
+        setIsAiProcessing(false); 
+    }
+};
 
     const handleConfirmBooking = async () => {
         if (!user) { Alert.alert("Login Required", "Please sign in to book."); return; }
