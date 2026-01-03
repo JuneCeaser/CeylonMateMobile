@@ -29,7 +29,8 @@
       "permissions": [
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
-        "INTERNET"
+        "INTERNET",
+        "DEVICE_MOTION"
       ],
       "usesCleartextTraffic": true
     },
@@ -56,6 +57,12 @@
         "expo-av",
         {
           "microphonePermission": "Allow CeylonMate to access your microphone for the cultural assistant."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow CeylonMate to access device motion for the VR experience."
         }
       ]
     ],

@@ -55,7 +55,7 @@ export default function ExperienceDetailScreen() {
         }
     };
 
-    // FIX: Pre-initialize Audio to avoid first-touch "Busy" error
+    // Keep this function exactly as is to maintain voice assistant stability
     const prepareAudio = async () => {
         try {
             await Audio.requestPermissionsAsync();
@@ -71,6 +71,14 @@ export default function ExperienceDetailScreen() {
         }
     };
 
+    // VR Navigation logic
+    const handleVRNavigation = () => {
+        router.push({
+            pathname: '/vr-viewer',
+            params: { videoUrl: exp?.vrVideoUrl } 
+        });
+    };
+
     // --- Voice Assistant Logic ---
     const startRecording = async () => {
         try {
@@ -80,12 +88,10 @@ export default function ExperienceDetailScreen() {
                 if (newStatus !== 'granted') return;
             }
 
-            // Reset UI states
             setAiVisible(false);
             setAiText("");
             Speech.stop(); 
 
-            // Initialize Recording
             const { recording } = await Audio.Recording.createAsync(
                 Audio.RecordingOptionsPresets.HIGH_QUALITY
             );
@@ -102,13 +108,11 @@ export default function ExperienceDetailScreen() {
         setIsListening(false);
 
         try {
-            // Wait for recording to stop and unload properly
             await recordingRef.current.stopAndUnloadAsync();
             const uri = recordingRef.current.getURI();
-            recordingRef.current = null; // Clear ref
+            recordingRef.current = null; 
 
             if (uri) {
-                // Delay upload slightly to ensure file is finalized on storage
                 setTimeout(() => {
                     handleVoiceQuery(uri);
                 }, 600);
@@ -119,41 +123,39 @@ export default function ExperienceDetailScreen() {
         }
     };
 
+    // Keep this function exactly as is to maintain connection settings
     const handleVoiceQuery = async (uri) => {
-    setIsAiProcessing(true);
-    try {
-        const formData = new FormData();
-        
-        // Correctly configured the URI for Android
-        const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
-        
-        formData.append('audio', { 
-            uri: fileUri, 
-            type: 'audio/m4a', // Used the appropriate format compatible with the application
-            name: 'speech.m4a' 
-        });
+        setIsAiProcessing(true);
+        try {
+            const formData = new FormData();
+            const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
+            
+            formData.append('audio', { 
+                uri: fileUri, 
+                type: 'audio/m4a', 
+                name: 'speech.m4a' 
+            });
 
-        const response = await api.post('/ai/cultural-assistant-voice', formData, {
-            headers: { 
-                'Accept': 'application/json',
-                'Content-Type': 'multipart/form-data' 
-            },
-            timeout: 60000, // Increased the timeout duration to 60 seconds
-        });
+            const response = await api.post('/ai/cultural-assistant-voice', formData, {
+                headers: { 
+                    'Accept': 'application/json',
+                    'Content-Type': 'multipart/form-data' 
+                },
+                timeout: 60000, 
+            });
 
-        if (response.data.answer) {
-            setAiText(response.data.answer);
-            setAiVisible(true);
-            // Starts speaking immediately once a response is received
-            Speech.speak(response.data.answer, { rate: 0.9, pitch: 1.0 });
+            if (response.data.answer) {
+                setAiText(response.data.answer);
+                setAiVisible(true);
+                Speech.speak(response.data.answer, { rate: 0.9, pitch: 1.0 });
+            }
+        } catch (error) { 
+            console.log("Detailed Error:", error.config?.url, error.message);
+            Alert.alert("Assistant Busy", "Please try one more time."); 
+        } finally { 
+            setIsAiProcessing(false); 
         }
-    } catch (error) { 
-        console.log("Detailed Error:", error.config?.url, error.message);
-        Alert.alert("Assistant Busy", "Please try one more time."); 
-    } finally { 
-        setIsAiProcessing(false); 
-    }
-};
+    };
 
     const handleConfirmBooking = async () => {
         if (!user) { Alert.alert("Login Required", "Please sign in to book."); return; }
@@ -224,11 +226,15 @@ export default function ExperienceDetailScreen() {
                     
                     <Text style={styles.subHeading}>Immersive Previews</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewScroll}>
-                        <TouchableOpacity style={styles.previewItem}>
+                        {/* VR Viewer Button */}
+                        <TouchableOpacity style={styles.previewItem} onPress={handleVRNavigation}>
                             <Image source={{ uri: exp?.images?.[0] }} style={styles.previewImage} />
-                            <View style={styles.previewIconWrap}><Text style={styles.iconTxt}>?</Text></View>
+                            <View style={styles.previewIconWrap}>
+                                <Ionicons name="glasses-outline" size={24} color="white" />
+                            </View>
                             <Text style={styles.previewLabel}>360° VR View</Text>
                         </TouchableOpacity>
+
                         <TouchableOpacity style={styles.previewItem}>
                             <Image source={{ uri: exp?.images?.[0] }} style={styles.previewImage} />
                             <View style={styles.previewIconWrap}><Ionicons name="play" size={24} color="white" /></View>
@@ -238,7 +244,7 @@ export default function ExperienceDetailScreen() {
                 </View>
             </ScrollView>
 
-            {/* AI PANEL */}
+            {/* AI Panel */}
             {aiVisible && (
                 <View style={styles.aiPanel}>
                     <View style={styles.aiContent}>
@@ -252,7 +258,7 @@ export default function ExperienceDetailScreen() {
                 </View>
             )}
 
-            {/* FIXED FOOTER */}
+            {/* Footer and Mic */}
             <View style={styles.footerSticky}>
                 <View style={styles.micSection}>
                     {!aiVisible && (
@@ -336,7 +342,6 @@ const styles = StyleSheet.create({
     previewItem: { width: 150, marginRight: 15, alignItems: 'center' },
     previewImage: { width: 150, height: 95, borderRadius: 12 },
     previewIconWrap: { position: 'absolute', top: 25, backgroundColor: 'rgba(0,0,0,0.4)', padding: 10, borderRadius: 25 },
-    iconTxt: { color: 'white', fontSize: 22, fontWeight: 'bold' },
     previewLabel: { fontSize: 11, fontWeight: '700', marginTop: 5, color: '#444' },
     footerSticky: { position: 'absolute', bottom: 0, width: width, backgroundColor: 'white', paddingHorizontal: 15, paddingBottom: Platform.OS === 'ios' ? 25 : 10, paddingTop: 10, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#EEE', zIndex: 50 },
     micSection: { flex: 0.2, alignItems: 'center' },

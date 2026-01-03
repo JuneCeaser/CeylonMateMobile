@@ -70,6 +70,7 @@ export default function TouristLayout() {
             />
             
             {/* HIDDEN ROUTES */}
+            <Tabs.Screen name="vr-viewer" options={{ href: null, tabBarStyle: { display: 'none' } }} />
             <Tabs.Screen name="experience-detail" options={{ href: null, }}/>
             <Tabs.Screen name="profile" options={{ href: null }} />
             <Tabs.Screen name="itinerary-results" options={{ href: null }} />
