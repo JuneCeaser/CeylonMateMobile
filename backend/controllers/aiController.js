@@ -3,25 +3,32 @@ const mongoose = require("mongoose");
 const Groq = require("groq-sdk");
 const fs = require("fs");
 
+// Initialize Hugging Face and Groq instances using environment variables
 const hf = new HfInference(process.env.HF_TOKEN);
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// --- 1. Main Function for Text Queries (RAG Logic) ---
+/**
+ * @desc    Processes text-based cultural queries using RAG (Retrieval-Augmented Generation)
+ * @route   POST /api/ai/cultural-assistant
+ * @access  Private/Public
+ */
 exports.getCulturalAdvice = async (req, res) => {
     try {
-        const { question, context } = req.body;
+        const { question } = req.body;
 
         if (!question) {
             return res.status(400).json({ error: "Question is required." });
         }
 
-        // 1. Convert question to Vector (Embedding) using Hugging Face
+        // 1. GENERATE VECTOR EMBEDDING
+        // Converts the user's plain-text question into a mathematical vector
         const queryVector = await hf.featureExtraction({
             model: "sentence-transformers/all-MiniLM-L6-v2",
             inputs: question,
         });
 
-        // 2. Vector Search in MongoDB Atlas
+        // 2. VECTOR SEARCH IN MONGODB ATLAS
+        // Performs a semantic search to find the most relevant cultural facts
         const collection = mongoose.connection.db.collection("cultural_knowledge");
         const searchResults = await collection.aggregate([
             {
@@ -35,74 +42,80 @@ exports.getCulturalAdvice = async (req, res) => {
             },
         ]).toArray();
 
-        // Join the found facts into one string for context
+        // Combine retrieved information into a single context block
         const retrievedInfo = searchResults.map(doc => doc.text).join("\n");
 
-        // 3. Generate Answer from Groq (Llama 3) using the retrieved info
+        // 3. GENERATE GROUNDED ANSWER VIA LLM (Llama 3.3)
+        // System prompt ensures the AI acts as a guide and sticks to factual data
         const chatCompletion = await groq.chat.completions.create({
             messages: [
                 {
                     role: "system",
                     content: `You are an expert Sri Lankan Cultural Guide. 
-                    Keep your responses concise, friendly, and limited to 2-3 short paragraphs.
-            
                     Structure your response:
                     1. Brief Overview: Direct answer to the question.
-                    2. Pro-Tips: Practical advice for the tourist.
-            
+                    2. Pro-Tips: Bulleted practical advice for tourists.
+                    
                     Important Guidelines:
                     - Use ONLY the provided context.
-                    - DO NOT say "I don't have more information" or "Based on the context". 
-                    - If information is missing, politely provide a general helpful cultural tip related to the topic instead of a refusal.`
+                    - If information is missing, provide a general helpful Sri Lankan cultural tip.
+                    - Keep the tone warm, welcoming, and professional.`
                 },
                 {
                     role: "user",
-                    content: `Retrieved Source Data: ${retrievedInfo} \n\n Question: ${question}`
+                    content: `Context: ${retrievedInfo} \n\n Question: ${question}`
                 }
             ],
             model: "llama-3.3-70b-versatile",
+            temperature: 0.7,
+            max_tokens: 500
         });
+
         res.json({ 
             answer: chatCompletion.choices[0].message.content,
-            recognizedText: question // Return what the AI "heard"
+            recognizedText: question 
         });
 
     } catch (error) {
-        console.error("AI Controller Error:", error.message);
-        res.status(500).json({ error: "AI Assistant failed to process request." });
+        console.error("RAG Logic Error:", error.message);
+        res.status(500).json({ error: "AI Assistant failed to process the request." });
     }
 };
 
-// --- 2. Optimized Function for Voice Queries (Using Groq Whisper) ---
+/**
+ * @desc    Handles voice-based cultural queries using Whisper for STT
+ * @route   POST /api/ai/cultural-assistant-voice
+ * @access  Private/Public
+ */
 exports.speechToText = async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ error: "No audio file uploaded." });
+            return res.status(400).json({ error: "No audio file provided." });
         }
 
-        // Use Groq's high-speed Whisper API for transcription
-        // We pass the file stream directly to Groq
+        // 1. SPEECH-TO-TEXT TRANSCRIPTION
+        // Sends the audio file stream to Groq Whisper for high-speed transcription
         const transcription = await groq.audio.transcriptions.create({
             file: fs.createReadStream(req.file.path),
-            model: "whisper-large-v3", // Industry standard for speed and accuracy
-            language: "en", // Specifically look for English
+            model: "whisper-large-v3", 
+            language: "en", 
         });
 
         const recognizedText = transcription.text;
-        console.log("🗣️ Groq Recognized Speech:", recognizedText);
+        console.log("🗣️ Recognized Speech:", recognizedText);
 
-        // Now, we use the recognized text as the 'question' and call the RAG logic
+        // 2. HANDOFF TO RAG LOGIC
+        // Inject the transcribed text back into the request body to reuse getCulturalAdvice
         req.body.question = recognizedText;
-        req.body.context = "Voice Input: Cultural Exploration";
 
-        // Re-use the existing text advice logic to get the final answer
         return exports.getCulturalAdvice(req, res);
 
     } catch (error) {
-        console.error("Groq STT Error:", error.message);
-        res.status(500).json({ error: "Speech recognition failed. Please try again." });
+        console.error("STT Process Error:", error.message);
+        res.status(500).json({ error: "Voice recognition failed. Please try again." });
     } finally {
-        // Clean up: delete the temporary uploaded file to save space
+        // 3. FILE CLEANUP
+        // Always delete the temporary upload file to prevent server storage bloat
         if (req.file && fs.existsSync(req.file.path)) {
             fs.unlinkSync(req.file.path);
         }

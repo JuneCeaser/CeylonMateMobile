@@ -9,18 +9,16 @@ exports.createExperience = async (req, res) => {
     try {
         let experienceData = { ...req.body };
 
-        // 🟢 FIX: Strict GeoJSON Validation
-        // Setting location to undefined prevents Mongoose from inserting default { type: 'Point' }
+        // FIX: Strict GeoJSON Validation
         if (!experienceData.location || 
             !experienceData.location.coordinates || 
             experienceData.location.coordinates.length !== 2) {
-            
             experienceData.location = undefined; 
         }
 
         const newExperience = new Experience({
             ...experienceData,
-            host: req.user.id 
+            host: req.user.id // Assign host ID from authenticated user token
         });
 
         await newExperience.save();
@@ -41,14 +39,14 @@ exports.updateExperience = async (req, res) => {
         let experience = await Experience.findById(req.params.id);
         if (!experience) return res.status(404).json({ error: "Experience not found" });
 
+        // Authorization check
         if (experience.host.toString() !== req.user.id.toString()) {
             return res.status(401).json({ error: "Unauthorized access" });
         }
 
         let updateData = { ...req.body };
 
-        // 🟢 FIX: Location Validation for Update
-        // Use undefined if coordinates are missing to satisfy the 2dsphere index
+        // FIX: Location Validation for Update
         if (updateData.location && (!updateData.location.coordinates || updateData.location.coordinates.length !== 2)) {
             updateData.location = undefined; 
         }
@@ -93,6 +91,11 @@ exports.deleteExperience = async (req, res) => {
  * @route   GET /api/experiences
  * @access  Public (Tourists)
  */
+/**
+ * @desc    Get all experiences with optional filters
+ * @route   GET /api/experiences
+ * @access  Public (Tourists)
+ */
 exports.getAllExperiences = async (req, res) => {
     try {
         const { category, search } = req.query;
@@ -101,9 +104,25 @@ exports.getAllExperiences = async (req, res) => {
         if (category) query.category = category;
         if (search) query.title = { $regex: search, $options: 'i' };
 
-        const experiences = await Experience.find(query).sort({ createdAt: -1 });
-        res.json(experiences);
+        // 1. Fetch experiences and populate the 'host' field with the 'name' from the User model
+        const experiences = await Experience.find(query)
+            .populate('host', 'name') 
+            .sort({ createdAt: -1 });
+
+        // 2. TRANSFORM DATA: Loop through and flatten 'host.name' to 'hostName' 
+        // This ensures the frontend card can simply use 'item.hostName'
+        const formattedExperiences = experiences.map(exp => {
+            const expObj = exp.toObject();
+            return {
+                ...expObj,
+                hostName: exp.host?.name || "Local Guide", // Extract name or use fallback
+                host: exp.host?._id || expObj.host // Keep the ID for references
+            };
+        });
+            
+        res.json(formattedExperiences);
     } catch (err) {
+        console.error("Get All Error:", err.message);
         res.status(500).json({ error: err.message });
     }
 };
@@ -129,9 +148,21 @@ exports.getMyExperiences = async (req, res) => {
  */
 exports.getExperienceById = async (req, res) => {
     try {
-        const experience = await Experience.findById(req.params.id);
+        /**
+         * FIX: Added .populate('host', 'name')
+         * This joins the User collection to get the Host's name.
+         * Without this, the mobile app cannot send 'hostName' in the booking request.
+         */
+        const experience = await Experience.findById(req.params.id).populate('host', 'name');
+        
         if (!experience) return res.status(404).json({ error: "Experience not found" });
-        res.status(200).json(experience);
+
+        // Transform the object to make it easy for the frontend to read hostName directly
+        const experienceObj = experience.toObject();
+        experienceObj.hostName = experience.host?.name || "Local Host";
+        experienceObj.host = experience.host?._id || experienceObj.host;
+
+        res.status(200).json(experienceObj);
     } catch (err) {
         console.error("Fetch Single Error:", err.message);
         res.status(500).json({ error: "Server error" });
