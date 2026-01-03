@@ -33,15 +33,26 @@ exports.getNearbyPlace = async (req, res) => {
 
 // 2. Add a new Place
 exports.addPlace = async (req, res) => {
-  // 👇 Add 'facts' to the extraction list
-  const { name, description, history, facts, latitude, longitude, model3DUrl, arOverlayUrl, images } = req.body;
+  // 👇 1. Extract the NEW fields (model3DNowUrl, model3DThenUrl)
+  const { 
+    name, description, history, facts, 
+    latitude, longitude, 
+    model3DNowUrl, model3DThenUrl, // <--- NEW NAMES
+    arOverlayUrl, images 
+  } = req.body;
   
   try {
     const newPlace = new Place({
-      name, description, history, facts, // 👈 Save it here
+      name, description, history, facts,
       location: { type: 'Point', coordinates: [longitude, latitude] },
-      model3DUrl, arOverlayUrl, images
+      
+      // 👇 2. Save them to the database
+      model3DNowUrl, 
+      model3DThenUrl,
+      
+      arOverlayUrl, images
     });
+
     await newPlace.save();
     res.status(201).json({ msg: "Place added successfully", place: newPlace });
   } catch (err) {

@@ -24,7 +24,6 @@ export default function PlaceScreen() {
   const detectLocation = async () => {
     setLoading(true);
     try {
-      // 1. Request Permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Allow location access to find nearby places.');
@@ -32,14 +31,10 @@ export default function PlaceScreen() {
         return;
       }
 
-      // 2. Get User's REAL Current Location
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      
-      // 3. Extract the real coordinates
       const { latitude, longitude } = location.coords;
       console.log("📍 Detected Real Location:", latitude, longitude);
 
-      // 4. Send REAL coordinates to Backend
       fetchNearbyPlace(latitude, longitude);
 
     } catch (error) {
@@ -57,11 +52,8 @@ export default function PlaceScreen() {
       });
 
       if (response.data.message) {
-        // No place found logic
-        console.log("Backend Response:", response.data.message);
         setPlace(null);
       } else {
-        // Place found!
         console.log("✅ Place Found:", response.data.name);
         setPlace(response.data);
       }
@@ -87,13 +79,9 @@ export default function PlaceScreen() {
         <View style={styles.center}>
             <Ionicons name="location-outline" size={60} color="#ccc" />
             <Text style={{marginTop: 10, color: '#555'}}>No historical site detected nearby.</Text>
-            <Text style={{fontSize: 12, color: '#999', marginTop: 5}}>(Try simulating location in Emulator)</Text>
-            
             <TouchableOpacity onPress={detectLocation} style={styles.retryBtn}>
                 <Text style={{color: '#fff', fontWeight: 'bold'}}>Retry GPS</Text>
             </TouchableOpacity>
-
-            {/* Back Button for safety */}
             <TouchableOpacity onPress={() => router.back()} style={{marginTop: 20}}>
                 <Text style={{color: '#007BFF'}}>Go Back</Text>
             </TouchableOpacity>
@@ -103,7 +91,6 @@ export default function PlaceScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
@@ -112,7 +99,6 @@ export default function PlaceScreen() {
         <View style={{width: 24}} /> 
       </View>
 
-      {/* Main Image Card */}
       <View style={styles.imageCard}>
         <Image 
           source={{ uri: place.images?.[0] || 'https://via.placeholder.com/400' }} 
@@ -122,12 +108,8 @@ export default function PlaceScreen() {
             <Ionicons name="locate" size={16} color="#000" />
             <Text style={styles.gpsText}>GPS MATCHED</Text>
         </View>
-        <TouchableOpacity style={styles.favBtn}>
-            <Ionicons name="heart" size={20} color="#fff" />
-        </TouchableOpacity>
       </View>
 
-      {/* Title Section */}
       <View style={styles.infoSection}>
         <Text style={styles.placeTitle}>{place.name}</Text>
         <View style={styles.locationRow}>
@@ -138,7 +120,6 @@ export default function PlaceScreen() {
         </View>
       </View>
 
-      {/* Grid Buttons */}
       <View style={styles.gridContainer}>
         {/* AR View */}
         <TouchableOpacity style={[styles.card, styles.yellowCard]}>
@@ -149,10 +130,28 @@ export default function PlaceScreen() {
             <Text style={styles.cardSubBlack}>Live Overlay</Text>
         </TouchableOpacity>
 
-        {/* 3D Model - UPDATED LINK */}
+        {/* 👇 3D Model Button - NOW DYNAMIC */}
+        {/* 3D Model - BUTTON UPDATED FOR DUAL LINKS */}
         <TouchableOpacity 
             style={styles.card}
-            onPress={() => router.push('/3d-model')}
+            onPress={() => {
+                // Check if we have at least one valid link
+                const nowLink = place.model3DNowUrl;
+                const thenLink = place.model3DThenUrl;
+
+                if (nowLink || thenLink) {
+                    router.push({
+                        pathname: '/3d-model',
+                        params: { 
+                            // 👇 Sending BOTH links explicitly
+                            nowUrl: nowLink, 
+                            thenUrl: thenLink 
+                        } 
+                    });
+                } else {
+                    Alert.alert("Unavailable", "No 3D Model found for this location.");
+                }
+            }}
         >
             <View style={styles.iconCircle}>
                  <Ionicons name="cube-outline" size={24} color="#000" />
@@ -161,15 +160,12 @@ export default function PlaceScreen() {
             <Text style={styles.cardSub}>Interactive</Text>
         </TouchableOpacity>
 
-        {/* About Place -> Chatbot Link */}
+        {/* Chatbot */}
         <TouchableOpacity 
             style={styles.card}
             onPress={() => router.push({
                 pathname: '/place-chat',
-                params: { 
-                    placeId: place._id, 
-                    placeName: place.name 
-                }
+                params: { placeId: place._id, placeName: place.name }
             })}
         >
             <View style={styles.iconCircle}>
@@ -179,21 +175,20 @@ export default function PlaceScreen() {
             <Text style={styles.cardSub}>AI Guide</Text>
         </TouchableOpacity>
 
-     
-       {/* Facts - BUTTON UPDATED */}
-<TouchableOpacity 
-    style={styles.card}
-    onPress={() => router.push({
-        pathname: '/facts',
-        params: { placeData: JSON.stringify(place) } // We pass the whole object as a string
-    })}
->
-    <View style={styles.iconCircle}>
-         <Ionicons name="bar-chart-outline" size={24} color="#000" />
-    </View>
-    <Text style={styles.cardTitle}>Facts</Text>
-    <Text style={styles.cardSub}>Dimensions</Text>
-</TouchableOpacity>
+        {/* Facts */}
+        <TouchableOpacity 
+            style={styles.card}
+            onPress={() => router.push({
+                pathname: '/facts',
+                params: { placeData: JSON.stringify(place) }
+            })}
+        >
+            <View style={styles.iconCircle}>
+                 <Ionicons name="bar-chart-outline" size={24} color="#000" />
+            </View>
+            <Text style={styles.cardTitle}>Facts</Text>
+            <Text style={styles.cardSub}>Dimensions</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -208,7 +203,6 @@ const styles = StyleSheet.create({
   mainImage: { width: '100%', height: '100%' },
   gpsBadge: { position: 'absolute', bottom: 15, left: 15, backgroundColor: '#FACC15', flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignItems: 'center', gap: 5 },
   gpsText: { fontWeight: 'bold', fontSize: 12 },
-  favBtn: { position: 'absolute', bottom: 15, right: 15, backgroundColor: 'rgba(0,0,0,0.3)', padding: 10, borderRadius: 50 },
   infoSection: { marginTop: 20, marginBottom: 20 },
   placeTitle: { fontSize: 28, fontWeight: 'bold', color: '#111' },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5, gap: 5 },
