@@ -109,7 +109,7 @@ export default function TouristDashboard() {
                 showsVerticalScrollIndicator={false} 
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* --- NEW: AI VOICE ASSISTANT HIGHLIGHT (ORANGE THEME) --- */}
+                {/* --- NEW: AI VOICE HIGHLIGHT (GREEN & ORANGE GRADIENT) --- */}
                 <View style={styles.section}>
                     <TouchableOpacity 
                         style={styles.aiPromoCard} 
@@ -117,7 +117,7 @@ export default function TouristDashboard() {
                         activeOpacity={0.9}
                     >
                         <LinearGradient 
-                            colors={['#F57C00', '#E65100']} 
+                            colors={['#2E7D32', '#F57C00']} // Green to Orange diagonal
                             start={{ x: 0, y: 0 }} 
                             end={{ x: 1, y: 1 }} 
                             style={styles.aiPromoGradient}
@@ -244,14 +244,15 @@ const styles = StyleSheet.create({
     statNumber: { fontSize: 22, fontWeight: 'bold', color: Colors.text, marginTop: Spacing.xs },
     statLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
-    // AI PROMO CARD STYLES (#F57C00)
+    // AI PROMO CARD STYLES (GREEN & ORANGE)
     aiPromoCard: { 
         borderRadius: 20, 
         overflow: 'hidden', 
-        elevation: 8, 
-        shadowColor: '#F57C00', 
+        elevation: 10, 
+        shadowColor: '#444', 
         shadowOpacity: 0.4, 
-        shadowRadius: 12 
+        shadowRadius: 15,
+        marginTop: 5
     },
     aiPromoGradient: { padding: 22 },
     aiPromoContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -259,7 +260,7 @@ const styles = StyleSheet.create({
     aiLiveBadge: { 
         flexDirection: 'row', 
         alignItems: 'center', 
-        backgroundColor: 'rgba(0, 0, 0, 0.15)', 
+        backgroundColor: 'rgba(0, 0, 0, 0.2)', 
         paddingHorizontal: 10, 
         paddingVertical: 5, 
         borderRadius: 12, 
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
     liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00FF00' },
     liveText: { color: '#FFF', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
     aiPromoTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFF', marginBottom: 5 },
-    aiPromoDesc: { fontSize: 14, color: 'rgba(255, 255, 255, 0.9)', lineHeight: 20 },
+    aiPromoDesc: { fontSize: 14, color: 'rgba(255, 255, 255, 0.95)', lineHeight: 20 },
     aiIconCircle: { 
         width: 64, 
         height: 64, 
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
         borderWidth: 1.5, 
         borderColor: 'rgba(255, 255, 255, 0.4)' 
     },
-    glowRing: { position: 'absolute', width: 75, height: 75, borderRadius: 40, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+    glowRing: { position: 'absolute', width: 75, height: 75, borderRadius: 40, borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.15)' },
 
     // Action Cards
     actionCard: { borderRadius: BorderRadius.lg, marginBottom: Spacing.md, overflow: 'hidden', elevation: 4 },
