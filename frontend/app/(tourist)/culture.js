@@ -98,7 +98,7 @@ export default function CultureScreen() {
                 <View style={styles.headerTopRow}>
                     <View>
                         <Text style={styles.headerTitle}>Culture Hub</Text>
-                        <Text style={styles.headerSubtitle}>Discover Sri Lankan traditions 🇱🇰</Text>
+                        <Text style={styles.headerSubtitle}>Discover authentic Sri Lankan traditions 🇱🇰</Text>
                     </View>
                     <TouchableOpacity style={styles.bookIcon} onPress={() => router.push('/(tourist)/my-bookings')}>
                         <Ionicons name="calendar-outline" size={24} color="#FFF" />
@@ -156,7 +156,7 @@ export default function CultureScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F9F9F9' },
-    header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+    header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
     headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
     headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)' },
@@ -205,16 +205,18 @@ const styles = StyleSheet.create({
     insightBtn: { 
         flexDirection: 'row', 
         alignItems: 'center', 
+        justifyContent: 'center',
         backgroundColor: '#2E7D32', 
-        paddingHorizontal: 8, 
+        paddingHorizontal: 10, 
         paddingVertical: 5, 
-        borderRadius: 8,
-        gap: 3
+        borderRadius: 10,
+        gap: 3,
+        minHeight: 28
     },
     insightBtnText: { 
         color: '#FFF', 
-        fontSize: 10, 
-        fontWeight: 'bold',
-        textTransform: 'uppercase'
+        fontSize: 9, 
+        fontWeight: '700',
+        textTransform: 'capitalize'
     }
 });
