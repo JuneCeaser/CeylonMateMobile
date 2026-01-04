@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Dimensions, Alert 
+  View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, 
+  Dimensions, Alert, FlatList // 👈 Added FlatList
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -16,6 +17,9 @@ export default function PlaceScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [place, setPlace] = useState(null);
+  
+  // 1. State for Carousel Dots
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     detectLocation();
@@ -65,6 +69,14 @@ export default function PlaceScreen() {
     }
   };
 
+  // 2. Function to handle swipe scroll
+  const handleScroll = (event) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    const index = event.nativeEvent.contentOffset.x / slideSize;
+    const roundIndex = Math.round(index);
+    setActiveImageIndex(roundIndex);
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -91,6 +103,7 @@ export default function PlaceScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#000" />
@@ -99,17 +112,44 @@ export default function PlaceScreen() {
         <View style={{width: 24}} /> 
       </View>
 
+      {/* 3. Image Carousel (Swipeable) */}
       <View style={styles.imageCard}>
-        <Image 
-          source={{ uri: place.images?.[0] || 'https://via.placeholder.com/400' }} 
-          style={styles.mainImage} 
+        <FlatList
+            data={place.images && place.images.length > 0 ? place.images : ['https://via.placeholder.com/400']}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+                <Image 
+                    source={{ uri: item }} 
+                    style={{ width: width - 40, height: 250 }} // Width matches card width
+                    resizeMode="cover"
+                />
+            )}
         />
+        
         <View style={styles.gpsBadge}>
             <Ionicons name="locate" size={16} color="#000" />
             <Text style={styles.gpsText}>GPS MATCHED</Text>
         </View>
+
+        {/* Dots Indicator */}
+        <View style={styles.paginationContainer}>
+            {(place.images || ['placeholder']).map((_, index) => (
+                <View 
+                    key={index} 
+                    style={[
+                        styles.dot, 
+                        activeImageIndex === index ? styles.activeDot : styles.inactiveDot
+                    ]} 
+                />
+            ))}
+        </View>
       </View>
 
+      {/* Title Section */}
       <View style={styles.infoSection}>
         <Text style={styles.placeTitle}>{place.name}</Text>
         <View style={styles.locationRow}>
@@ -120,6 +160,7 @@ export default function PlaceScreen() {
         </View>
       </View>
 
+      {/* Grid Buttons */}
       <View style={styles.gridContainer}>
         {/* AR View */}
         <TouchableOpacity style={[styles.card, styles.yellowCard]}>
@@ -130,12 +171,10 @@ export default function PlaceScreen() {
             <Text style={styles.cardSubBlack}>Live Overlay</Text>
         </TouchableOpacity>
 
-        {/* 👇 3D Model Button - NOW DYNAMIC */}
-        {/* 3D Model - BUTTON UPDATED FOR DUAL LINKS */}
+        {/* 4. 3D Model Button (Updated Logic) */}
         <TouchableOpacity 
             style={styles.card}
             onPress={() => {
-                // Check if we have at least one valid link
                 const nowLink = place.model3DNowUrl;
                 const thenLink = place.model3DThenUrl;
 
@@ -143,7 +182,6 @@ export default function PlaceScreen() {
                     router.push({
                         pathname: '/3d-model',
                         params: { 
-                            // 👇 Sending BOTH links explicitly
                             nowUrl: nowLink, 
                             thenUrl: thenLink 
                         } 
@@ -164,7 +202,7 @@ export default function PlaceScreen() {
         <TouchableOpacity 
             style={styles.card}
             onPress={() => router.push({
-                pathname: '/place-chat',
+                pathname: '/place-chat', // Adjust if your file is in /tourist/place-chat.js
                 params: { placeId: place._id, placeName: place.name }
             })}
         >
@@ -199,10 +237,35 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 30, marginBottom: 20 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  imageCard: { position: 'relative', borderRadius: 25, overflow: 'hidden', height: 250, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
-  mainImage: { width: '100%', height: '100%' },
+  
+  // 5. Updated Image Card Styles
+  imageCard: { 
+      position: 'relative', 
+      borderRadius: 25, 
+      overflow: 'hidden', 
+      height: 250, 
+      elevation: 5, 
+      shadowColor: '#000', 
+      shadowOpacity: 0.1, 
+      shadowRadius: 10,
+      backgroundColor: '#000' // Dark background for loading
+  },
+  
   gpsBadge: { position: 'absolute', bottom: 15, left: 15, backgroundColor: '#FACC15', flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignItems: 'center', gap: 5 },
   gpsText: { fontWeight: 'bold', fontSize: 12 },
+
+  // Pagination Dots
+  paginationContainer: {
+      position: 'absolute',
+      bottom: 15,
+      alignSelf: 'center', 
+      flexDirection: 'row',
+      gap: 8
+  },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  activeDot: { backgroundColor: '#FACC15', width: 20 },
+  inactiveDot: { backgroundColor: 'rgba(255, 255, 255, 0.5)' },
+
   infoSection: { marginTop: 20, marginBottom: 20 },
   placeTitle: { fontSize: 28, fontWeight: 'bold', color: '#111' },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5, gap: 5 },
