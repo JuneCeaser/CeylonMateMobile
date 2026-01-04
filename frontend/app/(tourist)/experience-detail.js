@@ -150,8 +150,6 @@ export default function ExperienceDetailScreen() {
         }
 
     };
-        
-    
 
     const handleVoiceQuery = async (uri) => {
         try {
@@ -223,33 +221,36 @@ export default function ExperienceDetailScreen() {
 
     return (
         <View style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
-                {/* Hero Section */}
-                <View style={styles.heroContainer}>
-                    <Image source={{ uri: exp?.images?.[0] }} style={styles.heroImg} />
-                    <LinearGradient colors={['rgba(0,0,0,0.7)', 'transparent']} style={styles.headerGradient}>
-                        <View style={styles.headerRow}>
-                            <TouchableOpacity onPress={() => router.replace('/(tourist)/culture')} style={styles.backBtn}activeOpacity={0.7}>
-                                <Ionicons name="arrow-back" size={24} color="white" />
-                            </TouchableOpacity>
-                            <Text style={styles.headerTitle}>Experience Insight</Text>
-                            <TouchableOpacity onPress={() => setWishlisted(!wishlisted)}>
-                                <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={28} color={wishlisted ? "#FF5252" : "white"} />
-                            </TouchableOpacity>
-                        </View>
-                    </LinearGradient>
-                    <View style={styles.heroOverlay}>
-                        <View style={styles.badgeRow}>
-                            <View style={styles.catBadge}><Text style={styles.catText}>{exp?.category}</Text></View>
-                            <View style={styles.ratingBadge}>
-                                <Ionicons name="star" size={14} color="#FFD700" />
-                                <Text style={styles.ratingText}>{exp?.rating || "5.0"}</Text>
-                            </View>
+            {/* Frozen Hero Section */}
+            <View style={styles.heroContainer}>
+                <Image source={{ uri: exp?.images?.[0] }} style={styles.heroImg} />
+                <LinearGradient colors={['rgba(0,0,0,0.7)', 'transparent']} style={styles.headerGradient}>
+                    <View style={styles.headerRow}>
+                        <TouchableOpacity onPress={() => router.replace('/(tourist)/culture')} style={styles.backBtn} activeOpacity={0.7}>
+                            <Ionicons name="arrow-back" size={24} color="white" />
+                        </TouchableOpacity>
+                        <Text style={styles.headerTitle}>Experience Insight</Text>
+                        <TouchableOpacity onPress={() => setWishlisted(!wishlisted)}>
+                            <Ionicons name={wishlisted ? "heart" : "heart-outline"} size={28} color={wishlisted ? "#FF5252" : "white"} />
+                        </TouchableOpacity>
+                    </View>
+                </LinearGradient>
+                <View style={styles.heroOverlay}>
+                    <View style={styles.badgeRow}>
+                        <View style={styles.catBadge}><Text style={styles.catText}>{exp?.category}</Text></View>
+                        <View style={styles.ratingBadge}>
+                            <Ionicons name="star" size={14} color="#FFD700" />
+                            <Text style={styles.ratingText}>{exp?.rating || "5.0"}</Text>
                         </View>
                     </View>
                 </View>
+            </View>
 
-                {/* Content */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
+                {/* Placeholder View with the same height as Hero to allow scrolling underneath */}
+                <View style={{ height: 280 }} />
+
+                {/* Scrollable Content */}
                 <View style={styles.contentBody}>
                     <Text style={styles.mainTitle}>{exp?.title}</Text>
                     <View style={styles.expertRow}>
@@ -366,7 +367,12 @@ export default function ExperienceDetailScreen() {
                             </View>
                             <View style={styles.inputGrid}>
                                 <View style={[styles.bookingCard, { flex: 1, marginRight: 8 }]}><View style={styles.cardHeader}><Ionicons name="time" size={18} color="#2E7D32" /><Text style={styles.cardTitle}>Time</Text></View><TouchableOpacity style={styles.timeSelector} onPress={() => setShowTimePicker(true)}><Text style={styles.timeVal}>{selectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text></TouchableOpacity></View>
-                                <View style={[styles.bookingCard, { flex: 1, marginLeft: 8 }]}><View style={styles.cardHeader}><Ionicons name="people" size={18} color="#2E7D32" /><Text style={styles.cardTitle}>Guests</Text></View><View style={styles.guestCounter}><TouchableOpacity onPress={() => setGuestCount(Math.max(1, guestCount-1))}><Ionicons name="remove-circle-outline" size={24} color="#666" /></TouchableOpacity><Text style={styles.guestCountText}>{guestCount}</Text><TouchableOpacity onPress={() => setGuestCount(guestCount+1)}><Ionicons name="add-circle-outline" size={24} color="#2E7D32" /></TouchableOpacity></View></View>
+                                <View style={[styles.bookingCard, { flex: 1, marginLeft: 8 }]}><View style={styles.cardHeader}><Ionicons name="people" size={18} color="#2E7D32" /><Text style={styles.cardTitle}>Guests</Text></View><View style={styles.guestCounter}>
+                                        <TouchableOpacity onPress={() => setGuestCount(Math.max(1, guestCount-1))}><Ionicons name="remove-circle-outline" size={24} color="#666" /></TouchableOpacity>
+                                        <Text style={styles.guestCountText}>{guestCount}</Text>
+                                        <TouchableOpacity onPress={() => setGuestCount(guestCount+1)}><Ionicons name="add-circle-outline" size={24} color="#2E7D32" /></TouchableOpacity>
+                                    </View>
+                                </View>
                             </View>
                             {showTimePicker && <DateTimePicker value={selectedTime} mode="time" is24Hour={false} onChange={(e, date) => { setShowTimePicker(false); if (date) setSelectedTime(date); }} />}
                             <LinearGradient colors={['#2E7D32', '#1B5E20']} style={styles.mSummaryCard}><View><Text style={styles.mTotalLabel}>Grand Total</Text><Text style={styles.mTotalVal}>LKR {(exp?.price * guestCount).toLocaleString()}</Text></View><Ionicons name="receipt" size={30} color="rgba(255,255,255,0.2)" /></LinearGradient>
@@ -384,7 +390,14 @@ const fullMarkdownStyles = { body: { color: 'white', fontSize: 16, lineHeight: 2
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFF' },
     loader: { flex: 1, justifyContent: 'center' },
-    heroContainer: { width: width, height: 280 },
+    // Updated Hero Container for Frozen Effect
+    heroContainer: { 
+        width: width, 
+        height: 280, 
+        position: 'absolute', 
+        top: 0, 
+        zIndex: 10 
+    },
     heroImg: { width: '100%', height: '100%' },
     headerGradient: { position: 'absolute', top: 0, width: '100%', height: 100, paddingTop: 40, paddingHorizontal: 15 },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -396,7 +409,8 @@ const styles = StyleSheet.create({
     catText: { color: 'white', fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase' },
     ratingBadge: { backgroundColor: 'white', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 5, gap: 3 },
     ratingText: { fontWeight: 'bold', fontSize: 11 },
-    contentBody: { paddingHorizontal: 20, paddingTop: 15 },
+    // Content body needs a background to cover the frozen image when scrolling
+    contentBody: { paddingHorizontal: 20, paddingTop: 15, backgroundColor: '#FFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
     mainTitle: { fontSize: 24, fontWeight: '900', color: '#1A1A1A', marginBottom: 12 },
     expertRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 15 },
     hostAvatar: { width: 40, height: 40, borderRadius: 20 },
