@@ -50,3 +50,13 @@ export const loadHotels = async () => {
     }
 };
 
+export const loadRiskEvents = async () => {
+    try {
+        return await loadCsvFromAsset(
+            require('../assets/data/risk_events_historical.csv')
+        );
+    } catch (error) {
+        console.error('Error loading risk events:', error);
+        return [];
+    }
+};
