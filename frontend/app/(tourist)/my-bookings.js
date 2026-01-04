@@ -9,19 +9,20 @@ import {
     RefreshControl,
     TouchableOpacity,
     Alert,
-    Dimensions
+    Dimensions,
+    Platform
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router'; 
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient'; 
 import api from '../../constants/api';
-import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import { Colors } from '../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
 /**
- * MyBookingsScreen: Allows tourists to view their cultural booking history
- * with clean, professionally styled status indicators.
+ * MyBookingsScreen: Displays a clean, card-based history of cultural bookings
+ * with intuitive status badges and action buttons.
  */
 export default function MyBookingsScreen() {
     const [bookings, setBookings] = useState([]);
@@ -70,132 +71,125 @@ export default function MyBookingsScreen() {
         }, [])
     );
 
-    /**
-     * getStatusTheme: Enhanced styling for status labels.
-     * Uses soft pastel backgrounds and professional iconography.
-     */
     const getStatusTheme = (status) => {
         switch (status) {
             case 'confirmed': 
-                return { color: '#2E7D32', icon: 'checkmark-circle', bg: '#E8F5E9', label: 'Confirmed' };
+                return { color: '#2E7D32', icon: 'check-decagram', bg: '#E8F5E9', label: 'Confirmed' };
             case 'pending': 
-                return { color: '#EF6C00', icon: 'time', bg: '#FFF3E0', label: 'Pending Approval' }; 
+                return { color: '#EF6C00', icon: 'clock-outline', bg: '#FFF3E0', label: 'Pending' }; 
             case 'cancelled_by_tourist': 
-                return { color: '#546E7A', icon: 'person-remove', bg: '#ECEFF1', label: 'Cancelled by You' };
+                return { color: '#546E7A', icon: 'account-remove', bg: '#ECEFF1', label: 'You Cancelled' };
             case 'cancelled_by_host': 
-                return { color: '#C62828', icon: 'close-circle', bg: '#FFEBEE', label: 'Rejected by Host' };
+                return { color: '#D32F2F', icon: 'close-octagon', bg: '#FFEBEE', label: 'Host Declined' };
             case 'completed': 
-                return { color: Colors.primary, icon: 'ribbon', bg: '#F1F8E9', label: 'Completed' };
+                return { color: '#1565C0', icon: 'star-circle', bg: '#E3F2FD', label: 'Completed' };
             default: 
-                return { color: Colors.textSecondary, icon: 'help-circle', bg: '#F5F5F5', label: status };
+                return { color: '#757575', icon: 'help-circle', bg: '#F5F5F5', label: status };
         }
     };
 
     const renderBookingItem = ({ item }) => {
         const theme = getStatusTheme(item.status);
+        const bookingDate = new Date(item.bookingDate);
         
         return (
-            <View style={styles.cardContainer}>
-                <View style={styles.card}>
-                    <View style={styles.cardTop}>
-                        {/* Image is now clear without overlaps */}
-                        <Image 
-                            source={{ uri: item.experience?.images?.[0] || 'https://via.placeholder.com/150' }} 
-                            style={styles.experienceImage} 
-                        />
-
-                        <View style={styles.contentRight}>
-                            {/* --- RE-STYLED STATUS BADGE --- */}
+            <View style={styles.bookingCard}>
+                <View style={styles.cardMain}>
+                    <Image 
+                        source={{ uri: item.experience?.images?.[0] || 'https://via.placeholder.com/150' }} 
+                        style={styles.experienceImage} 
+                    />
+                    <View style={styles.infoContainer}>
+                        <View style={styles.statusRow}>
                             <View style={[styles.statusBadge, { backgroundColor: theme.bg }]}>
-                                <Ionicons name={theme.icon} size={12} color={theme.color} />
-                                <Text style={[styles.statusLabelText, { color: theme.color }]}>{theme.label}</Text>
+                                <MaterialCommunityIcons name={theme.icon} size={14} color={theme.color} />
+                                <Text style={[styles.statusText, { color: theme.color }]}>{theme.label}</Text>
                             </View>
+                        </View>
+                        
+                        <Text style={styles.titleText} numberOfLines={1}>
+                            {item.experience?.title || 'Cultural Experience'}
+                        </Text>
+                        
+                        <View style={styles.detailRow}>
+                            <Ionicons name="person-circle-outline" size={14} color="#666" />
+                            <Text style={styles.detailText}>Host: {item.hostName || 'Local Expert'}</Text>
+                        </View>
 
-                            <Text style={styles.experienceTitle} numberOfLines={1}>
-                                {item.experience?.title || 'Experience Heritage'}
+                        <View style={styles.detailRow}>
+                            <Ionicons name="calendar-clear-outline" size={14} color="#666" />
+                            <Text style={styles.detailText}>
+                                {bookingDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                {'  •  '}
+                                {bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>
-                            
-                            <View style={styles.hostRow}>
-                                <Ionicons name="person-outline" size={12} color={Colors.primary} />
-                                <Text style={styles.hostName}>Host: {item.hostName || 'Verified Host'}</Text>
-                            </View>
-
-                            <View style={styles.dateContainer}>
-                                <Ionicons name="calendar-outline" size={13} color={Colors.textSecondary} />
-                                <Text style={styles.dateText}>
-                                    {new Date(item.bookingDate).toLocaleDateString('en-GB')}
-                                </Text>
-                            </View>
                         </View>
                     </View>
-
-                    <View style={styles.cardDivider} />
-
-                    <View style={styles.cardBottom}>
-                        <View>
-                            <Text style={styles.totalLabel}>Grand Total</Text>
-                            <Text style={styles.totalValue}>LKR {item.totalPrice?.toLocaleString()}</Text>
-                        </View>
-                        <View style={styles.guestCountPill}>
-                            <Ionicons name="people-outline" size={14} color={Colors.textSecondary} />
-                            <Text style={styles.guestCountText}>{item.guests} {item.guests > 1 ? 'Guests' : 'Guest'}</Text>
-                        </View>
-                    </View>
-
-                    {item.status === 'pending' && (
-                        <TouchableOpacity 
-                            style={styles.cancelButton} 
-                            onPress={() => handleCancelBooking(item._id)}
-                        >
-                            <Text style={styles.cancelButtonText}>Cancel Request</Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.cardFooter}>
+                    <View>
+                        <Text style={styles.priceLabel}>Amount Paid / Due</Text>
+                        <Text style={styles.priceValue}>LKR {item.totalPrice?.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.guestPill}>
+                        <Ionicons name="people" size={14} color="#555" />
+                        <Text style={styles.guestText}>{item.guests} {item.guests > 1 ? 'Guests' : 'Guest'}</Text>
+                    </View>
+                </View>
+
+                {item.status === 'pending' && (
+                    <TouchableOpacity 
+                        style={styles.cancelAction} 
+                        onPress={() => handleCancelBooking(item._id)}
+                    >
+                        <Text style={styles.cancelActionText}>Cancel Booking</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         );
     };
 
     return (
         <View style={styles.container}>
-            {/* --- FLAT HEADER WITH BACK NAVIGATION --- */}
-            <LinearGradient colors={[Colors.primary, '#08320A']} style={styles.header}>
-                <View style={styles.headerInner}>
-                    <TouchableOpacity 
-                        style={styles.backButton} 
-                        onPress={() => router.push('/(tourist)/culture')}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="white" />
+            <LinearGradient colors={['#2E7D32', '#1B5E20']} style={styles.topHeader}>
+                <View style={styles.headerContent}>
+                    <TouchableOpacity onPress={() => router.replace('/(tourist)/culture')} style={styles.iconCircle}>
+                        <Ionicons name="chevron-back" size={24} color="white" />
                     </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>My Cultural Booking List</Text>
-                        <Text style={styles.headerSubtitle}>Manage your cultural journeys</Text>
+                    <View style={styles.titleWrap}>
+                        <Text style={styles.mainTitle}>My Bookings</Text>
+                        <Text style={styles.subTitle}>{bookings.length} reservations found</Text>
                     </View>
-                    <Ionicons name="receipt-outline" size={30} color="rgba(255,255,255,0.2)" />
+                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={28} color="rgba(255,255,255,0.3)" />
                 </View>
             </LinearGradient>
 
             {loading ? (
-                <View style={styles.loader}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color="#2E7D32" />
                 </View>
             ) : (
                 <FlatList
                     data={bookings}
                     keyExtractor={(item) => item._id}
                     renderItem={renderBookingItem}
-                    contentContainerStyle={styles.listPadding}
+                    contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMyBookings(); }} tintColor={Colors.primary} />
+                        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMyBookings(); }} tintColor="#2E7D32" />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconCircle}>
-                                <Ionicons name="calendar-outline" size={50} color={Colors.border} />
-                            </View>
-                            <Text style={styles.emptyTitle}>No bookings found</Text>
-                            <TouchableOpacity onPress={() => router.push('/(tourist)/culture')}>
-                                <Text style={styles.browseLink}>Browse Authentic Experiences →</Text>
+                        <View style={styles.emptyWrap}>
+                            <Image 
+                                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076432.png' }} 
+                                style={styles.emptyImg} 
+                            />
+                            <Text style={styles.emptyText}>No bookings yet</Text>
+                            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.push('/(tourist)/culture')}>
+                                <Text style={styles.exploreBtnText}>Explore Experiences</Text>
                             </TouchableOpacity>
                         </View>
                     }
@@ -206,94 +200,82 @@ export default function MyBookingsScreen() {
 }
 
 const styles = StyleSheet.create({
-    // --- LAYOUT ---
-    container: { flex: 1, backgroundColor: '#F8F9FA' },
-    loader: { flex: 1, justifyContent: 'center' },
-    listPadding: { padding: 16, paddingBottom: 40 },
+    container: { flex: 1, backgroundColor: '#F9FBFA' },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    
+    // Header Styling
+    topHeader: { paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 25, paddingHorizontal: 20 },
+    headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center' },
+    titleWrap: { flex: 1, marginLeft: 15 },
+    mainTitle: { fontSize: 22, fontWeight: 'bold', color: 'white' },
+    subTitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
-    // --- HEADER ---
-    header: { paddingTop: 60, paddingBottom: 25, paddingHorizontal: 20 },
-    headerInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
-    headerTitleContainer: { flex: 1, marginLeft: 15 },
-    headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
-    headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-
-    // --- CARD DESIGN ---
-    cardContainer: { marginBottom: 16 },
-    card: { 
+    // List & Card Styling
+    listContainer: { padding: 16, paddingBottom: 100 },
+    bookingCard: { 
         backgroundColor: 'white', 
-        borderRadius: 20, 
-        padding: 16,
+        borderRadius: 24, 
+        padding: 16, 
+        marginBottom: 16,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
         elevation: 3,
         borderWidth: 1,
-        borderColor: '#F1F1F1'
+        borderColor: '#F0F0F0'
     },
-    cardTop: { flexDirection: 'row' },
-    experienceImage: { width: 90, height: 90, borderRadius: 15, backgroundColor: '#F3F4F6' },
-    contentRight: { flex: 1, marginLeft: 15 },
-
-    // --- CLEAN STATUS BADGE ---
-    statusBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        alignSelf: 'flex-start',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
-        marginBottom: 8,
-        gap: 4
-    },
-    statusLabelText: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5
-    },
-
-    experienceTitle: { fontSize: 18, fontWeight: 'bold', color: '#1F2937', marginBottom: 6 },
-    hostRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-    hostName: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
-    dateContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    dateText: { fontSize: 13, color: '#6B7280' },
-
-    // --- FOOTER ELEMENTS ---
-    cardDivider: { height: 1, backgroundColor: '#F3F4F6', marginVertical: 12 },
-    cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    totalLabel: { fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase' },
-    totalValue: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
-    guestCountPill: { 
+    cardMain: { flexDirection: 'row', alignItems: 'center' },
+    experienceImage: { width: 85, height: 85, borderRadius: 18, backgroundColor: '#F0F0F0' },
+    infoContainer: { flex: 1, marginLeft: 15 },
+    statusRow: { marginBottom: 6 },
+    statusBadge: { 
         flexDirection: 'row', 
         alignItems: 'center', 
-        backgroundColor: '#F9FAFB', 
+        alignSelf: 'flex-start', 
         paddingHorizontal: 10, 
-        paddingVertical: 5, 
-        borderRadius: 8, 
-        gap: 5 
+        paddingVertical: 4, 
+        borderRadius: 10,
+        gap: 5
     },
-    guestCountText: { fontSize: 12, fontWeight: '600', color: '#4B5563' },
+    statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
+    titleText: { fontSize: 17, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 5 },
+    detailRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
+    detailText: { fontSize: 12, color: '#666', fontWeight: '500' },
 
-    // --- BUTTONS ---
-    cancelButton: { 
+    // Footer & Divider
+    divider: { height: 1, backgroundColor: '#F1F1F1', marginVertical: 15 },
+    cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    priceLabel: { fontSize: 10, color: '#999', textTransform: 'uppercase', fontWeight: '600' },
+    priceValue: { fontSize: 18, fontWeight: 'bold', color: '#2E7D32' },
+    guestPill: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        backgroundColor: '#F5F5F5', 
+        paddingHorizontal: 12, 
+        paddingVertical: 6, 
+        borderRadius: 12,
+        gap: 6
+    },
+    guestText: { fontSize: 12, fontWeight: '700', color: '#444' },
+
+    // Actions
+    cancelAction: { 
         marginTop: 15, 
-        paddingVertical: 10, 
-        borderRadius: 12, 
         backgroundColor: '#FFF5F5', 
-        alignItems: 'center' 
+        paddingVertical: 12, 
+        borderRadius: 15, 
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FFEBEB'
     },
-    cancelButtonText: { color: '#DC2626', fontWeight: 'bold', fontSize: 13 },
+    cancelActionText: { color: '#E53935', fontWeight: 'bold', fontSize: 13 },
 
-    // --- EMPTY STATE ---
-    emptyContainer: { alignItems: 'center', marginTop: 100, paddingHorizontal: 30 },
-    emptyIconCircle: {
-        width: 100, height: 100, borderRadius: 50,
-        backgroundColor: 'white', justifyContent: 'center', alignItems: 'center',
-        marginBottom: 20, borderWidth: 1, borderColor: '#E5E7EB'
-    },
-    emptyTitle: { fontSize: 20, fontWeight: 'bold', color: '#374151', marginBottom: 10 },
-    browseLink: { color: Colors.primary, fontWeight: 'bold', fontSize: 15 }
+    // Empty State
+    emptyWrap: { alignItems: 'center', marginTop: 80 },
+    emptyImg: { width: 120, height: 120, opacity: 0.5, marginBottom: 20 },
+    emptyText: { fontSize: 18, fontWeight: 'bold', color: '#CCC', marginBottom: 20 },
+    exploreBtn: { backgroundColor: '#2E7D32', paddingHorizontal: 25, paddingVertical: 12, borderRadius: 20 },
+    exploreBtnText: { color: 'white', fontWeight: 'bold' }
 });

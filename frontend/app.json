@@ -64,7 +64,8 @@
         {
           "motionPermission": "Allow CeylonMate to access device motion for the VR experience."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
