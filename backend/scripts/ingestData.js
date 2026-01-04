@@ -1,58 +1,44 @@
-// backend/scripts/ingestData.js
 require("dotenv").config();
 const mongoose = require("mongoose");
-const { HfInference } = require("@huggingface/inference"); // Import official HF library
+const { HfInference } = require("@huggingface/inference");
 
-// Initialize the Hugging Face Inference instance with your API token
 const hf = new HfInference(process.env.HF_TOKEN);
 
-/**
- * Cultural Schema: Defines how cultural facts and their vector representations
- * are stored in MongoDB Atlas for Vector Search.
+/** * SCHEMA UPDATE:
+ * Note that all-mpnet-base-v2 produces 768-dimensional vectors.
  */
 const CulturalSchema = new mongoose.Schema({
     text: String,
     category: String,
-    embedding: Array // Stores the 384-dimensional vector
+    embedding: Array 
 });
 
-// Create the Model: linking to the 'cultural_knowledge' collection
 const CulturalKnowledge = mongoose.model("cultural_knowledge", CulturalSchema, "cultural_knowledge");
 
 /**
- * getEmbedding: Converts plain text into a numerical vector (Embedding).
- * Uses the official HF library to handle the Feature Extraction pipeline.
+ * Generates high-accuracy embeddings using the MPNET model.
  */
 async function getEmbedding(text) {
     try {
-        // featureExtraction automatically selects the correct API endpoint
         const output = await hf.featureExtraction({
-            model: "sentence-transformers/all-MiniLM-L6-v2",
+            model: "sentence-transformers/all-mpnet-base-v2", 
             inputs: text,
         });
-
-        // The library returns a numerical array (the vector)
         return output; 
     } catch (error) {
-        console.error("Hugging Face Library Error:", error.message);
+        console.error("HF Error:", error.message);
         return null;
     }
 }
 
-/**
- * ingest: Main function to connect to DB, generate vectors, and save data.
- */
 async function ingest() {
     try {
-        // 1. Establish connection to MongoDB Atlas
         await mongoose.connect(process.env.MONGO_URI);
         console.log("📡 Connected to MongoDB Atlas...");
         
-        // 2. Clear old data to prevent duplicates during testing
         await CulturalKnowledge.deleteMany({}); 
         console.log("🧹 Cleaned old cultural records.");
 
-        // 3. Cultural dataset to be vectorized and stored
         const data = [
             {
                 category: "Farming",
@@ -75,7 +61,7 @@ async function ingest() {
                 text: "Wooden Mask Carving: A hereditary craft in Ambalangoda using local 'Kaduru' wood. Guidance: Join half-day workshops to watch artisans carve and paint. You can try painting a small piece. Ethics: Do not haggle excessively on prices as this is a master craft. Ensure wood is legally and sustainably sourced."
             },
             {
-                category: "Handicraft",
+                category: "Handicraft",                
                 text: "Batik & Handloom Workshops: Batik is an art of waxing and dyeing, while handloom weaving is a village economy staple. Guidance: Design your own small batik piece or try weaving at a village center. Ethics: Avoid copying sacred temple motifs without consent. Pay weavers fairly and support small local businesses."
             },
             {
@@ -137,34 +123,80 @@ async function ingest() {
             {
                 category: "History",
                 text: "Temple Paintings & Cave Art: Murals in places like Dambulla showing religious and daily life history. Guidance: Guided visits focus on ancient symbolism and conservation. Ethics: No flash photography inside as it damages ancient pigments. Do not touch or lean against painted walls."
+            },
+            {
+                category: "Handicraft",
+                text: "Traditional Clay Pottery in Molagoda Village: Located 9km north of Pinnawala in Kegalle District, Molagoda is one of Sri Lanka's oldest pottery villages where families have engaged in manual clay pottery since the Rajakari feudal system during the king's period. Guidance: Join half-day or full-day workshops to learn clay preparation, hand-molding techniques, wheel-throwing, and observe traditional wood-fired kilns. Artisans create cooking pots, oil lamps, terracotta figures, roof tiles, and ceremonial urns. Ethics: Respect the ancestral knowledge being shared, pay artisans fairly for genuine handmade products, and handle unfired pottery carefully as it represents hours of skilled labor."
+            },
+            {
+                category: "Fishing",
+                text: "Traditional Stilt Fishing (Ritipanna): An iconic age-old fishing method unique to Sri Lanka's southern coast in Hikkaduwa, Koggala, Ahangama, Welipenna, Kathaluwa, and Mirissa. Fishermen balance on a crossbar (petta) tied to vertical poles planted in shallow waters to catch spotted herring and mackerel. Started during World War II due to food and boat shortages. Guidance: Visit during early morning or sunset for spectacular silhouettes. Some authentic fishermen offer hands-on experiences where tourists can try balancing on stilts under supervision. Ethics: Many young fishermen now pose only for tourist photos—seek genuine working fishermen and pay fairly for their time. Do not pressure them to perform dangerous acts. Respect that this is a dying tradition with few practitioners remaining."
+            },
+            {
+                category: "Dancing",
+                text: "Yakun Natima (Devil Dance Ritual): An ancient healing ritual performed to exorcise evil spirits, cure illnesses, and protect communities in southern villages, especially Ambalangoda. Features performers in vivid costumes and elaborate masks representing specific demons (yakka), accompanied by rhythmic yak bera drumming and chanting. Rooted in Buddhist, Hindu, and indigenous beliefs. The edura (exorcist/shaman) wears masks to embody demons and create healing catharsis. Guidance: Seek authentic ceremonies in remote southern villages through local guides rather than staged tourist performances. Observe the ritual with deep respect as it holds spiritual significance. Best experienced at night with torchlight and smoky resin atmosphere. Ethics: This is a sacred healing ceremony, not entertainment. Do not mock, laugh, or imitate movements. Photography of pilgrims in prayer should be avoided or done with explicit permission. Allow the community to control what is shared, as some rituals are spiritually sensitive."
+            },
+            {
+                category: "Agriculture",
+                text: "Authentic Spice Garden Experiences: Ceylon spices like cinnamon, cardamom, cloves, nutmeg, pepper, and vanilla have been central to Sri Lanka's heritage for centuries. Matale region is particularly famous for spice cultivation. Guidance: Walk through lush gardens with expert guides who explain cultivation methods, traditional uses in cuisine and Ayurveda, and processing techniques. Watch live demonstrations of spice preparation and sample herbal teas, natural oils, and organic products. Learn to identify authentic spices and their grades. Ethics: Choose carefully vetted spice gardens that support local farmers rather than commercial tourist traps. Avoid gardens that aggressively sell overpriced products. Ask if income reaches actual growers and support smallholder cooperatives when possible."
+            },
+            {
+                category: "Agriculture",
+                text: "Ceylon Cinnamon Estate Experience: True Ceylon cinnamon (Cinnamomum verum) is unique to Sri Lanka and prized by chefs worldwide. Guidance: Visit cinnamon estates to see the plants growing, then observe master peelers transforming bark into precision cinnamon quills. Learn about different grades based on quality and thickness. Tourists can try peeling cinnamon themselves under expert guidance. Watch cinnamon oil extraction processes. Finish with cinnamon-infused juice and tea tasting. Ethics: This is skilled labor requiring years of practice—do not undervalue the craft. Pay peelers directly when possible. Many women and entire families work as peelers; ensure your visit respects their work schedules and provides fair compensation."
+            },
+            {
+                category: "Handicraft",
+                text: "Traditional Brass and Metal Work: Ancient craft practiced by artisans called Lokuru or Achari (blacksmiths) across Kandy, Matale, Batticaloa, Galle, Colombo, Gampaha, and Hambantota districts. Angulmaduwa (between Hambantota and Matara) is considered the original home of metal artisans. Kandy district has a Housing Estate for Craftsmen (Kala Puraya or Craft City) where descendants of royal mastercraftsmen work. Guidance: Visit workshops to watch artisans cast brass, bronze, copper, and niello into temple bells, Buddha figures, oil lamps, door hinges, locks, betel pounders, arecanut slicers, and ornamental animals (Hansa, Kukul Pahana, Sinha, Naga). The bell-making craft tests quality through the special tone produced. Ethics: These are descendants of royal craftsmen preserving ancient techniques—respect their heritage. Buy directly from artisans rather than middlemen. Authentic casting and bell-making require significant skill; do not bargain aggressively."
+            },
+            {
+                category: "Tradition",
+                text: "Village Pola (Weekly Markets): Authentic weekly pop-up bazaars where rural communities gather to trade, bargain, and stock supplies. Markets overflow with fresh spices, handwoven baskets, big fish, farm vegetables, red rice, dried areca nuts, cinnamon, and local produce. Guidance: Visit early morning for the most active atmosphere. Observe traditional barter systems still in practice. Try local snacks and interact with vendors selling heritage seeds and organic produce. Learn about seasonal crops and traditional preservation methods. Ethics: Bargain respectfully without undermining livelihoods. Purchase items you genuinely need rather than treating the market as only a photo opportunity. Ask permission before photographing vendors, especially women. Support small-scale farmers and avoid large commercial resellers."
+            },
+            {
+                category: "Handicraft",
+                text: "Traditional Gemstone and Jewelry Making: Sri Lanka's gem trade spans centuries with famous blue sapphires, rubies, and other precious stones. Guidance: Join hands-on workshops with skilled local artisans in Galle or Ahangama regions. Learn to distinguish authentic gems from imitations, understand gem varieties and their values, and follow the jewelry-making process from stone selection to final setting. Create your own piece using traditional techniques with guidance. Some workshops include complimentary handcrafted silver rings. Ethics: Ensure gems are ethically sourced with proper documentation. Be aware of the difference between authentic workshops and commercial tourist traps. Respect the cultural significance behind traditional designs and avoid copying sacred motifs without understanding their meaning."
+            },
+            {
+                category: "Tourism",
+                text: "Village Homestay with Cultural Activities: Living with local families in villages near cultural sites like Sigiriya, Dambulla, or Habarana offers immersive experiences. Guidance: Participate in bullock cart rides, help with daily farm chores, join storytelling evenings with elders, play traditional games like Olinda Keliya and carrom, attend village music nights with rabana drums and flutes, and share home-cooked meals made from locally sourced ingredients. Learn oral traditions and folk songs with translation support. Ethics: Agree on all prices beforehand to avoid misunderstandings. Respect family privacy and household rules. Follow local dress codes (modest clothing covering shoulders and knees). Ensure income stays with the host family rather than external agencies. Participate in children's games only when genuinely welcomed, never pressured. Do not publish detailed family information or extensive recordings without explicit consent."
+            },
+            {
+                category: "Religion",
+                text: "Hidden Meditation Caves Beyond Dambulla: Ancient Buddhist meditation chambers dating to the 1st century BC, concealed by overgrown banyan roots and rock formations near the Golden Cave Temple. Originally used by Sri Lanka's earliest Buddhist monks for deep practice. Guidance: These sacred caves require local monk guidance and often special permission. Visit during quieter hours and express genuine interest in Buddhist teachings rather than tourism. Experience the raw, unrestored meditation chambers that reveal centuries of spiritual practice. Ethics: These are active spiritual sites, not tourist attractions. Approach with utmost reverence. Do not touch ancient surfaces or disturb meditation areas. Photography may be restricted or prohibited. Donations to temple maintenance are appropriate. Cover shoulders and knees, remove shoes, and maintain silence."
+            },
+            {
+                category: "Religion",
+                text: "Forest Monastery Visits (Aranya Senasana): Ancient forest monasteries like Ritigala and Arankele where monks live in complete seclusion following Buddha's original teachings. These sites portray the peaceful, simple lifestyle with minimal possessions and natural surroundings. Guidance: Visit with respectful intention to learn about meditation practice and Buddhist philosophy. Observe the architectural remains of ancient monastic complexes integrated with nature. If welcomed, share a simple meal of steamed rice, jackfruit curry, and forest vegetables with the community. Ethics: These are functioning religious communities seeking solitude—do not disturb meditation practices. Speak softly and follow all monastery rules. Dress extremely modestly. Do not bring inappropriate items (meat, alcohol, revealing clothes). Photography of monks requires permission. Practice mindfulness throughout your visit and consider the humility at the heart of these teachings."
+            },
+            {
+                category: "Handicraft",
+                text: "Cane and Bamboo Weaving: Traditional craft using natural cane and bamboo to create furniture, baskets, mats, and household items. Practiced in villages like Wewaldeniya near pottery centers. Guidance: Visit rural workshops to watch artisans split, soak, and weave cane into intricate patterns. Learn about sustainable harvesting from nearby forests and the soaking/drying processes that make cane flexible. Try basic weaving techniques under supervision. Ethics: Support sustainable forestry practices—ask about cane sources. These natural fiber crafts are environmentally friendly; appreciate them as eco-friendly alternatives to plastic. Pay fairly for time-intensive handwoven items."
             }
         ];
 
-        console.log("🔄 Generating embeddings and saving to Database...");
+        console.log("🔄 Generating embeddings (768-dim) and saving...");
 
         for (let item of data) {
             const vector = await getEmbedding(item.text);
             
-            // Ensure the vector is valid before saving to MongoDB
             if (vector && Array.isArray(vector)) {
                 await CulturalKnowledge.create({
                     text: item.text,
                     category: item.category,
                     embedding: vector
                 });
-                console.log(`✅ Successfully saved: ${item.category}`);
+                console.log(`✅ Saved: ${item.category}`);
             } else {
-                console.log(`❌ Failed to process: ${item.category}`);
+                console.log(`❌ Failed: ${item.category}`);
             }
         }
 
-        console.log("🚀 Data Ingestion Process Complete!");
+        console.log("🚀 Data Ingestion Complete!");
         process.exit();
     } catch (err) {
-        console.error("❌ Process Error:", err);
+        console.error("❌ Error:", err);
         process.exit(1);
     }
 }
 
-// Start the process
 ingest();
