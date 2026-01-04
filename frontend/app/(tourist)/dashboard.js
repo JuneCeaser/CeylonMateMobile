@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,13 +7,14 @@ import {
     TouchableOpacity,
     Image,
     Dimensions,
+    ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 
 const { width } = Dimensions.get('window');
@@ -26,32 +27,64 @@ export default function TouristDashboard() {
         savedAttractions: 0,
         riskChecks: 0,
     });
+    const [recentItineraries, setRecentItineraries] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadStats();
-    }, []);
+    // Reload data when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            loadDashboardData();
+        }, [userProfile])
+    );
 
-    const loadStats = async () => {
+    // Replace the loadDashboardData function in dashboard.js
+
+    const loadDashboardData = async () => {
         try {
+            setLoading(true);
+
+            // Load itineraries WITHOUT orderBy to avoid index requirement
             const itinerariesQuery = query(
                 collection(db, 'itineraries'),
-                where('userId', '==', userProfile.uid || 'temp')
+                where('userId', '==', userProfile?.uid || 'temp')
             );
             const itinerariesSnapshot = await getDocs(itinerariesQuery);
 
+            const itineraries = itinerariesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+
+            // Sort on the client side instead of in Firestore
+            const sortedItineraries = itineraries.sort((a, b) => {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
+
+            // Take only the 5 most recent
+            setRecentItineraries(sortedItineraries.slice(0, 5));
             setStats({
                 totalItineraries: itinerariesSnapshot.size,
-                savedAttractions: 0, 
-                riskChecks: 0, 
+                savedAttractions: 0,
+                riskChecks: 0,
             });
+
+            setLoading(false);
         } catch (error) {
-            console.error('Error loading stats:', error);
+            console.error('Error loading dashboard data:', error);
+            setLoading(false);
         }
     };
 
-    // Helper to navigate
-    const handleNavigation = (path) => {
-        router.push(path);
+    const viewItinerary = (itinerary) => {
+        // Navigate to itinerary results with the saved data
+        router.push({
+            pathname: '/(tourist)/itinerary-results',
+            params: {
+                ...itinerary,
+                // Convert arrays to strings for URL params
+                attractions: JSON.stringify(itinerary.selectedAttractions || itinerary.attractions || []),
+            },
+        });
     };
 
     const featuredDestinations = [
@@ -86,137 +119,87 @@ export default function TouristDashboard() {
                 style={styles.header}
             >
                 <View style={styles.headerContent}>
-                    {/* Make the greeting clickable to go to Profile */}
-                    <TouchableOpacity onPress={() => handleNavigation('/(tourist)/profile')}>
+                    <View>
                         <Text style={styles.greeting}>Welcome back,</Text>
                         <Text style={styles.userName}>{userProfile?.name || 'Traveler'}!</Text>
-                    </TouchableOpacity>
-                    
-                    <View style={{flexDirection: 'row', gap: 15}}>
-                        {/* Added Profile Icon explicitly here since it's not in the tab bar */}
-                        <TouchableOpacity onPress={() => handleNavigation('/(tourist)/profile')}>
-                            <Ionicons name="person-circle-outline" size={32} color={Colors.surface} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.notificationButton}>
-                            <Ionicons name="notifications-outline" size={28} color={Colors.surface} />
-                            <View style={styles.notificationBadge}>
-                                <Text style={styles.notificationBadgeText}>2</Text>
-                            </View>
-                        </TouchableOpacity>
                     </View>
+                    <TouchableOpacity style={styles.notificationButton}>
+                        <Ionicons name="notifications-outline" size={28} color={Colors.surface} />
+                        <View style={styles.notificationBadge}>
+                            <Text style={styles.notificationBadgeText}>2</Text>
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Quick Stats */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
-                        <Ionicons name="map-outline" size={24} color={Colors.primary} />
-                        <Text style={styles.statNumber}>{stats.totalItineraries}</Text>
+                        <Ionicons name="map-outline" size={24} color={Colors.surface} />
+                        <Text style={styles.statValue}>{stats.totalItineraries}</Text>
                         <Text style={styles.statLabel}>Trips</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Ionicons name="heart-outline" size={24} color={Colors.danger} />
-                        <Text style={styles.statNumber}>{stats.savedAttractions}</Text>
-                        <Text style={styles.statLabel}>Favorites</Text>
+                        <Ionicons name="location-outline" size={24} color={Colors.surface} />
+                        <Text style={styles.statValue}>{stats.savedAttractions}</Text>
+                        <Text style={styles.statLabel}>Saved</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Ionicons name="shield-checkmark-outline" size={24} color={Colors.success} />
-                        <Text style={styles.statNumber}>{stats.riskChecks}</Text>
-                        <Text style={styles.statLabel}>Safety</Text>
+                        <Ionicons name="shield-checkmark-outline" size={24} color={Colors.surface} />
+                        <Text style={styles.statValue}>{stats.riskChecks}</Text>
+                        <Text style={styles.statLabel}>Checked</Text>
                     </View>
                 </View>
             </LinearGradient>
 
             <ScrollView
                 style={styles.content}
-                showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
             >
-                {/* Main Action Cards */}
+
+
+                {/* Quick Actions */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-                    <TouchableOpacity
-                        style={[styles.actionCard, { backgroundColor: Colors.primary }]}
-                        onPress={() => handleNavigation('/(tourist)/itinerary')}
-                    >
-                        <LinearGradient
-                            colors={[Colors.primary, Colors.accent]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.actionCardGradient}
+                    <View style={styles.actionsGrid}>
+                        <TouchableOpacity
+                            style={styles.actionCard}
+                            onPress={() => router.push('/(tourist)/itinerary')}
                         >
-                            <View style={styles.actionCardContent}>
-                                <View>
-                                    <Text style={styles.actionCardTitle}>Plan Your Trip</Text>
-                                    <Text style={styles.actionCardSubtitle}>
-                                        Generate personalized itineraries
-                                    </Text>
-                                </View>
-                                <Ionicons name="map" size={48} color={Colors.surface} />
-                            </View>
-                        </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.actionCard, { backgroundColor: Colors.danger }]}
-                        onPress={() => handleNavigation('/(tourist)/risk')}
-                    >
-                        <LinearGradient
-                            colors={[Colors.danger, Colors.warning]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.actionCardGradient}
-                        >
-                            <View style={styles.actionCardContent}>
-                                <View>
-                                    <Text style={styles.actionCardTitle}>Check Safety</Text>
-                                    <Text style={styles.actionCardSubtitle}>
-                                        View real-time risk zones
-                                    </Text>
-                                </View>
-                                <Ionicons name="alert-circle" size={48} color={Colors.surface} />
-                            </View>
-                        </LinearGradient>
-                    </TouchableOpacity>
-
-                    {/* Navigation Buttons for Place and Culture (Alternative to Tabs) */}
-                    <View style={{flexDirection: 'row', gap: 10, marginTop: 10}}>
-                         <TouchableOpacity
-                            style={{flex: 1, backgroundColor: Colors.surface, padding: 15, borderRadius: 10, alignItems: 'center', elevation: 2}}
-                            onPress={() => handleNavigation('/(tourist)/place')}
-                        >
-                            <Ionicons name="location" size={24} color={Colors.primary} />
-                            <Text style={{fontWeight: 'bold', marginTop: 5, color: Colors.text}}>Places</Text>
+                            <LinearGradient
+                                colors={[Colors.primary, Colors.accent]}
+                                style={styles.actionGradient}
+                            >
+                                <Ionicons name="add-circle" size={32} color={Colors.surface} />
+                                <Text style={styles.actionText}>Plan Trip</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={{flex: 1, backgroundColor: Colors.surface, padding: 15, borderRadius: 10, alignItems: 'center', elevation: 2}}
-                            onPress={() => handleNavigation('/(tourist)/culture')}
+                            style={styles.actionCard}
+                            onPress={() => router.push('/(tourist)/risk')}
                         >
-                            <Ionicons name="people" size={24} color={Colors.primary} />
-                            <Text style={{fontWeight: 'bold', marginTop: 5, color: Colors.text}}>Culture</Text>
+                            <LinearGradient
+                                colors={[Colors.danger, Colors.warning]}
+                                style={styles.actionGradient}
+                            >
+                                <Ionicons name="shield-checkmark" size={32} color={Colors.surface} />
+                                <Text style={styles.actionText}>Check Safety</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
-
                 </View>
 
                 {/* Featured Destinations */}
                 <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Featured Destinations</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeAllText}>See All →</Text>
-                        </TouchableOpacity>
-                    </View>
-
+                    <Text style={styles.sectionTitle}>Featured Destinations</Text>
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.destinationsScroll}
                     >
                         {featuredDestinations.map((destination) => (
-                            <TouchableOpacity key={destination.id} style={styles.destinationCard}>
+                            <View key={destination.id} style={styles.destinationCard}>
                                 <Image
                                     source={{ uri: destination.image }}
                                     style={styles.destinationImage}
@@ -225,22 +208,95 @@ export default function TouristDashboard() {
                                     colors={['transparent', 'rgba(0,0,0,0.8)']}
                                     style={styles.destinationGradient}
                                 >
-                                    <View style={styles.destinationInfo}>
-                                        <Text style={styles.destinationName}>{destination.name}</Text>
-                                        <View style={styles.destinationMeta}>
-                                            <View style={styles.categoryBadge}>
-                                                <Text style={styles.categoryText}>{destination.category}</Text>
-                                            </View>
-                                            <View style={styles.ratingContainer}>
-                                                <Ionicons name="star" size={14} color={Colors.warning} />
-                                                <Text style={styles.ratingText}>{destination.rating}</Text>
-                                            </View>
-                                        </View>
+                                    <View style={styles.destinationBadge}>
+                                        <Text style={styles.destinationCategory}>{destination.category}</Text>
+                                    </View>
+                                    <Text style={styles.destinationName}>{destination.name}</Text>
+                                    <View style={styles.destinationRating}>
+                                        <Ionicons name="star" size={16} color={Colors.secondary} />
+                                        <Text style={styles.ratingText}>{destination.rating}</Text>
                                     </View>
                                 </LinearGradient>
-                            </TouchableOpacity>
+                            </View>
                         ))}
                     </ScrollView>
+                </View>
+
+                {/* My Itineraries Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>My Itineraries</Text>
+                        {recentItineraries.length > 0 && (
+                            <TouchableOpacity>
+                                <Text style={styles.seeAllText}>See All</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    {loading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={Colors.primary} />
+                        </View>
+                    ) : recentItineraries.length === 0 ? (
+                        <View style={styles.emptyState}>
+                            <Ionicons name="map-outline" size={64} color={Colors.textSecondary} />
+                            <Text style={styles.emptyStateText}>No itineraries yet</Text>
+                            <Text style={styles.emptyStateSubtext}>
+                                Start planning your perfect trip!
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.emptyStateButton}
+                                onPress={() => router.push('/(tourist)/itinerary')}
+                            >
+                                <Text style={styles.emptyStateButtonText}>Plan a Trip</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View>
+                            {recentItineraries.map((itinerary) => (
+                                <TouchableOpacity
+                                    key={itinerary.id}
+                                    style={styles.itineraryCard}
+                                    onPress={() => viewItinerary(itinerary)}
+                                >
+                                    <View style={styles.itineraryHeader}>
+                                        <View style={styles.itineraryIcon}>
+                                            <Ionicons name="map" size={24} color={Colors.primary} />
+                                        </View>
+                                        <View style={styles.itineraryInfo}>
+                                            <Text style={styles.itineraryTitle}>
+                                                {itinerary.activityType?.toUpperCase()} Trip
+                                            </Text>
+                                            <Text style={styles.itinerarySubtitle}>
+                                                {new Date(itinerary.createdAt).toLocaleDateString()}
+                                            </Text>
+                                        </View>
+                                        <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                                    </View>
+                                    <View style={styles.itineraryDetails}>
+                                        <View style={styles.itineraryDetail}>
+                                            <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
+                                            <Text style={styles.itineraryDetailText}>
+                                                {itinerary.availableDays} days
+                                            </Text>
+                                        </View>
+                                        <View style={styles.itineraryDetail}>
+                                            <Ionicons name="location-outline" size={16} color={Colors.textSecondary} />
+                                            <Text style={styles.itineraryDetailText}>
+                                                {(itinerary.selectedAttractions || itinerary.attractions || []).length} places
+                                            </Text>
+                                        </View>
+                                        <View style={styles.itineraryDetail}>
+                                            <Ionicons name="cash-outline" size={16} color={Colors.textSecondary} />
+                                            <Text style={styles.itineraryDetailText}>
+                                                {(itinerary.estimatedBudget / 1000).toFixed(0)}K LKR
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -256,6 +312,8 @@ const styles = StyleSheet.create({
         paddingTop: 60,
         paddingBottom: Spacing.xl,
         paddingHorizontal: Spacing.lg,
+        borderBottomLeftRadius: BorderRadius.xl,
+        borderBottomRightRadius: BorderRadius.xl,
     },
     headerContent: {
         flexDirection: 'row',
@@ -289,7 +347,7 @@ const styles = StyleSheet.create({
     },
     notificationBadgeText: {
         color: Colors.surface,
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: 'bold',
     },
     statsContainer: {
@@ -298,37 +356,32 @@ const styles = StyleSheet.create({
     },
     statCard: {
         flex: 1,
-        backgroundColor: Colors.surface,
+        backgroundColor: 'rgba(255,255,255,0.2)',
         borderRadius: BorderRadius.md,
         padding: Spacing.md,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
     },
-    statNumber: {
+    statValue: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: Colors.text,
+        color: Colors.surface,
         marginTop: Spacing.xs,
     },
     statLabel: {
         fontSize: 12,
-        color: Colors.textSecondary,
+        color: Colors.surface,
+        opacity: 0.9,
         marginTop: 2,
-        textAlign: 'center',
     },
     content: {
         flex: 1,
     },
     scrollContent: {
+        padding: Spacing.lg,
         paddingBottom: Spacing.xl * 2,
     },
     section: {
-        paddingHorizontal: Spacing.lg,
-        marginTop: Spacing.lg,
+        marginBottom: Spacing.xl,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -337,17 +390,108 @@ const styles = StyleSheet.create({
         marginBottom: Spacing.md,
     },
     sectionTitle: {
-        ...Typography.h3,
+        fontSize: 20,
+        fontWeight: 'bold',
         color: Colors.text,
     },
     seeAllText: {
-        fontSize: 14,
         color: Colors.primary,
+        fontSize: 14,
         fontWeight: '600',
     },
-    actionCard: {
+    loadingContainer: {
+        padding: Spacing.xl,
+        alignItems: 'center',
+    },
+    emptyState: {
+        backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,
-        marginBottom: Spacing.md,
+        padding: Spacing.xl,
+        alignItems: 'center',
+    },
+    emptyStateText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: Colors.text,
+        marginTop: Spacing.md,
+    },
+    emptyStateSubtext: {
+        fontSize: 14,
+        color: Colors.textSecondary,
+        marginTop: Spacing.xs,
+        textAlign: 'center',
+    },
+    emptyStateButton: {
+        backgroundColor: Colors.primary,
+        borderRadius: BorderRadius.md,
+        paddingVertical: Spacing.sm,
+        paddingHorizontal: Spacing.lg,
+        marginTop: Spacing.md,
+    },
+    emptyStateButtonText: {
+        color: Colors.surface,
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    itineraryCard: {
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        marginBottom: Spacing.sm,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    itineraryHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
+    },
+    itineraryIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: BorderRadius.md,
+        backgroundColor: Colors.primary + '20',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: Spacing.sm,
+    },
+    itineraryInfo: {
+        flex: 1,
+    },
+    itineraryTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.text,
+        marginBottom: 2,
+    },
+    itinerarySubtitle: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+    },
+    itineraryDetails: {
+        flexDirection: 'row',
+        gap: Spacing.md,
+        marginTop: Spacing.xs,
+    },
+    itineraryDetail: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    itineraryDetailText: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+    },
+    actionsGrid: {
+        flexDirection: 'row',
+        gap: Spacing.sm,
+    },
+    actionCard: {
+        flex: 1,
+        borderRadius: BorderRadius.lg,
         overflow: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -355,24 +499,15 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
     },
-    actionCardGradient: {
+    actionGradient: {
         padding: Spacing.lg,
-    },
-    actionCardContent: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        gap: Spacing.sm,
     },
-    actionCardTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+    actionText: {
         color: Colors.surface,
-        marginBottom: Spacing.xs,
-    },
-    actionCardSubtitle: {
         fontSize: 14,
-        color: Colors.surface,
-        opacity: 0.9,
+        fontWeight: 'bold',
     },
     destinationsScroll: {
         gap: Spacing.md,
@@ -382,11 +517,6 @@ const styles = StyleSheet.create({
         height: 200,
         borderRadius: BorderRadius.lg,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
     },
     destinationImage: {
         width: '100%',
@@ -397,42 +527,36 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        height: '50%',
-        justifyContent: 'flex-end',
         padding: Spacing.md,
+        justifyContent: 'flex-end',
     },
-    destinationInfo: {
-        gap: Spacing.xs,
+    destinationBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: Colors.primary,
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: Spacing.sm,
+        paddingVertical: 4,
+        marginBottom: Spacing.xs,
+    },
+    destinationCategory: {
+        color: Colors.surface,
+        fontSize: 10,
+        fontWeight: 'bold',
     },
     destinationName: {
         fontSize: 18,
         fontWeight: 'bold',
         color: Colors.surface,
+        marginBottom: 4,
     },
-    destinationMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: Spacing.sm,
-    },
-    categoryBadge: {
-        backgroundColor: Colors.primary,
-        paddingHorizontal: Spacing.sm,
-        paddingVertical: 4,
-        borderRadius: BorderRadius.sm,
-    },
-    categoryText: {
-        fontSize: 12,
-        color: Colors.surface,
-        fontWeight: '600',
-    },
-    ratingContainer: {
+    destinationRating: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
     },
     ratingText: {
-        fontSize: 12,
         color: Colors.surface,
+        fontSize: 14,
         fontWeight: '600',
     },
 });
