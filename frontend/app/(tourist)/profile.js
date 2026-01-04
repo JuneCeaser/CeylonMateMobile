@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react'; // Added useCallback
 import {
     View,
     Text,
@@ -7,16 +7,65 @@ import {
     TouchableOpacity,
     Image,
     Alert,
+    Dimensions,
+    ActivityIndicator,
+    RefreshControl, // Added for manual pull-to-refresh
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router'; // Added useFocusEffect
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import api from '../../constants/api';
+
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const { userProfile, logout } = useAuth();
+    const { user, userProfile, logout } = useAuth();
+
+    // States for the Moments feature
+    const [moments, setMoments] = useState([]);
+    const [loadingMoments, setLoadingMoments] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    /**
+     * Fetch preserved cultural moments from the backend
+     * Research Novelty: Provides the data for the 'Experience Timeline'
+     */
+    const fetchUserMoments = async () => {
+        if (!user?.uid) return; // Prevent call if user ID is missing
+        
+        try {
+            const res = await api.get(`/moments/user/${user.uid}`);
+            if (res.data.success) {
+                setMoments(res.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching moments:", error);
+        } finally {
+            setLoadingMoments(false);
+            setRefreshing(false);
+        }
+    };
+
+    /**
+     * HOOK: useFocusEffect
+     * This triggers every time the user navigates back to the Profile screen.
+     * This ensures the timeline displays the newly added moment immediately.
+     */
+    useFocusEffect(
+        useCallback(() => {
+            setLoadingMoments(true);
+            fetchUserMoments();
+        }, [user?.uid])
+    );
+
+    // Manual refresh handler
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchUserMoments();
+    };
 
     const handleLogout = () => {
         Alert.alert(
@@ -38,16 +87,15 @@ export default function ProfileScreen() {
 
     const menuItems = [
         { icon: 'person-outline', label: 'Edit Profile', action: () => {} },
-        { icon: 'settings-outline', label: 'Settings', action: () => {} },
         { icon: 'heart-outline', label: 'Favorites', action: () => {} },
         { icon: 'time-outline', label: 'Travel History', action: () => {} },
+        { icon: 'settings-outline', label: 'Settings', action: () => {} },
         { icon: 'help-circle-outline', label: 'Help & Support', action: () => {} },
-        { icon: 'information-circle-outline', label: 'About', action: () => {} },
     ];
 
     return (
         <View style={styles.container}>
-            {/* Header */}
+            {/* Frozen Header with User Info */}
             <LinearGradient
                 colors={[Colors.primary, Colors.accent]}
                 style={styles.header}
@@ -79,8 +127,55 @@ export default function ProfileScreen() {
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+                }
             >
-                {/* Preferences */}
+                {/* NOVELTY FEATURE: Cultural Moments Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeaderRow}>
+                        <View>
+                            <Text style={styles.sectionTitle}>Cultural Moments</Text>
+                            <Text style={styles.sectionSubtitle}>Your AI-Preserved Memories</Text>
+                        </View>
+                        <TouchableOpacity 
+                            style={styles.addMomentBtn}
+                            onPress={() => router.push('/(tourist)/add-moment')}
+                        >
+                            <Ionicons name="add" size={20} color="white" />
+                            <Text style={styles.addMomentBtnText}>Add</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {loadingMoments && !refreshing ? (
+                        <ActivityIndicator color={Colors.primary} style={{ marginVertical: Spacing.md }} />
+                    ) : moments.length > 0 ? (
+                        <View style={styles.momentsGrid}>
+                            {moments.map((moment) => (
+                                <TouchableOpacity 
+                                    key={moment._id} 
+                                    style={styles.momentThumbnail}
+                                    onPress={() => router.push({
+                                        pathname: '/(tourist)/moment-detail',
+                                        params: { momentId: moment._id }
+                                    })}
+                                >
+                                    <Image source={{ uri: moment.imageUrl }} style={styles.momentImage} />
+                                    <View style={styles.momentBadge}>
+                                        <MaterialCommunityIcons name="robot" size={10} color="white" />
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    ) : (
+                        <View style={styles.emptyMoments}>
+                            <Ionicons name="images-outline" size={40} color={Colors.textSecondary} opacity={0.5} />
+                            <Text style={styles.emptyMomentsText}>No memories preserved yet.</Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Travel Preferences Section */}
                 {userProfile?.preferences && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Travel Preferences</Text>
@@ -105,7 +200,7 @@ export default function ProfileScreen() {
                     </View>
                 )}
 
-                {/* Menu */}
+                {/* Settings & Information Menu */}
                 <View style={styles.section}>
                     <View style={styles.menuCard}>
                         {menuItems.map((item, index) => (
@@ -118,16 +213,16 @@ export default function ProfileScreen() {
                                 onPress={item.action}
                             >
                                 <View style={styles.menuItemLeft}>
-                                    <Ionicons name={item.icon} size={24} color={Colors.primary} />
+                                    <Ionicons name={item.icon} size={22} color={Colors.primary} />
                                     <Text style={styles.menuItemText}>{item.label}</Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                                <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} />
                             </TouchableOpacity>
                         ))}
                     </View>
                 </View>
 
-                {/* Logout Button */}
+                {/* Authentication Action */}
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                     <Ionicons name="log-out-outline" size={24} color={Colors.danger} />
                     <Text style={styles.logoutText}>Logout</Text>
@@ -212,10 +307,73 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: Spacing.lg,
     },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.md,
+    },
     sectionTitle: {
         ...Typography.h3,
         color: Colors.text,
-        marginBottom: Spacing.md,
+        marginBottom: 2,
+    },
+    sectionSubtitle: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+    },
+    addMomentBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primary,
+        paddingHorizontal: Spacing.md,
+        paddingVertical: Spacing.xs,
+        borderRadius: BorderRadius.md,
+        gap: 4,
+    },
+    addMomentBtnText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    momentsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    momentThumbnail: {
+        width: (width - Spacing.lg * 2 - 16) / 3,
+        aspectRatio: 1,
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        backgroundColor: Colors.border,
+    },
+    momentImage: {
+        width: '100%',
+        height: '100%',
+    },
+    momentBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: 2,
+        borderRadius: 4,
+    },
+    emptyMoments: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: Spacing.xl,
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        borderStyle: 'dashed',
+    },
+    emptyMomentsText: {
+        fontSize: 14,
+        color: Colors.textSecondary,
+        marginTop: Spacing.sm,
     },
     preferencesCard: {
         backgroundColor: Colors.surface,

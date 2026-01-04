@@ -65,7 +65,9 @@
           "motionPermission": "Allow CeylonMate to access device motion for the VR experience."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-audio",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true
