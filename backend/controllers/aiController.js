@@ -3,22 +3,23 @@ const mongoose = require("mongoose");
 const Groq = require("groq-sdk");
 const fs = require("fs");
 
-// Initialize AI Service Instances using API keys from environment variables
+// Initialize AI Service Instances
 const hf = new HfInference(process.env.HF_TOKEN);
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Using the high-accuracy model (768 dimensions)
+const ACCURACY_MODEL = "sentence-transformers/all-mpnet-base-v2";
+
 /**
  * OPTIMIZATION: Model Warm-up
- * Hugging Face free-tier models often enter a "sleep" state after inactivity. 
- * This function performs a "ping" to wake the model during server startup.
  */
 const warmupModel = async () => {
     try {
         await hf.featureExtraction({
-            model: "sentence-transformers/all-MiniLM-L6-v2",
+            model: ACCURACY_MODEL,
             inputs: "warmup",
-            provider: "hf-inference",
         });
+        console.log("✅ AI accuracy model warmed up.");
     } catch (e) {
         console.error("⚠️ AI Warmup failed.");
     }
@@ -27,28 +28,25 @@ warmupModel();
 
 /**
  * HELPER: Robust Embedding Generator
- * Specifically designed to handle the "Model is loading" error from Hugging Face.
- * It retries the connection if the model is still initializing.
+ * Updated to use the 768-dimensional model for better accuracy.
  */
 const getEmbeddingsWithRetry = async (text, retries = 3) => {
     for (let i = 0; i < retries; i++) {
         try {
             return await hf.featureExtraction({
-                model: "sentence-transformers/all-MiniLM-L6-v2",
+                model: ACCURACY_MODEL,
                 inputs: text,
-                provider: "hf-inference",
-                options: { wait_for_model: true } // Force HF to wait until the model is ready
+                options: { wait_for_model: true } 
             });
         } catch (err) {
             if (i === retries - 1) throw err;
-            // Wait 2 seconds before retrying if the model is busy
             await new Promise(res => setTimeout(res, 2000));
         }
     }
 };
 
 /**
- * @desc    Processes text-based cultural queries using RAG (Retrieval-Augmented Generation)
+ * @desc    Processes text-based cultural queries using RAG
  * @route   POST /api/ai/cultural-assistant
  */
 exports.getCulturalAdvice = async (req, res) => {
@@ -59,7 +57,7 @@ exports.getCulturalAdvice = async (req, res) => {
             return res.status(400).json({ error: "Question is required." });
         }
 
-        // 1. GENERATE VECTOR EMBEDDING (With improved retry logic)
+        // 1. GENERATE VECTOR EMBEDDING (High Accuracy)
         const queryVector = await getEmbeddingsWithRetry(question);
 
         // 2. VECTOR SEARCH IN MONGODB ATLAS
@@ -70,29 +68,30 @@ exports.getCulturalAdvice = async (req, res) => {
                     index: "vector_index", 
                     path: "embedding",
                     queryVector: queryVector,
-                    numCandidates: 10,
-                    limit: 3, 
+                    numCandidates: 100, // Increased candidates for better match
+                    limit: 5, // Providing more context to the LLM
                 },
             },
         ]).toArray();
 
-        const retrievedInfo = searchResults.map(doc => doc.text).join("\n");
+        // Join retrieved snippets
+        const retrievedInfo = searchResults.map(doc => doc.text).join("\n\n");
 
-        // 3. GENERATE GROUNDED ANSWER VIA LLM (Llama 3.3)
+        // 3. GENERATE GROUNDED ANSWER VIA LLM
         const chatCompletion = await groq.chat.completions.create({
             messages: [
                 {
                     role: "system",
                     content: `You are a friendly, warm, and professional Sri Lankan Local Guide. 
 
-                    Instructions for your response:
+                    STRICT INSTRUCTIONS:
+                    - Use ONLY the provided context to answer. 
+                    - If the context doesn't have the answer, give a warm Sri Lankan greeting and politely explain you don't have that specific detail yet.
                     - Speak naturally like a human guide talking to a friend. 
-                    - Avoid using headings like "Overview", "Pro-Tips", or numbering.
-                    - Start with a welcoming opening (e.g., "Ah, that's a great question!" or "I'd love to tell you about that.")
-                    - Explain the cultural aspect simply and clearly in 2-3 short paragraphs.
-                    - Integrate practical advice or "tips" naturally into your conversation instead of using bullet points.
-                    - Use ONLY the provided context. If information is missing, give a general warm Sri Lankan greeting.
-                    - NEVER say "Based on the context" or "I am an AI".`
+                    - Avoid headings, bullet points, or numbering.
+                    - Start with a welcoming opening.
+                    - Explain the cultural aspect in 2-3 short, clear paragraphs.
+                    - Never mention "Based on the context" or that you are an AI.`
                 },
                 {
                     role: "user",
@@ -100,8 +99,8 @@ exports.getCulturalAdvice = async (req, res) => {
                 }
             ],
             model: "llama-3.3-70b-versatile",
-            temperature: 0.8,
-            max_tokens: 300
+            temperature: 0.4, // Lower temperature for higher factual accuracy
+            max_tokens: 400
         });
 
         res.json({ 
@@ -111,7 +110,7 @@ exports.getCulturalAdvice = async (req, res) => {
 
     } catch (error) {
         console.error("RAG Logic Error:", error.message);
-        res.status(500).json({ error: "AI Assistant is warming up. Please try again in 5 seconds." });
+        res.status(500).json({ error: "AI Assistant is optimizing. Please try again in a few seconds." });
     }
 };
 
@@ -133,7 +132,7 @@ exports.speechToText = async (req, res) => {
         const recognizedText = transcription.text;
         console.log("✅ Recognized:", recognizedText);
 
-        // Handoff to RAG but with a timeout safety
+        // Handoff to RAG logic
         req.body.question = recognizedText;
         return exports.getCulturalAdvice(req, res);
 
@@ -141,7 +140,6 @@ exports.speechToText = async (req, res) => {
         console.error("STT Process Error:", error.message);
         res.status(500).json({ error: "Voice recognition failed." });
     } finally {
-        // Cleanup file
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     }
 };
