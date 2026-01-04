@@ -27,7 +27,6 @@ export default function VRViewerScreen() {
             <a-assets timeout="10000">
               <video id="v" src="${actualVideoUrl}" 
                      autoplay="true" 
-                     loop="true" 
                      muted="true" 
                      crossorigin="anonymous" 
                      playsinline 
@@ -40,12 +39,18 @@ export default function VRViewerScreen() {
           </a-scene>
 
           <script>
-            // Screen එක touch කළ සැණින් වීඩියෝව Play කරවීමට
+            var v = document.querySelector('#v');
+
+            // Handle user interaction to start playback
             document.body.addEventListener('click', function() {
-              var v = document.querySelector('#v');
               v.play();
               document.querySelector('#click-to-play').style.display = 'none';
             }, {once: true});
+
+            // Listen for the video to finish
+            v.addEventListener('ended', function() {
+              window.ReactNativeWebView.postMessage('videoEnded');
+            });
           </script>
         </body>
       </html>
@@ -58,7 +63,23 @@ export default function VRViewerScreen() {
                 source={{ html: vrHtml }} 
                 style={styles.webview} 
                 allowsInlineMediaPlayback={true}
-                onMessage={(event) => { if (event.nativeEvent.data === 'loaded') setIsLoading(false); }}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                onMessage={(event) => { 
+                    const message = event.nativeEvent.data;
+                    
+                    if (message === 'loaded') {
+                        setIsLoading(false);
+                    } else if (message === 'videoEnded') {
+                        // Safe navigation check: prevent "GO_BACK was not handled" error
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            // Fallback if there is no history stack
+                            router.replace('/'); 
+                        }
+                    }
+                }}
             />
             {isLoading && (
                 <View style={styles.loaderContainer}>
@@ -66,7 +87,16 @@ export default function VRViewerScreen() {
                     <Text style={styles.loaderText}>Loading 360° Experience...</Text>
                 </View>
             )}
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <TouchableOpacity 
+                style={styles.backBtn} 
+                onPress={() => {
+                    if (router.canGoBack()) {
+                        router.back();
+                    } else {
+                        router.replace('/');
+                    }
+                }}
+            >
                 <Ionicons name="arrow-back-circle" size={50} color="white" />
             </TouchableOpacity>
         </View>
