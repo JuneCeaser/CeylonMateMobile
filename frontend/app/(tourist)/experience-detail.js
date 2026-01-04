@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../constants/api';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function ExperienceDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -26,6 +26,7 @@ export default function ExperienceDetailScreen() {
     const [isAiProcessing, setIsAiProcessing] = useState(false);
     const [aiVisible, setAiVisible] = useState(false);
     const [aiText, setAiText] = useState("");
+    const [recognizedQuestion, setRecognizedQuestion] = useState("");
     const [wishlisted, setWishlisted] = useState(false);
     
     const [isModalVisible, setModalVisible] = useState(false);
@@ -34,7 +35,7 @@ export default function ExperienceDetailScreen() {
 
     useEffect(() => {
         fetchDetails();
-        prepareAudio(); // Pre-initialize audio engine
+        prepareAudio();
         return () => { 
             Speech.stop(); 
             if (recordingRef.current) {
@@ -55,7 +56,6 @@ export default function ExperienceDetailScreen() {
         }
     };
 
-    // Keep this function exactly as is to maintain voice assistant stability
     const prepareAudio = async () => {
         try {
             await Audio.requestPermissionsAsync();
@@ -71,7 +71,6 @@ export default function ExperienceDetailScreen() {
         }
     };
 
-    // VR Navigation logic
     const handleVRNavigation = () => {
         router.push({
             pathname: '/vr-viewer',
@@ -79,7 +78,7 @@ export default function ExperienceDetailScreen() {
         });
     };
 
-    // --- Voice Assistant Logic ---
+    // --- High-Focus Voice Assistant Logic ---
     const startRecording = async () => {
         try {
             const { status } = await Audio.getPermissionsAsync();
@@ -88,8 +87,9 @@ export default function ExperienceDetailScreen() {
                 if (newStatus !== 'granted') return;
             }
 
-            setAiVisible(false);
             setAiText("");
+            setRecognizedQuestion("");
+            setAiVisible(false);
             Speech.stop(); 
 
             const { recording } = await Audio.Recording.createAsync(
@@ -106,6 +106,7 @@ export default function ExperienceDetailScreen() {
     const stopRecording = async () => {
         if (!recordingRef.current) return;
         setIsListening(false);
+        setIsAiProcessing(true); // Switch to processing state on the overlay
 
         try {
             await recordingRef.current.stopAndUnloadAsync();
@@ -123,9 +124,7 @@ export default function ExperienceDetailScreen() {
         }
     };
 
-    // Keep this function exactly as is to maintain connection settings
     const handleVoiceQuery = async (uri) => {
-        setIsAiProcessing(true);
         try {
             const formData = new FormData();
             const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
@@ -145,16 +144,25 @@ export default function ExperienceDetailScreen() {
             });
 
             if (response.data.answer) {
+                setRecognizedQuestion(response.data.recognizedText || "");
                 setAiText(response.data.answer);
-                setAiVisible(true);
+                setIsAiProcessing(false);
+                setAiVisible(true); // Display the result section within the overlay
                 Speech.speak(response.data.answer, { rate: 0.9, pitch: 1.0 });
             }
         } catch (error) { 
-            console.log("Detailed Error:", error.config?.url, error.message);
+            setIsAiProcessing(false);
+            setIsListening(false);
+            setAiVisible(false);
             Alert.alert("Assistant Busy", "Please try one more time."); 
-        } finally { 
-            setIsAiProcessing(false); 
         }
+    };
+
+    const closeAssistantOverlay = () => {
+        Speech.stop();
+        setIsListening(false);
+        setIsAiProcessing(false);
+        setAiVisible(false);
     };
 
     const handleConfirmBooking = async () => {
@@ -186,6 +194,7 @@ export default function ExperienceDetailScreen() {
     return (
         <View style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 110 }}>
+                {/* Hero Section */}
                 <View style={styles.heroContainer}>
                     <Image source={{ uri: exp?.images?.[0] }} style={styles.heroImg} />
                     <LinearGradient colors={['rgba(0,0,0,0.7)', 'transparent']} style={styles.headerGradient}>
@@ -199,7 +208,6 @@ export default function ExperienceDetailScreen() {
                             </TouchableOpacity>
                         </View>
                     </LinearGradient>
-
                     <View style={styles.heroOverlay}>
                         <View style={styles.badgeRow}>
                             <View style={styles.catBadge}><Text style={styles.catText}>{exp?.category}</Text></View>
@@ -211,6 +219,7 @@ export default function ExperienceDetailScreen() {
                     </View>
                 </View>
 
+                {/* Body Content */}
                 <View style={styles.contentBody}>
                     <Text style={styles.mainTitle}>{exp?.title}</Text>
                     <View style={styles.expertRow}>
@@ -226,7 +235,6 @@ export default function ExperienceDetailScreen() {
                     
                     <Text style={styles.subHeading}>Immersive Previews</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.previewScroll}>
-                        {/* VR Viewer Button */}
                         <TouchableOpacity style={styles.previewItem} onPress={handleVRNavigation}>
                             <Image source={{ uri: exp?.images?.[0] }} style={styles.previewImage} />
                             <View style={styles.previewIconWrap}>
@@ -244,24 +252,63 @@ export default function ExperienceDetailScreen() {
                 </View>
             </ScrollView>
 
-            {/* AI Panel */}
-            {aiVisible && (
-                <View style={styles.aiPanel}>
-                    <View style={styles.aiContent}>
-                        <View style={styles.aiTop}>
-                            <Text style={styles.aiLabel}>Assistant</Text>
-                            <TouchableOpacity onPress={() => {setAiVisible(false); Speech.stop();}}><Ionicons name="close-circle" size={20} color="#666" /></TouchableOpacity>
+            {/* FULL-SCREEN VOICE ASSISTANT OVERLAY */}
+            <Modal visible={isListening || isAiProcessing || aiVisible} transparent animationType="fade">
+                <View style={styles.voiceOverlay}>
+                    <LinearGradient colors={['rgba(0,0,0,0.95)', 'rgba(20,60,30,0.98)']} style={styles.voiceOverlayGradient}>
+                        
+                        <View style={styles.voiceCenterContent}>
+                            {isListening ? (
+                                <>
+                                    <View style={styles.pulseContainer}>
+                                        <View style={styles.pulseCircle} />
+                                        <View style={styles.micCircleActive}>
+                                            <Ionicons name="mic" size={60} color="white" />
+                                        </View>
+                                    </View>
+                                    <Text style={styles.voiceStatusText}>Listening...</Text>
+                                    <Text style={styles.voiceSubText}>Go ahead, ask about Sri Lankan culture</Text>
+                                </>
+                            ) : isAiProcessing ? (
+                                <>
+                                    <ActivityIndicator size="large" color="#FFA000" style={{ marginBottom: 20 }} />
+                                    <Text style={styles.voiceStatusText}>Processing...</Text>
+                                    <Text style={styles.voiceSubText}>Analyzing cultural nuances</Text>
+                                </>
+                            ) : (
+                                /* Result State: Shows Transcript + AI Answer */
+                                <View style={styles.fullScreenResult}>
+                                    <View style={styles.transcriptSection}>
+                                        <Text style={styles.transcriptLabel}>You asked:</Text>
+                                        <Text style={styles.transcriptText}>{recognizedQuestion ? `"${recognizedQuestion}"` : "Analyzing your question..."}</Text>
+                                    </View>
+                                    <View style={styles.aiResultDivider} />
+                                    <ScrollView style={styles.resultScroll} showsVerticalScrollIndicator={true}>
+                                        <View style={styles.aiHeaderRow}>
+                                            <MaterialCommunityIcons name="robot-happy" size={24} color="#FFA000" />
+                                            <Text style={styles.aiHeaderLabel}>CeylonMate Guide</Text>
+                                        </View>
+                                        <Markdown style={fullMarkdownStyles}>{aiText}</Markdown>
+                                    </ScrollView>
+                                </View>
+                            )}
                         </View>
-                        <ScrollView style={{ maxHeight: 120 }}><Markdown style={markdownStyles}>{aiText}</Markdown></ScrollView>
-                    </View>
-                    <View style={styles.aiPointer} />
-                </View>
-            )}
 
-            {/* Footer and Mic */}
+                        {/* Close button to return to Detail Screen */}
+                        <TouchableOpacity style={styles.voiceCloseBtn} onPress={closeAssistantOverlay}>
+                            <View style={styles.closeBtnContent}>
+                                <Ionicons name="close-circle" size={50} color="rgba(255,255,255,0.7)" />
+                                <Text style={styles.closeBtnText}>Return to Experience</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </LinearGradient>
+                </View>
+            </Modal>
+
+            {/* Footer and Mic Trigger */}
             <View style={styles.footerSticky}>
                 <View style={styles.micSection}>
-                    {!aiVisible && (
+                    {!aiVisible && !isListening && (
                         <View style={styles.guideWrapper}>
                             <View style={styles.speechBubble}>
                                 <Text style={styles.speechText}>Ask me anything!</Text>
@@ -270,11 +317,11 @@ export default function ExperienceDetailScreen() {
                         </View>
                     )}
                     <TouchableOpacity 
-                        style={[styles.footerMic, isListening && styles.micActive]} 
+                        style={styles.footerMic} 
                         onPressIn={startRecording} 
                         onPressOut={stopRecording}
                     >
-                        {isAiProcessing ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="mic" size={24} color="white" />}
+                        <Ionicons name="mic" size={24} color="white" />
                     </TouchableOpacity>
                 </View>
 
@@ -288,6 +335,7 @@ export default function ExperienceDetailScreen() {
                 </TouchableOpacity>
             </View>
 
+            {/* Booking Modal */}
             <Modal visible={isModalVisible} animationType="slide" transparent>
                 <View style={styles.modalBg}>
                     <View style={styles.modalContent}>
@@ -313,6 +361,10 @@ export default function ExperienceDetailScreen() {
 }
 
 const markdownStyles = { body: { color: '#333', fontSize: 13 } };
+const fullMarkdownStyles = { 
+    body: { color: 'white', fontSize: 16, lineHeight: 24 },
+    strong: { color: '#FFA000', fontWeight: 'bold' } 
+};
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFF' },
@@ -350,18 +402,12 @@ const styles = StyleSheet.create({
     speechText: { color: 'white', fontSize: 10, fontWeight: '600', textAlign: 'center' },
     bubbleTail: { width: 0, height: 0, borderLeftWidth: 8, borderRightWidth: 8, borderTopWidth: 10, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: '#2E7D32', marginLeft: 18, marginTop: -1 },
     footerMic: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFA000', justifyContent: 'center', alignItems: 'center', elevation: 3 },
-    micActive: { backgroundColor: '#D32F2F' },
     bookActionBtn: { flex: 0.8, backgroundColor: '#2E7D32', height: 52, borderRadius: 12, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginLeft: 10 },
     priceInfo: { flex: 1 },
     footerPriceText: { color: 'white', fontSize: 15, fontWeight: '800' },
     footerSubText: { color: 'rgba(255,255,255,0.7)', fontSize: 9 },
     btnDivider: { width: 1, height: '50%', backgroundColor: 'rgba(255,255,255,0.3)', marginHorizontal: 10 },
     bookNowText: { color: 'white', fontSize: 14, fontWeight: '800' },
-    aiPanel: { position: 'absolute', bottom: 100, left: 15, right: 15, zIndex: 1000 },
-    aiContent: { backgroundColor: 'white', borderRadius: 15, padding: 15, elevation: 15, borderLeftWidth: 4, borderLeftColor: '#2E7D32' },
-    aiTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-    aiLabel: { fontSize: 10, fontWeight: 'bold', color: '#2E7D32' },
-    aiPointer: { width: 0, height: 0, borderLeftWidth: 12, borderRightWidth: 12, borderTopWidth: 15, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: 'white', alignSelf: 'flex-start', marginLeft: 30, marginTop: -1 },
     modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center' },
     modalContent: { backgroundColor: 'white', margin: 40, borderRadius: 20, padding: 25, alignItems: 'center' },
     mHeader: { fontSize: 18, fontWeight: '800', marginBottom: 15 },
@@ -372,5 +418,44 @@ const styles = StyleSheet.create({
     mTotalVal: { fontWeight: 'bold', color: '#2E7D32', fontSize: 16 },
     mConfirmBtn: { backgroundColor: '#2E7D32', width: '100%', padding: 12, borderRadius: 10 },
     mConfirmText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
-    mCancel: { marginTop: 15, color: '#D32F2F', fontSize: 12 }
+    mCancel: { marginTop: 15, color: '#D32F2F', fontSize: 12 },
+    
+    // Voice Assistant High-Focus Overlay Styles
+    voiceOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    voiceOverlayGradient: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
+    voiceCenterContent: { width: '90%', alignItems: 'center' },
+    pulseContainer: { justifyContent: 'center', alignItems: 'center', marginBottom: 30 },
+    micCircleActive: {
+        width: 120, height: 120, borderRadius: 60,
+        backgroundColor: '#FFA000', justifyContent: 'center', alignItems: 'center',
+        elevation: 20, shadowColor: '#000', shadowOpacity: 0.5, shadowRadius: 15
+    },
+    pulseCircle: {
+        position: 'absolute', width: 160, height: 160, borderRadius: 80,
+        backgroundColor: 'rgba(255, 160, 0, 0.3)',
+    },
+    voiceStatusText: { color: 'white', fontSize: 24, fontWeight: 'bold', marginTop: 10 },
+    voiceSubText: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 5, textAlign: 'center' },
+    
+    // Full Screen Result Display
+    fullScreenResult: { 
+        width: '100%', 
+        backgroundColor: 'rgba(255,255,255,0.1)', 
+        borderRadius: 20, 
+        padding: 20, 
+        maxHeight: height * 0.65,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.15)'
+    },
+    transcriptSection: { marginBottom: 15 },
+    transcriptLabel: { color: '#FFA000', fontSize: 12, fontWeight: 'bold', marginBottom: 4 },
+    transcriptText: { color: 'rgba(255,255,255,0.9)', fontSize: 18, fontWeight: '600', fontStyle: 'italic' },
+    aiResultDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 15 },
+    resultScroll: { flexGrow: 0 },
+    aiHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+    aiHeaderLabel: { color: '#FFA000', fontSize: 14, fontWeight: 'bold' },
+    
+    voiceCloseBtn: { position: 'absolute', bottom: 50, alignItems: 'center' },
+    closeBtnContent: { alignItems: 'center', gap: 8 },
+    closeBtnText: { color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: '600' }
 });
