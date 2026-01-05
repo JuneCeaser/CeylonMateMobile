@@ -9,7 +9,7 @@ const experienceSchema = new mongoose.Schema({
     required: true 
   },
   
-  // CHANGED: String type to store Firebase UID
+  // Firebase UID of the host
   host: { 
     type: String, 
     required: true,
@@ -18,9 +18,18 @@ const experienceSchema = new mongoose.Schema({
 
   price: { type: Number, required: true },
   duration: { type: String }, 
+  
+  // UPDATED: Location logic to avoid GeoJSON errors
   location: {
-    type: { type: String, default: 'Point' },
-    coordinates: [Number] 
+    type: { 
+      type: String, 
+      enum: ['Point'],
+      required: false // Removed default 'Point' to prevent auto-insertion
+    },
+    coordinates: {
+      type: [Number],
+      required: false
+    }
   },
 
   voiceGuideContent: {
@@ -35,6 +44,7 @@ const experienceSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Index for map-based searches (only works if location data is valid)
 experienceSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Experience', experienceSchema);

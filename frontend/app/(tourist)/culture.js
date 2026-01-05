@@ -1,93 +1,91 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    FlatList, 
-    TextInput, 
-    TouchableOpacity, 
-    Image, 
-    ActivityIndicator, 
-    ScrollView 
+    View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, 
+    Image, ActivityIndicator, ScrollView, Dimensions 
 } from 'react-native';
-import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import { useRouter } from 'expo-router'; 
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../constants/api'; // Centralized Axios instance with your IP
+import api from '../../constants/api';
+
+const { width } = Dimensions.get('window');
 
 export default function CultureScreen() {
+    const router = useRouter();
     const [experiences, setExperiences] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
-    // Available categories for filtering
     const categories = ['Cooking', 'Farming', 'Handicraft', 'Fishing', 'Dancing'];
 
-    // Fetch data from MongoDB via Node.js backend
-    useEffect(() => {
-        fetchExperiences();
+    useEffect(() => { 
+        fetchExperiences(); 
     }, [searchQuery, selectedCategory]);
 
     const fetchExperiences = async () => {
         try {
             setLoading(true);
-            // Constructing the URL with query parameters for Search and Category
             let url = `/experiences?search=${searchQuery}`;
             if (selectedCategory) url += `&category=${selectedCategory}`;
-            
             const response = await api.get(url);
             setExperiences(response.data);
-        } catch (error) {
-            console.error("Error fetching cultural data:", error);
-        } finally {
-            setLoading(false);
+        } catch (error) { 
+            console.error("Fetch error:", error);
+        } finally { 
+            setLoading(false); 
         }
     };
 
-    /**
-     * Component for each Cultural Experience Card
-     */
     const renderExperienceCard = ({ item }) => (
         <TouchableOpacity 
-            style={styles.card}
-            onPress={() => {
-                /* NEXT STEP: Navigate to a detailed screen 
-                   where the Voice Assistant can be activated 
-                */
-                console.log("Selected Experience ID:", item._id);
-            }}
+            style={styles.ultraCompactCard} 
+            activeOpacity={0.9}
+            onPress={() => router.push({
+                pathname: "/experience-detail",
+                params: { id: item._id }
+            })}
         >
-            {/* Display the first image or a placeholder */}
-            <Image 
-                source={{ 
-                    uri: item.images && item.images.length > 0 
-                        ? item.images[0] 
-                        : 'https://via.placeholder.com/300x200?text=CeylonMate+Culture' 
-                }} 
-                style={styles.image} 
-                resizeMode="cover"
-            />
-            
-            <View style={styles.cardContent}>
-                <View style={styles.headerRow}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <View style={styles.ratingBox}>
-                        <Ionicons name="star" size={14} color={Colors.warning} />
-                        <Text style={styles.ratingText}>{item.rating || 'N/A'}</Text>
+            {/* Visual Section */}
+            <View style={styles.imageBox}>
+                <Image 
+                    source={{ uri: item.images?.[0] || 'https://via.placeholder.com/150' }} 
+                    style={styles.thumbImage} 
+                />
+                <View style={styles.miniCategory}>
+                    <Text style={styles.miniCategoryText}>{item.category}</Text>
+                </View>
+            </View>
+
+            {/* Information Section */}
+            <View style={styles.textContainer}>
+                <View>
+                    <View style={styles.topRow}>
+                        <Text style={styles.titleMain} numberOfLines={2}>{item.title}</Text>
+                        <View style={styles.ratingRow}>
+                            <Ionicons name="star" size={10} color="#FFA000" />
+                            <Text style={styles.ratingVal}>{item.rating || '5.0'}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.hostRow}>
+                        <Ionicons name="person-circle-outline" size={14} color="#2E7D32" />
+                        <Text style={styles.hostNameText} numberOfLines={1}>
+                            Hosted by {item.hostName || "Local Guide"}
+                        </Text>
                     </View>
                 </View>
 
-                <Text style={styles.categoryBadge}>{item.category}</Text>
-                
-                <Text style={styles.description} numberOfLines={2}>
-                    {item.description}
-                </Text>
-
-                <View style={styles.footerRow}>
-                    <Text style={styles.price}>LKR {item.price}</Text>
-                    <View style={styles.hostSection}>
-                        <Ionicons name="person-outline" size={14} color={Colors.textSecondary} />
-                        <Text style={styles.hostName}>{item.host?.name || 'Local Guide'}</Text>
+                {/* Footer Section */}
+                <View style={styles.bottomSection}>
+                    <View>
+                        <Text style={styles.priceHead}>Price per guest</Text>
+                        <Text style={styles.priceValText}>LKR {item.price.toLocaleString()}</Text>
+                    </View>
+                    
+                    <View style={styles.insightBtn}>
+                        <Text style={styles.insightBtnText}>Explore Insight</Text>
+                        <Ionicons name="chevron-forward" size={12} color="#FFF" />
                     </View>
                 </View>
             </View>
@@ -96,60 +94,60 @@ export default function CultureScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Header with Search Bar */}
-            <View style={styles.searchContainer}>
-                <Ionicons name="search" size={20} color={Colors.textSecondary} />
-                <TextInput 
-                    style={styles.searchInput}
-                    placeholder="Search traditional arts & crafts..."
-                    placeholderTextColor="#999"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                />
-            </View>
+            <LinearGradient colors={['#2E7D32', '#1B5E20']} style={styles.header}>
+                <View style={styles.headerTopRow}>
+                    <View>
+                        <Text style={styles.headerTitle}>Culture Hub</Text>
+                        <Text style={styles.headerSubtitle}>Discover authentic Sri Lankan traditions 🇱🇰</Text>
+                    </View>
+                    <TouchableOpacity style={styles.bookIcon} onPress={() => router.push('/(tourist)/my-bookings')}>
+                        <Ionicons name="calendar-outline" size={24} color="#FFF" />
+                        {/* NEW: Notification dot to signal updates */}
+                        <View style={styles.notificationDot} />
+                    </TouchableOpacity>
+                </View>
+                
+                <View style={styles.searchWrapper}>
+                    <Ionicons name="search" size={18} color="#666" />
+                    <TextInput 
+                        style={styles.searchInput} 
+                        placeholder="Search experiences..." 
+                        placeholderTextColor="#999"
+                        value={searchQuery} 
+                        onChangeText={setSearchQuery} 
+                    />
+                </View>
+            </LinearGradient>
 
-            {/* Horizontal Filter for Categories */}
-            <View style={styles.categoryBar}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.filterSection}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
                     <TouchableOpacity 
-                        style={[styles.chip, !selectedCategory && styles.activeChip]}
+                        style={[styles.chip, !selectedCategory && styles.activeChip]} 
                         onPress={() => setSelectedCategory('')}
                     >
-                        <Text style={!selectedCategory ? styles.activeChipText : styles.chipText}>All</Text>
+                        <Text style={[styles.chipText, !selectedCategory && styles.activeChipText]}>All</Text>
                     </TouchableOpacity>
-                    
                     {categories.map(cat => (
                         <TouchableOpacity 
                             key={cat} 
-                            style={[styles.chip, selectedCategory === cat && styles.activeChip]}
+                            style={[styles.chip, selectedCategory === cat && styles.activeChip]} 
                             onPress={() => setSelectedCategory(cat)}
                         >
-                            <Text style={selectedCategory === cat ? styles.activeChipText : styles.chipText}>
-                                {cat}
-                            </Text>
+                            <Text style={[styles.chipText, selectedCategory === cat && styles.activeChipText]}>{cat}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
             </View>
 
-            {/* Data Display Logic */}
             {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                    <Text style={styles.loadingText}>Discovering Cultural Experiences...</Text>
-                </View>
+                <ActivityIndicator size="large" color="#2E7D32" style={{marginTop: 50}} />
             ) : (
-                <FlatList
-                    data={experiences}
-                    keyExtractor={(item) => item._id}
-                    renderItem={renderExperienceCard}
-                    contentContainerStyle={styles.listPadding}
-                    ListEmptyComponent={
-                        <View style={styles.center}>
-                            <Ionicons name="alert-circle-outline" size={50} color="#ccc" />
-                            <Text style={styles.emptyMsg}>No cultural experiences found for this search.</Text>
-                        </View>
-                    }
+                <FlatList 
+                    data={experiences} 
+                    keyExtractor={(item) => item._id} 
+                    renderItem={renderExperienceCard} 
+                    contentContainerStyle={styles.listContainer}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
         </View>
@@ -157,72 +155,68 @@ export default function CultureScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background, paddingTop: 50 },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
-    searchContainer: { 
+    container: { flex: 1, backgroundColor: '#F9F9F9' },
+    header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
+    headerTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+    headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFF' },
+    headerSubtitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)' },
+    
+    // Updated Book Icon with relative positioning
+    bookIcon: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 10, position: 'relative' },
+    
+    // NEW: Notification Dot styling
+    notificationDot: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#F57C00',
+        borderWidth: 1.5,
+        borderColor: '#1B5E20',
+    },
+
+    searchWrapper: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 12, height: 42, alignItems: 'center' },
+    searchInput: { flex: 1, marginLeft: 8, fontSize: 14 },
+    filterSection: { marginVertical: 12 },
+    chipScroll: { paddingHorizontal: 20 },
+    chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: '#FFF', marginRight: 8, borderWidth: 1, borderColor: '#EEE' },
+    activeChip: { backgroundColor: '#2E7D32', borderColor: '#2E7D32' },
+    chipText: { color: '#666', fontSize: 12, fontWeight: '600' },
+    activeChipText: { color: '#FFF' },
+    listContainer: { paddingHorizontal: 20, paddingBottom: 30 },
+    ultraCompactCard: { flexDirection: 'row', backgroundColor: '#FFF', borderRadius: 15, marginBottom: 12, height: 115, elevation: 3, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 5, overflow: 'hidden' },
+    imageBox: { width: 115, height: 115, position: 'relative' },
+    thumbImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+    miniCategory: { position: 'absolute', bottom: 0, width: '100%', backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 2 },
+    miniCategoryText: { color: '#FFF', fontSize: 8, fontWeight: 'bold', textAlign: 'center', textTransform: 'uppercase' },
+    textContainer: { flex: 1, padding: 10, justifyContent: 'space-between' },
+    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    titleMain: { fontSize: 14, fontWeight: '700', color: '#222', flex: 1, marginRight: 4, lineHeight: 18 },
+    hostRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 },
+    hostNameText: { fontSize: 11, color: '#666', fontWeight: '500', fontStyle: 'italic' },
+    ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: '#F0F7F0', paddingHorizontal: 5, borderRadius: 5 },
+    ratingVal: { fontSize: 10, fontWeight: 'bold', color: '#2E7D32' },
+    bottomSection: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    priceHead: { fontSize: 9, color: '#999', marginBottom: -2 },
+    priceValText: { fontSize: 14, fontWeight: 'bold', color: '#2E7D32' },
+    
+    insightBtn: { 
         flexDirection: 'row', 
-        backgroundColor: Colors.surface, 
-        marginHorizontal: 15, 
-        marginVertical: 10, 
-        padding: 12, 
-        borderRadius: 12, 
         alignItems: 'center', 
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5
+        justifyContent: 'center',
+        backgroundColor: '#2E7D32', 
+        paddingHorizontal: 10, 
+        paddingVertical: 5, 
+        borderRadius: 10,
+        gap: 3,
+        minHeight: 28
     },
-    searchInput: { flex: 1, marginLeft: 10, fontSize: 16, color: Colors.text },
-    categoryBar: { paddingLeft: 15, marginBottom: 15 },
-    chip: { 
-        paddingHorizontal: 18, 
-        paddingVertical: 8, 
-        borderRadius: 25, 
-        marginRight: 10, 
-        backgroundColor: '#e0e0e0',
-        borderWidth: 1,
-        borderColor: '#d0d0d0'
-    },
-    activeChip: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-    chipText: { color: Colors.text, fontWeight: '500' },
-    activeChipText: { color: '#fff', fontWeight: 'bold' },
-    listPadding: { paddingHorizontal: 15, paddingBottom: 20 },
-    card: { 
-        backgroundColor: Colors.surface, 
-        borderRadius: 15, 
-        marginBottom: 20, 
-        overflow: 'hidden', 
-        elevation: 5,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 10
-    },
-    image: { width: '100%', height: 190 },
-    cardContent: { padding: 15 },
-    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    title: { fontSize: 20, fontWeight: 'bold', color: Colors.text, flex: 1 },
-    ratingBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    ratingText: { fontSize: 14, fontWeight: 'bold', color: Colors.text },
-    categoryBadge: { 
-        color: Colors.primary, 
-        fontSize: 14, 
-        fontWeight: '700', 
-        marginTop: 5, 
-        textTransform: 'uppercase' 
-    },
-    description: { color: Colors.textSecondary, marginTop: 8, lineHeight: 20 },
-    footerRow: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginTop: 15,
-        borderTopWidth: 0.5,
-        borderTopColor: '#eee',
-        paddingTop: 10
-    },
-    price: { fontSize: 18, color: Colors.secondary, fontWeight: 'bold' },
-    hostSection: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    hostName: { fontSize: 13, color: Colors.textSecondary },
-    loadingText: { marginTop: 10, color: Colors.primary, fontWeight: '500' },
-    emptyMsg: { marginTop: 10, color: '#999', textAlign: 'center', paddingHorizontal: 40 }
+    insightBtnText: { 
+        color: '#FFF', 
+        fontSize: 9, 
+        fontWeight: '700',
+        textTransform: 'capitalize'
+    }
 });

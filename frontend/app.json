@@ -3,7 +3,7 @@
     "name": "CeylonMate",
     "slug": "ceylonmate-mobile",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "ceylonmate",
     "userInterfaceStyle": "automatic",
@@ -13,6 +13,10 @@
       "bundleIdentifier": "com.ceylonmate.app",
       "config": {
         "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow CeylonMate to access your location to tag your cultural moments and provide local recommendations.",
+        "NSLocationAlwaysUsageDescription": "Allow CeylonMate to access your location to provide personalized cultural notifications."
       }
     },
     "android": {
@@ -25,7 +29,17 @@
         "googleMaps": {
           "apiKey": "AIzaSyDcd9aSiBRhT4uRZSVPBe5fj1NH_3KiXiw"
         }
-      }
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "INTERNET",
+        "DEVICE_MOTION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE"
+      ],
+      "usesCleartextTraffic": true
     },
     "web": {
       "bundler": "metro",
@@ -37,7 +51,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow CeylonMate to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow CeylonMate to use your location for preserving cultural memories."
         }
       ],
       [
@@ -45,7 +59,22 @@
         {
           "photosPermission": "Allow CeylonMate to access your photos."
         }
-      ]
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow CeylonMate to access your microphone for the cultural assistant."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow CeylonMate to access device motion for the VR experience."
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-audio",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

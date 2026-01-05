@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,16 +7,85 @@ import {
     TouchableOpacity,
     Image,
     Alert,
+    Dimensions,
+    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
+import api from '../../constants/api';
+
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
     const router = useRouter();
-    const { userProfile, logout } = useAuth();
+    const { user, userProfile, logout } = useAuth();
+
+    // States for the Moments feature
+    const [moments, setMoments] = useState([]);
+    const [loadingMoments, setLoadingMoments] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+
+    /**
+     * Fetch preserved cultural moments from the backend
+     */
+    const fetchUserMoments = async () => {
+        if (!user?.uid) return; 
+        
+        try {
+            const res = await api.get(`/moments/user/${user.uid}`);
+            if (res.data.success) {
+                setMoments(res.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching moments:", error);
+        } finally {
+            setLoadingMoments(false);
+            setRefreshing(false);
+        }
+    };
+
+    /**
+     * Delete a specific moment after user confirmation.
+     */
+    const handleDeleteMoment = (momentId) => {
+        Alert.alert(
+            "Delete Memory?",
+            "This will permanently remove this AI-preserved moment from your timeline.",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            const res = await api.delete(`/moments/${momentId}`);
+                            if (res.data.success) {
+                                fetchUserMoments(); 
+                            }
+                        } catch (error) {
+                            Alert.alert("Error", "Could not delete moment.");
+                        }
+                    } 
+                }
+            ]
+        );
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            setLoadingMoments(true);
+            fetchUserMoments();
+        }, [user?.uid])
+    );
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchUserMoments();
+    };
 
     const handleLogout = () => {
         Alert.alert(
@@ -38,16 +107,15 @@ export default function ProfileScreen() {
 
     const menuItems = [
         { icon: 'person-outline', label: 'Edit Profile', action: () => {} },
-        { icon: 'settings-outline', label: 'Settings', action: () => {} },
         { icon: 'heart-outline', label: 'Favorites', action: () => {} },
         { icon: 'time-outline', label: 'Travel History', action: () => {} },
+        { icon: 'settings-outline', label: 'Settings', action: () => {} },
         { icon: 'help-circle-outline', label: 'Help & Support', action: () => {} },
-        { icon: 'information-circle-outline', label: 'About', action: () => {} },
     ];
 
     return (
         <View style={styles.container}>
-            {/* Header */}
+            {/* Frozen Header with User Info */}
             <LinearGradient
                 colors={[Colors.primary, Colors.accent]}
                 style={styles.header}
@@ -79,8 +147,85 @@ export default function ProfileScreen() {
                 style={styles.content}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+                }
             >
-                {/* Preferences */}
+                {/* --- BEAUTIFIED CULTURAL TIMELINE SECTION --- */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeaderRow}>
+                        <View>
+                            <Text style={styles.sectionTitle}>Experience Timeline</Text>
+                            <Text style={styles.sectionSubtitle}>{moments.length} Moments Preserved</Text>
+                        </View>
+                        <TouchableOpacity 
+                            style={styles.addMomentBtn}
+                            onPress={() => router.push('/(tourist)/add-moment')}
+                        >
+                            <LinearGradient
+                                colors={['#2074ceff', '#156436ff']} // Updated to green gradient
+                                start={{x: 0, y: 0}}
+                                end={{x: 1, y: 0}}
+                                style={styles.gradientAddBtn}
+                            >
+                                <Ionicons name="add" size={18} color="white" />
+                                <Text style={styles.addMomentBtnText}>Moment</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </View>
+
+                    {loadingMoments && !refreshing ? (
+                        <ActivityIndicator color={Colors.primary} style={{ marginVertical: Spacing.xl }} />
+                    ) : moments.length > 0 ? (
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.horizontalScroll}
+                        >
+                            {moments.map((moment) => (
+                                <TouchableOpacity 
+                                    key={moment._id} 
+                                    style={styles.momentCardWide}
+                                    onPress={() => router.push({
+                                        pathname: '/(tourist)/moment-detail',
+                                        params: { momentId: moment._id }
+                                    })}
+                                    onLongPress={() => handleDeleteMoment(moment._id)}
+                                    activeOpacity={0.9}
+                                >
+                                    <Image source={{ uri: moment.imageUrl }} style={styles.gridImage} />
+                                    
+                                    <LinearGradient 
+                                        colors={['transparent', 'rgba(0,0,0,0.9)']} 
+                                        style={styles.imageOverlay}
+                                    >
+                                        <View style={styles.overlayContent}>
+                                            <Text style={styles.overlayTitle} numberOfLines={1}>
+                                                {moment.experienceName}
+                                            </Text>
+                                            <View style={styles.overlayLocRow}>
+                                                <Ionicons name="location" size={12} color={Colors.accent} />
+                                                <Text style={styles.overlayLocText} numberOfLines={1}>
+                                                    {moment.location}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    ) : (
+                        <TouchableOpacity 
+                            style={styles.emptyMoments}
+                            onPress={() => router.push('/(tourist)/add-moment')}
+                        >
+                            <MaterialCommunityIcons name="camera-plus-outline" size={42} color={Colors.primary} opacity={0.4} />
+                            <Text style={styles.emptyMomentsText}>Tap here to preserve your first memory</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Travel Preferences Section */}
                 {userProfile?.preferences && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Travel Preferences</Text>
@@ -105,7 +250,7 @@ export default function ProfileScreen() {
                     </View>
                 )}
 
-                {/* Menu */}
+                {/* Settings & Information Menu */}
                 <View style={styles.section}>
                     <View style={styles.menuCard}>
                         {menuItems.map((item, index) => (
@@ -118,16 +263,16 @@ export default function ProfileScreen() {
                                 onPress={item.action}
                             >
                                 <View style={styles.menuItemLeft}>
-                                    <Ionicons name={item.icon} size={24} color={Colors.primary} />
+                                    <Ionicons name={item.icon} size={22} color={Colors.primary} />
                                     <Text style={styles.menuItemText}>{item.label}</Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+                                <Ionicons name="chevron-forward" size={18} color={Colors.textSecondary} />
                             </TouchableOpacity>
                         ))}
                     </View>
                 </View>
 
-                {/* Logout Button */}
+                {/* Authentication Action */}
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                     <Ionicons name="log-out-outline" size={24} color={Colors.danger} />
                     <Text style={styles.logoutText}>Logout</Text>
@@ -212,11 +357,105 @@ const styles = StyleSheet.create({
     section: {
         marginBottom: Spacing.lg,
     },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Spacing.md,
+    },
     sectionTitle: {
         ...Typography.h3,
         color: Colors.text,
-        marginBottom: Spacing.md,
+        marginBottom: 2,
     },
+    sectionSubtitle: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+    },
+    addMomentBtn: {
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        elevation: 2,
+    },
+    gradientAddBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.md,
+        paddingVertical: 8,
+        gap: 6,
+    },
+    addMomentBtnText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 13,
+    },
+    // --- Styles for the Enhanced Timeline ---
+    horizontalScroll: {
+        paddingRight: Spacing.lg,
+        paddingVertical: 4,
+        gap: 16,
+    },
+    momentCardWide: { 
+        width: width * 0.7, 
+        height: 180, 
+        borderRadius: BorderRadius.lg, 
+        overflow: 'hidden', 
+        backgroundColor: Colors.border,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+    },
+    gridImage: { 
+        width: '100%', 
+        height: '100%',
+        resizeMode: 'cover'
+    },
+    imageOverlay: { 
+        position: 'absolute', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        height: '80%', 
+        justifyContent: 'flex-end', 
+    },
+    overlayContent: {
+        padding: 12,
+    },
+    overlayTitle: { 
+        color: 'white', 
+        fontSize: 15, 
+        fontWeight: 'bold',
+        marginBottom: 4
+    },
+    overlayLocRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    overlayLocText: {
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 12,
+        fontWeight: '500'
+    },
+    emptyMoments: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 40,
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        borderWidth: 1,
+        borderColor: Colors.primary + '30',
+        borderStyle: 'dashed',
+    },
+    emptyMomentsText: {
+        fontSize: 14,
+        color: Colors.textSecondary,
+        marginTop: Spacing.sm,
+        textAlign: 'center',
+    },
+    // --- End Timeline Styles ---
     preferencesCard: {
         backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,
