@@ -10,6 +10,7 @@ const experienceRoutes = require("./routes/experienceRoutes");
 const bookingExperienceRoutes = require("./routes/bookingExperienceRoutes");
 const aiRoutes = require("./routes/aiRoutes"); // Added: Import AI routes
 const momentRoutes = require('./routes/momentRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/experiences", experienceRoutes);
 app.use("/api/bookings", bookingExperienceRoutes); 
 app.use("/api/ai", aiRoutes); // Updated: Use AI routes for RAG
 app.use('/api/moments', momentRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // Health Check
 app.get("/", (req, res) => res.send("Ceylon Mate API Running Successfully"));

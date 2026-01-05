@@ -28,10 +28,43 @@ export default function TouristDashboard() {
         riskChecks: 0,
     });
 
+    /**
+     * Mock Data for Personalized Recommendations from Culture Hub
+     */
+    const [recommendations, setRecommendations] = useState([
+        { 
+            _id: '1', 
+            title: 'Ritipanna Fishing', 
+            matchScore: 98, 
+            category: 'Tradition', 
+            location: 'Ahangama',
+            images: ['https://wildnestvilla.com/images/blog/stilt_fishing_koggala_wild_nest_villa.jpg'] 
+        },
+        { 
+            _id: '2', 
+            title: 'Pottery Workshop', 
+            matchScore: 88, 
+            category: 'Handicrafts', 
+            location: 'Molagoda',
+            images: ['https://images.unsplash.com/photo-1520408222757-6f9f95d87d5d?w=800'] 
+        },
+        { 
+            _id: '3', 
+            title: 'Mask Carving', 
+            matchScore: 82, 
+            category: 'Art', 
+            location: 'Ambalangoda',
+            images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-hp-d8pqS5NdIkaHpNhYCdFxvCOd2opnLkA&s'] 
+        },
+    ]);
+
     useEffect(() => {
         loadStats();
     }, []);
 
+    /**
+     * Fetch user-specific statistics from Firebase Firestore
+     */
     const loadStats = async () => {
         try {
             const itinerariesQuery = query(
@@ -54,6 +87,9 @@ export default function TouristDashboard() {
         router.push(path);
     };
 
+    /**
+     * Featured Sri Lankan destinations
+     */
     const featuredDestinations = [
         { id: 1, name: 'Sigiriya Rock', category: 'Historical', image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800', rating: 4.8 },
         { id: 2, name: 'Mirissa Beach', category: 'Beach', image: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=800', rating: 4.9 },
@@ -62,7 +98,7 @@ export default function TouristDashboard() {
 
     return (
         <View style={styles.container}>
-            {/* --- HEADER --- */}
+            {/* --- TOP HEADER WITH STATS --- */}
             <LinearGradient colors={[Colors.primary, Colors.accent]} style={styles.header}>
                 <View style={styles.headerContent}>
                     <TouchableOpacity onPress={() => handleNavigation('/(tourist)/profile')}>
@@ -84,7 +120,7 @@ export default function TouristDashboard() {
                     </View>
                 </View>
 
-                {/* Stats Row */}
+                {/* Dashboard statistics summary cards */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
                         <Ionicons name="map-outline" size={24} color={Colors.primary} />
@@ -109,7 +145,7 @@ export default function TouristDashboard() {
                 showsVerticalScrollIndicator={false} 
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* --- NEW: AI VOICE HIGHLIGHT (GREEN & ORANGE GRADIENT) --- */}
+                {/* --- VOICE HUB PROMO --- */}
                 <View style={styles.section}>
                     <TouchableOpacity 
                         style={styles.aiPromoCard} 
@@ -117,7 +153,7 @@ export default function TouristDashboard() {
                         activeOpacity={0.9}
                     >
                         <LinearGradient 
-                            colors={['#2E7D32', '#F57C00']} // Green to Orange diagonal
+                            colors={['#2E7D32', '#F57C00']} 
                             start={{ x: 0, y: 0 }} 
                             end={{ x: 1, y: 1 }} 
                             style={styles.aiPromoGradient}
@@ -128,21 +164,55 @@ export default function TouristDashboard() {
                                         <View style={styles.liveDot} />
                                         <Text style={styles.liveText}>VOICE MODE ON</Text>
                                     </View>
-                                    <Text style={styles.aiPromoTitle}>Explore Culture Hub with Voice</Text>
+                                    <Text style={styles.aiPromoTitle}>Explore Culture Hub</Text>
                                     <Text style={styles.aiPromoDesc}>
-                                        Discover stories, traditions, and insights inside the Culture Hub through simple voice prompts..
+                                        Discover stories and traditions through simple voice prompts.
                                     </Text>
                                 </View>
                                 <View style={styles.aiIconCircle}>
-                                    <Ionicons name="mic" size={32} color="#FFF" />
-                                    <View style={styles.glowRing} />
+                                    <Ionicons name="mic" size={28} color="#FFF" />
                                 </View>
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
                 </View>
 
-                {/* --- QUICK ACTIONS --- */}
+                {/* --- CULTURAL HUB RECOMMENDATIONS --- */}
+                {recommendations.length > 0 && (
+                    <View style={styles.section}>
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Picked For You</Text>
+                            <TouchableOpacity><Text style={styles.seeAllText}>View All</Text></TouchableOpacity>
+                        </View>
+
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recommendationScroll}>
+                            {recommendations.map((exp) => (
+                                <TouchableOpacity 
+                                    key={exp._id} 
+                                    style={styles.cuteCard}
+                                    onPress={() => router.push(`/(tourist)/place/${exp._id}`)}
+                                >
+                                    <Image source={{ uri: exp.images[0] }} style={styles.cuteImage} />
+                                    
+                                    {/* Highlighted Match Percentage Tag */}
+                                    <View style={styles.matchTag}>
+                                        <Text style={styles.matchTagText}>{exp.matchScore}% Match</Text>
+                                    </View>
+
+                                    <View style={styles.cuteContent}>
+                                        <Text style={styles.cuteTitle} numberOfLines={1}>{exp.title}</Text>
+                                        <View style={styles.cuteMeta}>
+                                            <Ionicons name="location-sharp" size={12} color={Colors.primary} />
+                                            <Text style={styles.cuteLocation}>{exp.location}</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
+                {/* --- QUICK ACTION NAVIGATION --- */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Quick Actions</Text>
 
@@ -153,7 +223,7 @@ export default function TouristDashboard() {
                                     <Text style={styles.actionCardTitle}>Plan Your Trip</Text>
                                     <Text style={styles.actionCardSubtitle}>Generate personalized itineraries</Text>
                                 </View>
-                                <Ionicons name="map" size={48} color={Colors.surface} />
+                                <Ionicons name="map" size={40} color={Colors.surface} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -163,9 +233,9 @@ export default function TouristDashboard() {
                             <View style={styles.actionCardContent}>
                                 <View style={styles.actionTextContainer}>
                                     <Text style={styles.actionCardTitle}>Discover Culture</Text>
-                                    <Text style={styles.actionCardSubtitle}>Explore authentic local traditions</Text>
+                                    <Text style={styles.actionCardSubtitle}>Explore local traditions</Text>
                                 </View>
-                                <Ionicons name="people" size={48} color={Colors.surface} />
+                                <Ionicons name="people" size={40} color={Colors.surface} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -175,9 +245,9 @@ export default function TouristDashboard() {
                             <View style={styles.actionCardContent}>
                                 <View style={styles.actionTextContainer}>
                                     <Text style={styles.actionCardTitle}>Check Safety</Text>
-                                    <Text style={styles.actionCardSubtitle}>View real-time risk zones</Text>
+                                    <Text style={styles.actionCardSubtitle}>Real-time risk zones</Text>
                                 </View>
-                                <Ionicons name="alert-circle" size={48} color={Colors.surface} />
+                                <Ionicons name="alert-circle" size={40} color={Colors.surface} />
                             </View>
                         </LinearGradient>
                     </TouchableOpacity>
@@ -188,7 +258,7 @@ export default function TouristDashboard() {
                     </TouchableOpacity>
                 </View>
 
-                {/* --- FEATURED DESTINATIONS --- */}
+                {/* --- POPULAR DESTINATIONS --- */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Featured Destinations</Text>
@@ -202,14 +272,9 @@ export default function TouristDashboard() {
                                 <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={styles.destinationGradient}>
                                     <View style={styles.destinationInfo}>
                                         <Text style={styles.destinationName}>{destination.name}</Text>
-                                        <View style={styles.destinationMeta}>
-                                            <View style={styles.categoryBadge}>
-                                                <Text style={styles.categoryText}>{destination.category}</Text>
-                                            </View>
-                                            <View style={styles.ratingContainer}>
-                                                <Ionicons name="star" size={14} color={Colors.warning} />
-                                                <Text style={styles.ratingText}>{destination.rating}</Text>
-                                            </View>
+                                        <View style={styles.ratingContainer}>
+                                            <Ionicons name="star" size={14} color={Colors.warning} />
+                                            <Text style={styles.ratingText}>{destination.rating}</Text>
                                         </View>
                                     </View>
                                 </LinearGradient>
@@ -232,69 +297,79 @@ const styles = StyleSheet.create({
     header: { paddingTop: 60, paddingBottom: Spacing.xl, paddingHorizontal: Spacing.lg },
     headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
     headerIcons: { flexDirection: 'row', gap: 15 },
-    greeting: { fontSize: 16, color: Colors.surface, opacity: 0.9 },
-    userName: { fontSize: 28, fontWeight: 'bold', color: Colors.surface },
+    greeting: { fontSize: 14, color: Colors.surface, opacity: 0.9 },
+    userName: { fontSize: 24, fontWeight: 'bold', color: Colors.surface },
     notificationButton: { position: 'relative' },
-    notificationBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: Colors.danger, borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
-    notificationBadgeText: { color: Colors.surface, fontSize: 10, fontWeight: 'bold' },
+    notificationBadge: { position: 'absolute', top: -2, right: -2, backgroundColor: Colors.danger, borderRadius: 10, width: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
+    notificationBadgeText: { color: Colors.surface, fontSize: 8, fontWeight: 'bold' },
 
-    // Stats Styles
+    // Top Stats
     statsContainer: { flexDirection: 'row', gap: Spacing.sm },
     statCard: { flex: 1, backgroundColor: Colors.surface, borderRadius: BorderRadius.md, padding: Spacing.md, alignItems: 'center', elevation: 2 },
-    statNumber: { fontSize: 22, fontWeight: 'bold', color: Colors.text, marginTop: Spacing.xs },
-    statLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+    statNumber: { fontSize: 18, fontWeight: 'bold', color: Colors.text, marginTop: 4 },
+    statLabel: { fontSize: 11, color: Colors.textSecondary },
 
-    // AI PROMO CARD STYLES (GREEN & ORANGE)
-    aiPromoCard: { 
-        borderRadius: 20, 
-        overflow: 'hidden', 
-        elevation: 10, 
-        shadowColor: '#444', 
-        shadowOpacity: 0.4, 
-        shadowRadius: 15,
-        marginTop: 5
-    },
-    aiPromoGradient: { padding: 22 },
+    // Voice Hub Card
+    aiPromoCard: { borderRadius: 16, overflow: 'hidden', elevation: 5, marginTop: 5 },
+    aiPromoGradient: { padding: 18 },
     aiPromoContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    aiTextWrapper: { flex: 1, marginRight: 12 },
-    aiLiveBadge: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        backgroundColor: 'rgba(0, 0, 0, 0.2)', 
-        paddingHorizontal: 10, 
-        paddingVertical: 5, 
-        borderRadius: 12, 
-        alignSelf: 'flex-start', 
-        marginBottom: 8, 
-        gap: 6 
+    aiTextWrapper: { flex: 1 },
+    aiLiveBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, alignSelf: 'flex-start', marginBottom: 6, gap: 4 },
+    liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#00FF00' },
+    liveText: { color: '#FFF', fontSize: 9, fontWeight: 'bold' },
+    aiPromoTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF' },
+    aiPromoDesc: { fontSize: 12, color: 'rgba(255, 255, 255, 0.95)', marginTop: 4 },
+    aiIconCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' },
+
+    // Recommendation Cards
+    recommendationScroll: { paddingRight: 20 },
+    cuteCard: { 
+        width: 150, 
+        backgroundColor: Colors.surface, 
+        borderRadius: 16, 
+        marginRight: 8, 
+        elevation: 3, 
+        overflow: 'hidden', 
+        marginBottom: 5 
     },
-    liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00FF00' },
-    liveText: { color: '#FFF', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-    aiPromoTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFF', marginBottom: 5 },
-    aiPromoDesc: { fontSize: 14, color: 'rgba(255, 255, 255, 0.95)', lineHeight: 20 },
-    aiIconCircle: { 
-        width: 64, 
-        height: 64, 
-        borderRadius: 32, 
-        backgroundColor: 'rgba(255, 255, 255, 0.25)', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        borderWidth: 1.5, 
-        borderColor: 'rgba(255, 255, 255, 0.4)' 
+    cuteImage: { width: '100%', height: 90 },
+    cuteContent: { padding: 8 },
+    cuteTitle: { fontSize: 13, fontWeight: 'bold', color: Colors.text },
+    cuteMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 },
+    cuteLocation: { fontSize: 10, color: Colors.textSecondary },
+
+    // --- HIGHLIGHTED MATCH PERCENTAGE STYLE ---
+    matchTag: { 
+        position: 'absolute', 
+        top: 6, 
+        right: 6, 
+        backgroundColor: Colors.success, // Bold green background
+        paddingHorizontal: 8, 
+        paddingVertical: 3, 
+        borderRadius: 10,
+        elevation: 4, // Shadow for prominence
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
-    glowRing: { position: 'absolute', width: 75, height: 75, borderRadius: 40, borderWidth: 1.5, borderColor: 'rgba(255, 255, 255, 0.15)' },
+    matchTagText: { 
+        fontSize: 10, 
+        fontWeight: '900', // Heavy bold
+        color: Colors.surface // White text
+    },
 
     // Action Cards
-    actionCard: { borderRadius: BorderRadius.lg, marginBottom: Spacing.md, overflow: 'hidden', elevation: 4 },
-    actionCardGradient: { padding: Spacing.lg },
+    actionCard: { borderRadius: 16, marginBottom: 12, overflow: 'hidden', elevation: 3 },
+    actionCardGradient: { padding: 16 },
     actionCardContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    actionTextContainer: { flex: 1, marginRight: 15 },
-    actionCardTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.surface, marginBottom: Spacing.xs },
-    actionCardSubtitle: { fontSize: 14, color: Colors.surface, opacity: 0.9 },
+    actionTextContainer: { flex: 1 },
+    actionCardTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.surface },
+    actionCardSubtitle: { fontSize: 12, color: Colors.surface, opacity: 0.8 },
 
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md },
-    sectionTitle: { ...Typography.h3, color: Colors.text },
-    seeAllText: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
+    seeAllText: { fontSize: 12, color: Colors.primary, fontWeight: '600' },
 
     placesButton: { backgroundColor: Colors.surface, padding: 18, borderRadius: BorderRadius.md, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 2, gap: 10, marginTop: 10 },
     placesButtonText: { fontWeight: 'bold', color: Colors.text, fontSize: 16 },
