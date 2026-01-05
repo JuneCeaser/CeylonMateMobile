@@ -60,13 +60,23 @@ exports.getPlaceDetails = async (req, res) => {
 };
 
 // 4. Chatbot [MOBILE]
+// 4. Chatbot [MOBILE]
 exports.chatWithPlace = async (req, res) => {
-  const { placeId, question } = req.body;
+  // 👇 1. Extract 'language' from request
+  const { placeId, question, language } = req.body; 
+
   try {
     const place = await Place.findById(placeId);
     if (!place) return res.status(404).json({ error: "Place not found" });
 
-    const systemPrompt = `You are a guide at ${place.name}. Context: ${place.description} ${place.history}`;
+    // 👇 2. Add language instruction to System Prompt
+    const systemPrompt = `
+      You are an expert historical guide at ${place.name}.
+      Context: ${place.description} ${place.history}.
+      
+      IMPORTANT: Answer the user's question in ${language || "English"}.
+      Keep the answer concise (under 3 sentences).
+    `;
     
     const chatCompletion = await groq.chat.completions.create({
       messages: [{ role: "system", content: systemPrompt }, { role: "user", content: question }],
