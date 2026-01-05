@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 
 // REPLACE WITH YOUR ACTUAL LOCAL IP ADDRESS
-const API_URL = 'http://192.168.8.101:5000/api/places'; 
+const API_URL = 'http://192.168.8.100:5000/api/places'; 
 
 const { width } = Dimensions.get('window');
 
