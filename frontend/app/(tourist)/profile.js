@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'; // Added useCallback
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -9,9 +9,9 @@ import {
     Alert,
     Dimensions,
     ActivityIndicator,
-    RefreshControl, // Added for manual pull-to-refresh
+    RefreshControl,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router'; // Added useFocusEffect
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
@@ -31,10 +31,9 @@ export default function ProfileScreen() {
 
     /**
      * Fetch preserved cultural moments from the backend
-     * Research Novelty: Provides the data for the 'Experience Timeline'
      */
     const fetchUserMoments = async () => {
-        if (!user?.uid) return; // Prevent call if user ID is missing
+        if (!user?.uid) return; 
         
         try {
             const res = await api.get(`/moments/user/${user.uid}`);
@@ -50,10 +49,32 @@ export default function ProfileScreen() {
     };
 
     /**
-     * HOOK: useFocusEffect
-     * This triggers every time the user navigates back to the Profile screen.
-     * This ensures the timeline displays the newly added moment immediately.
+     * Delete a specific moment after user confirmation.
      */
+    const handleDeleteMoment = (momentId) => {
+        Alert.alert(
+            "Delete Memory?",
+            "This will permanently remove this AI-preserved moment from your timeline.",
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        try {
+                            const res = await api.delete(`/moments/${momentId}`);
+                            if (res.data.success) {
+                                fetchUserMoments(); 
+                            }
+                        } catch (error) {
+                            Alert.alert("Error", "Could not delete moment.");
+                        }
+                    } 
+                }
+            ]
+        );
+    };
+
     useFocusEffect(
         useCallback(() => {
             setLoadingMoments(true);
@@ -61,7 +82,6 @@ export default function ProfileScreen() {
         }, [user?.uid])
     );
 
-    // Manual refresh handler
     const onRefresh = () => {
         setRefreshing(true);
         fetchUserMoments();
@@ -131,47 +151,77 @@ export default function ProfileScreen() {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
                 }
             >
-                {/* NOVELTY FEATURE: Cultural Moments Section */}
+                {/* --- BEAUTIFIED CULTURAL TIMELINE SECTION --- */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
                         <View>
-                            <Text style={styles.sectionTitle}>Cultural Moments</Text>
-                            <Text style={styles.sectionSubtitle}>Your AI-Preserved Memories</Text>
+                            <Text style={styles.sectionTitle}>Experience Timeline</Text>
+                            <Text style={styles.sectionSubtitle}>{moments.length} Moments Preserved</Text>
                         </View>
                         <TouchableOpacity 
                             style={styles.addMomentBtn}
                             onPress={() => router.push('/(tourist)/add-moment')}
                         >
-                            <Ionicons name="add" size={20} color="white" />
-                            <Text style={styles.addMomentBtnText}>Add</Text>
+                            <LinearGradient
+                                colors={['#2074ceff', '#156436ff']} // Updated to green gradient
+                                start={{x: 0, y: 0}}
+                                end={{x: 1, y: 0}}
+                                style={styles.gradientAddBtn}
+                            >
+                                <Ionicons name="add" size={18} color="white" />
+                                <Text style={styles.addMomentBtnText}>Moment</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
 
                     {loadingMoments && !refreshing ? (
-                        <ActivityIndicator color={Colors.primary} style={{ marginVertical: Spacing.md }} />
+                        <ActivityIndicator color={Colors.primary} style={{ marginVertical: Spacing.xl }} />
                     ) : moments.length > 0 ? (
-                        <View style={styles.momentsGrid}>
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.horizontalScroll}
+                        >
                             {moments.map((moment) => (
                                 <TouchableOpacity 
                                     key={moment._id} 
-                                    style={styles.momentThumbnail}
+                                    style={styles.momentCardWide}
                                     onPress={() => router.push({
                                         pathname: '/(tourist)/moment-detail',
                                         params: { momentId: moment._id }
                                     })}
+                                    onLongPress={() => handleDeleteMoment(moment._id)}
+                                    activeOpacity={0.9}
                                 >
-                                    <Image source={{ uri: moment.imageUrl }} style={styles.momentImage} />
-                                    <View style={styles.momentBadge}>
-                                        <MaterialCommunityIcons name="robot" size={10} color="white" />
-                                    </View>
+                                    <Image source={{ uri: moment.imageUrl }} style={styles.gridImage} />
+                                    
+                                    <LinearGradient 
+                                        colors={['transparent', 'rgba(0,0,0,0.9)']} 
+                                        style={styles.imageOverlay}
+                                    >
+                                        <View style={styles.overlayContent}>
+                                            <Text style={styles.overlayTitle} numberOfLines={1}>
+                                                {moment.experienceName}
+                                            </Text>
+                                            <View style={styles.overlayLocRow}>
+                                                <Ionicons name="location" size={12} color={Colors.accent} />
+                                                <Text style={styles.overlayLocText} numberOfLines={1}>
+                                                    {moment.location}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </LinearGradient>
                                 </TouchableOpacity>
                             ))}
-                        </View>
+                        </ScrollView>
                     ) : (
-                        <View style={styles.emptyMoments}>
-                            <Ionicons name="images-outline" size={40} color={Colors.textSecondary} opacity={0.5} />
-                            <Text style={styles.emptyMomentsText}>No memories preserved yet.</Text>
-                        </View>
+                        <TouchableOpacity 
+                            style={styles.emptyMoments}
+                            onPress={() => router.push('/(tourist)/add-moment')}
+                        >
+                            <MaterialCommunityIcons name="camera-plus-outline" size={42} color={Colors.primary} opacity={0.4} />
+                            <Text style={styles.emptyMomentsText}>Tap here to preserve your first memory</Text>
+                        </TouchableOpacity>
                     )}
                 </View>
 
@@ -323,58 +373,89 @@ const styles = StyleSheet.create({
         color: Colors.textSecondary,
     },
     addMomentBtn: {
+        borderRadius: BorderRadius.md,
+        overflow: 'hidden',
+        elevation: 2,
+    },
+    gradientAddBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.primary,
         paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.xs,
-        borderRadius: BorderRadius.md,
-        gap: 4,
+        paddingVertical: 8,
+        gap: 6,
     },
     addMomentBtnText: {
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 12,
+        fontSize: 13,
     },
-    momentsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
+    // --- Styles for the Enhanced Timeline ---
+    horizontalScroll: {
+        paddingRight: Spacing.lg,
+        paddingVertical: 4,
+        gap: 16,
     },
-    momentThumbnail: {
-        width: (width - Spacing.lg * 2 - 16) / 3,
-        aspectRatio: 1,
-        borderRadius: BorderRadius.md,
-        overflow: 'hidden',
+    momentCardWide: { 
+        width: width * 0.7, 
+        height: 180, 
+        borderRadius: BorderRadius.lg, 
+        overflow: 'hidden', 
         backgroundColor: Colors.border,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
-    momentImage: {
-        width: '100%',
+    gridImage: { 
+        width: '100%', 
         height: '100%',
+        resizeMode: 'cover'
     },
-    momentBadge: {
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: 2,
-        borderRadius: 4,
+    imageOverlay: { 
+        position: 'absolute', 
+        bottom: 0, 
+        left: 0, 
+        right: 0, 
+        height: '80%', 
+        justifyContent: 'flex-end', 
+    },
+    overlayContent: {
+        padding: 12,
+    },
+    overlayTitle: { 
+        color: 'white', 
+        fontSize: 15, 
+        fontWeight: 'bold',
+        marginBottom: 4
+    },
+    overlayLocRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    overlayLocText: {
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: 12,
+        fontWeight: '500'
     },
     emptyMoments: {
         alignItems: 'center',
         justifyContent: 'center',
-        padding: Spacing.xl,
+        padding: 40,
         backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: Colors.primary + '30',
         borderStyle: 'dashed',
     },
     emptyMomentsText: {
         fontSize: 14,
         color: Colors.textSecondary,
         marginTop: Spacing.sm,
+        textAlign: 'center',
     },
+    // --- End Timeline Styles ---
     preferencesCard: {
         backgroundColor: Colors.surface,
         borderRadius: BorderRadius.lg,

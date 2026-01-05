@@ -13,6 +13,10 @@
       "bundleIdentifier": "com.ceylonmate.app",
       "config": {
         "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow CeylonMate to access your location to tag your cultural moments and provide local recommendations.",
+        "NSLocationAlwaysUsageDescription": "Allow CeylonMate to access your location to provide personalized cultural notifications."
       }
     },
     "android": {
@@ -30,7 +34,10 @@
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
         "INTERNET",
-        "DEVICE_MOTION"
+        "DEVICE_MOTION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "FOREGROUND_SERVICE"
       ],
       "usesCleartextTraffic": true
     },
@@ -44,7 +51,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow CeylonMate to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow CeylonMate to use your location for preserving cultural memories."
         }
       ],
       [
