@@ -18,10 +18,7 @@ import xgboost as xgb
 from tensorflow import keras
 from tensorflow.keras import layers
 
-
-
 # Utilities
-
 
 def haversine_distance(lat1, lon1, lat2, lon2):
 

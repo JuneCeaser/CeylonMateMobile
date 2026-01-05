@@ -1,0 +1,367 @@
+hotel_id,name,latitude,longitude,location,price_range_min,price_range_max,rating,review_count,amenities,verified
+ChIJPUmFLhNZ4joRqBRIpk7g1Qk,Hilton Colombo,6.9325714,79.8447398,Colombo,20000,40000,4.6,10984,"wifi,pool,spa,restaurant,bar,parking",true
+ChIJg5nQ7Ltb4joRV-2u4bOYJJo,Mirage Hotel Colombo,6.8704361,79.8586972,Colombo,12000,22000,4.0,2094,"wifi,restaurant,parking,bar",true
+ChIJOZCsQWBZ4joR29AzAwfi6zk,Mandarina Colombo,6.9000288,79.8536285,Colombo,10000,20000,4.3,3350,"wifi,restaurant,bar,parking",true
+ChIJtZJD3aVb4joROkc91MuElUk,Radisson Hotel Colombo,6.8825216,79.8558691,Colombo,18000,35000,4.5,7058,"wifi,pool,restaurant,spa,parking",true
+ChIJeTKH885b4joRVmBpuu_fCOk,ME Colombo Hotel,6.8856331,79.8682515,Colombo,14000,28000,4.2,1377,"wifi,bar,restaurant,parking",true
+ChIJ-2jwaXRZ4joRijx-9hZDsUM,Jetwing Colombo Seven,6.9163848,79.8702139,Colombo,16000,30000,4.5,3354,"wifi,pool,spa,restaurant",true
+ChIJ76MM3hlb4joRUZzXABfRL4M,Berjaya Hotel Colombo,6.8385818,79.8636682,Colombo,9000,18000,4.1,5194,"wifi,restaurant,bar",true
+ChIJ2e3NszhZ4joRgMEx0M0swC8,Galle Face Hotel,6.9201163,79.846126,Colombo,18000,35000,4.5,9629,"wifi,pool,spa,restaurant,bar",true
+ChIJr7RJPT1b4joRrkQyFfagbMQ,Mount Lavinia Hotel,6.8331427,79.8619079,Colombo,15000,30000,4.4,9287,"wifi,beach_access,pool,restaurant",true
+ChIJYyNfxuhb4joR46VEKUExR3I,MaRadha Colombo,6.8957417,79.8525908,Colombo,8000,15000,4.5,1097,"wifi,restaurant",true
+ChIJPz9sxUJZ4joRqbp1iLsl3CU,Juliana Hotel Colombo,6.9090728,79.8499501,Colombo,6000,12000,3.4,932,"wifi,parking",false
+ChIJT0w2CTtZ4joRFlxN8qE_wX0,Shangri-La Colombo,6.9285354,79.8444362,Colombo,22000,45000,4.6,16433,"wifi,pool,spa,restaurant,parking,bar",true
+ChIJDeMdNSRZ4joRymwzaUU7Zwk,Fairway Colombo,6.9339806,79.8439423,Colombo,12000,25000,4.2,3078,"wifi,pool,restaurant",true
+ChIJId3V219Z4joRUrzZ_yfqajo,Marino Beach Colombo,6.8998657,79.8515105,Colombo,16000,30000,4.6,9059,"wifi,beach_access,pool,restaurant",true
+ChIJhfsZ82tZ4joRcCgQ_cyMuAQ,Global Towers Hotel & Apartments,6.8775322,79.857178,Colombo,7000,14000,3.9,2116,"wifi,parking",true
+ChIJJu5QWQ99b4joRqOrSgneXwyM,Colombo Court Hotel & Spa,6.897765,79.856454,Colombo,10000,19000,4.4,1208,"wifi,spa,pool,restaurant",true
+ChIJ2f38AMNb4joR8DHB0F5ClVc,The Ocean Colombo,6.8854412,79.8551322,Colombo,8000,16000,4.1,1868,"wifi,restaurant,parking",true
+ChIJd0hScH5Z4joRxml1RKg-LL8,Sheraton Colombo Hotel,6.9102517,79.8501669,Colombo,20000,38000,4.5,649,"wifi,pool,spa,restaurant,bar",true
+ChIJwbUePaVb4joR35PrIxBCBcc,Fair View Hotel Colombo,6.8654859,79.8612982,Colombo,7000,14000,4.3,1174,"wifi,restaurant,parking",true
+ChIJf5jjgiZZ4joRW1f6vCdi71U,C1 Colombo Fort,6.9354043,79.8442681,Colombo,9000,17000,4.4,869,"wifi,restaurant",true
+ChIJPbv66LBz4ToRNBOmgDqrhxs,Hotel Sea Line,6.0366266,80.2229156,Galle,5000,12000,3.4,912,"wifi,parking",false
+ChIJ_YIdatJz4ToR3isel9wxa7w,Sera Villa,6.0549057,80.2282951,Galle,13000,28000,4.4,341,"wifi,pool,restaurant",true
+ChIJiTVeJkB34ToRJyuZKYopOkM,New Ocean Hill Hotel,6.0818888,80.1484374,Galle,8000,16000,3.9,291,"wifi,restaurant,parking",true
+ChIJc_eiAadz4ToR7AAc4eWcubs,Moi Galle Fort by DBI,6.0260541,80.21881,Galle,13000,26000,4.5,305,"wifi,restaurant,bar",true
+ChIJy5-yXzBy4ToRuqVWOIlEOq0,Hotel Hillside Galle,6.0517203,80.2414086,Galle,5000,10000,3.5,89,"wifi,parking",true
+ChIJSTftMABL4ToRexlYChMVLIY,Bellissimo Hotel & Banquet,6.0810804,80.2851126,Galle,7000,14000,5,2,"wifi,restaurant,parking",true
+ChIJq8tAhOlz4ToRBo7mevCrBlI,Aradhana Hotel,6.0485174,80.2073192,Galle,6000,13000,3.9,659,"wifi,restaurant",true
+ChIJyaV3T8dz4ToRAf3Wd4Wgq-4,Elliot Nature Resort,6.0445964,80.2160223,Galle,10000,20000,4.0,223,"wifi,restaurant,pool",true
+ChIJx6_xgMpz4ToRNdVaay0zM8Y,Grecha Hotel,6.009993,80.2475673,Galle,14000,30000,5,4,"wifi,restaurant,pool,bar",true
+ChIJlw5sKdlz4ToRxG1JO3M1eEc,Lucky Breeze Hotel,6.0425012,80.1977405,Galle,7000,12000,3.8,74,"wifi,parking",true
+ChIJgb7lG6Rz4ToR1ZhFDFX4M1w,Old Dutch House,6.0267665,80.2165776,Galle,9000,18000,4.3,142,"wifi,restaurant",true
+ChIJ1SvQgp934ToRjr3W3Ej8Zjg,Ocean Rock Beach House & Eazy Cafe.,6.0685062,80.1670175,Galle,7000,14000,3.9,53,"wifi,beach_access",true
+ChIJ3_5CLwB34ToRIZlhV905Ono,The Ocean Villa Den,6.0642334,80.173142,Galle,9000,18000,4.3,102,"wifi,restaurant,pool",true
+ChIJx0ZkifZy4ToRAN1phGTeWKo,Hotel J,6.0197428,80.2480637,Galle,9000,18000,4.2,875,"wifi,restaurant",true
+ChIJV2o2ywNn4zoRiuwolTo4ld4,Hotel Izakaya Sakura,7.2874165,80.6423939,Kandy,3000,8000,3.1,15,"wifi,parking",false
+ChIJJxb7qzZm4zoR9nVdxjMrP6I,Lodge in 611,7.2920626,80.6496575,Kandy,5000,10000,3.8,205,"wifi,breakfast,parking",true
+ChIJzTyVRzlm4zoRrOSw7wzpah8,Kandy View Hotel,7.2827064,80.6494358,Kandy,5000,12000,3.6,380,"wifi,restaurant,parking",true
+ChIJC8iVBOpn4zoRdwzFsTPw1kY,Sky Heaven Hotel,7.2876554,80.6389635,Kandy,9000,18000,4.3,42,"wifi,pool,restaurant",true
+ChIJc2WVgjlm4zoRarOG0QL5ahE,Devon Hotel,7.2844896,80.6499863,Kandy,7000,15000,3.8,1135,"wifi,restaurant,bar",true
+ChIJCa50VINo4zoReRlrzVO4pjE,Kandy City Stay,7.286733,80.627697,Kandy,8000,16000,4.0,547,"wifi,restaurant",true
+ChIJTXJiybln4zoR6UM5mIIf5io,Avora Mount Hotel,7.284491,80.648371,Kandy,6000,12000,3.9,132,"wifi,parking",true
+ChIJM8VOZTZp4zoRuqO3N2DWIPg,Hotel Kandyan View,7.2759028,80.625061,Kandy,9000,18000,4.0,103,"wifi,restaurant",true
+ChIJ9x0nly9m4zoR1OEOZsFEGNQ,Kandy Waters Hotel,7.2880298,80.6419129,Kandy,9000,17000,3.9,61,"wifi,pool",true
+ChIJt7MTSaFn4zoRtDEJPnshZl4,River Green Hotel,7.2917659,80.65459,Kandy,5000,10000,3.7,24,"wifi,parking",true
+ChIJ57oDgMNn4zoRHb9UNyjLULk,Water Front Hotel Kandy,7.3136315,80.6465836,Kandy,8000,16000,3.7,194,"wifi,restaurant,parking",true
+ChIJXxcRtCtm4zoRtcbTzYTJdSw,Kandy Tower Inn,7.2934667,80.6353607,Kandy,7000,14000,3.9,110,"wifi,restaurant",true
+ChIJ63cf0I9n4zoRLd9b8zTUxww,Radisson Hotel Kandy,7.2883061,80.6427859,Kandy,18000,35000,4.7,3591,"wifi,pool,spa,restaurant",true
+ChIJGVzIOTNv4zoRppczy6kAL-k,Linwood Forest Bungalow,7.2537724,80.6035741,Kandy,6000,12000,4.1,118,"wifi,breakfast",true
+ChIJa1nc9Ctm4zoRQJYkW3DAHiQ,Queens Hotel,7.2932328,80.6383765,Kandy,15000,28000,4.0,3690,"wifi,pool,restaurant",true
+ChIJPSYJtcFo4zoRxztrx5SZJjQ,Oak Ray Regency Hotel,7.2741203,80.6076831,Kandy,12000,25000,4.1,4170,"wifi,pool,restaurant,parking",true
+ChIJKRY1YyVm4zoRvZL-HJ-H5CU,Hotel Bamiyan,7.2837203,80.6494205,Kandy,7000,14000,4.0,481,"wifi,restaurant",true
+ChIJC5gJL8Jn4zoRNM6UASf4BWM,Kandy City Inn,7.3009814,80.6361511,Kandy,9000,18000,4.6,93,"wifi,restaurant",true
+ChIJfTA0jzpm4zoRRvpza1-qsoQ,hotel kanda uda,7.2862454,80.6463468,Kandy,5000,11000,3.8,89,"wifi,parking",true
+ChIJ17eefTlm4zoRcdKIyMeuIcI,Empire Valley Hotel,7.2838652,80.6494571,Kandy,7000,14000,3.8,57,"wifi,parking",flase
+ChIJM9GlTgBx5DoRv9hLhFVMUS4,HOTEL GREEN VIEW,6.8176421,80.9825964,Ella,4000,9000,3.8,120,"wifi,breakfast,parking",true
+ChIJn0twvpZx5DoRE343TiH_Nz8,Highcliffe Hotel Resort & Bar,6.7686821,80.95955699999999,Ella,7000,15000,3.8,64,"wifi,pool,restaurant",true
+ChIJTf-l-Hdv5DoRcFBK26MwkA,Grand Jumbo residence.,6.8382548,81.0016239,Ella,6000,13000,4.1,77,"wifi,restaurant",true
+ChIJFx_WdYtx5DoRMC3mfauo03k,Hotel La Vista Sur,6.7678503,80.9586848,Ella,5000,11000,4.0,18,"wifi,parking",true
+ChIJB-XGsKR65DoRZA3B7zOdWpo,Victorian Guest,6.8414678,80.9729741,Ella,5000,11000,3.6,82,"wifi,breakfast",true
+ChIJo07HIpRx5DoR-JdhmUypMMQ,SriLak View Holiday Inn,6.7680307,80.9604228,Ella,9000,18000,4.2,345,"wifi,pool,restaurant",true
+ChIJnzBsrgBv5DoRgp1p8IyZxso,Himagira Hotel,6.8304114,80.9823759,Ella,6000,13000,4.0,42,"wifi,restaurant",true
+ChIJZ47EdHVx5DoR8C5c-fDiWgE,White Home,6.7693742,80.942056,Ella,7000,15000,4.1,95,"wifi,breakfast",true
+ChIJIZVwwZZx5DoR5wRWuOuBwpk,Lakshan View Resort,6.7683631,80.9585564,Ella,12000,25000,4.6,477,"wifi,pool,spa,restaurant",true
+ChIJq2MUQh4V4ToRrJhQPX-9KcY,Ocean Bliss by Sugar Coliving - Beachfront Hotel in Weligama,5.9591568,80.4120879,Mirissa,15000,28000,4.6,157,"wifi,beach_access,pool",true
+ChIJtbhcAwAV4ToRfMF_TGpWU1g,Manalee boutique hotel,5.9610749,80.3992115,Mirissa,7000,14000,3.8,30,"wifi,breakfast",true
+ChIJeU7I78IV4ToRa9p4yYgami8,La Brisa Mirissa - Boutique Hotel,5.9480148,80.454411,Mirissa,18000,32000,4.9,11,"wifi,beach_access,restaurant,bar",true
+ChIJecu1FQA_4ToRJCLwH0ue1ZI,Coastline Mirissa Boutique hotel and Spa,5.9467193,80.4629783,Mirissa,22000,42000,4.8,181,"wifi,pool,spa,restaurant",true
+ChIJJo5D-XSI_4ToRpcBG-ee_EbY,Hotel Ferola,5.935807,80.5211471,Mirissa,16000,30000,4.7,55,"wifi,beach_access,restaurant",true
+ChIJLWmGUEA_4ToRTXjsEv1yoCc,Kiara Sands Hotel Mirissa,5.9486857,80.4567897,Mirissa,14000,26000,4.5,18,"wifi,restaurant",true
+ChIJIetnbuk_4ToRidBCUYNgZ-Y,The Garnet Hotel & Restaurant,5.9475557,80.4579379,Mirissa,18000,32000,4.7,28,"wifi,restaurant,bar",true
+ChIJPasYdrUV4ToRjnG9PVQymCo,The Stables Oceanfront Hotel Midigama,5.9625519,80.3955022,Mirissa,14000,28000,4.7,56,"wifi,beach_access,restaurant",true
+ChIJfVq98s8_4ToRHBt0ylWFuZI,Mirissa Blue Whale Holiday Hotel,5.9475089,80.4615162,Mirissa,9000,18000,3.9,169,"wifi,restaurant",true
+ChIJi6r0fPkV4ToROUEHxOfduXo,7elements - Boutique Hotel & Restaurant,5.972760500000001,80.4297125,Mirissa,16000,30000,4.8,69,"wifi,restaurant,bar",true
+ChIJjf4JQww_4ToR0GPSLq7pmFI,Sachinro Hotel Mirissa,5.9469773,80.4581447,Mirissa,7000,13000,3.2,46,"wifi,parking",false
+ChIJNe-Y_Aw_4ToRjoxQtvFWcpU,VThree Hotel,5.943969,80.5257083,Mirissa,18000,36000,4.9,30,"wifi,restaurant,bar",true
+ChIJ0VDhHwAV4ToRKFlq-PetYgo,Sakura Surf Lanka Hotel & Restaurant,5.973438,80.4366344,Mirissa,17000,32000,4.8,46,"wifi,restaurant",true
+ChIJ_x_OQ3AV4ToR9n-tARNLKuI,Omeera Sand Hotel Weligama,5.9744969,80.4371135,Mirissa,18000,34000,5,6,"wifi,beach_access,restaurant",true
+ChIJaRHfnkQV4ToRKUX0Ws6SDOM,Mimoza Mirissa,5.9462382,80.4522518,Mirissa,20000,38000,4.9,288,"wifi,beach_access,restaurant,pool",true
+ChIJwVZGMQA_4ToR3APeE2POMsw,Hotel Polhena,5.9437217,80.5255614,Mirissa,15000,28000,4.9,58,"wifi,beach_access,restaurant",true
+ChIJ8ZiYt37x4joRXesJnOLXC5k,Hotel Dream Paradise Ja-ela,7.109914,79.8843069,Negombo,7000,14000,3.8,135,"wifi,restaurant,parking",true
+ChIJI5S--rrp4joRXAs_BpT1gsM,Emerald Coast Hotel Negombo,7.2539244,79.8433609,Negombo,15000,28000,4.4,15,"wifi,pool,restaurant",true
+ChIJW4OMGWfv4joR-1emu9OAxY0,Belmont Boutique Hotel,7.2349974,79.842577,Negombo,16000,30000,4.7,236,"wifi,pool,restaurant,parking,bar",true
+ChIJCajEDabv4joRcMXFrHvg5MY,La Casablanca Tourist Hotel,7.2301878,79.8441206,Negombo,8000,16000,3.8,59,"wifi,parking,restaurant",true
+ChIJWX8qEwDp4joRELHn7AJOGDo,Tropicana Negombo Boutique Hotel,7.2379497,79.8459687,Negombo,18000,35000,4.9,21,"wifi,pool,restaurant,bar",true
+ChIJg7Gr9NlZ4joR5F6uGrn20nU,Le Petit Hotel and Restaurant Negombo Sri Lanka,7.2464133,79.8419468,Negombo,12000,24000,4.3,68,"wifi,restaurant",true
+ChIJF_x3eivv4joRwlIrf-eauPw,The Empyrean Hotel,7.1844505,79.8951883,Negombo,9000,18000,3.8,385,"wifi,restaurant,parking",true
+ChIJWZe8R6Xu4joR5sVopmx9euA,Hotel Rainbow Negombo,7.2259913,79.8402981,Negombo,8000,15000,3.7,210,"wifi,parking",true
+ChIJaadfKa7u4joRTGF2ly2e4sg,Hotel Silver Sands,7.2286987,79.8403657,Negombo,7000,13000,3.6,120,"wifi,restaurant",true
+ChIJ3YEnBrLu4joRSmONqlz2i_8,Hotel J Negombo,7.2326935,79.840586,Negombo,10000,20000,3.9,1085,"wifi,restaurant,parking",true
+ChIJb4GhNwDx4joR9d9LfZuXxpc,Ro Rich Hotel,7.1207826,79.8409206,Negombo,18000,36000,4.9,10,"wifi,restaurant,parking",true
+ChIJm6n2H5jv4joRDy5LQ8RQrRg,Meshendra Garden Hotel,7.1857857,79.898259,Negombo,6000,12000,3.3,60,"wifi,parking",true
+ChIJnStY303p4joRcpPeyYIzO3w,Sky Beach Hotel,7.2429545,79.842427,Negombo,12000,24000,4.1,18,"wifi,beach_access,restaurant",true
+ChIJ-xgqnrHu4joRnX4cogxFQQU,Red Rose Hotel,7.2312045,79.8436634,Negombo,7000,13000,3.6,17,"wifi,parking",true
+ChIJi5mBc7Xp4joRshlRRZ6oNrs,The Cottage Negombo,7.2656573,79.844844,Negombo,18000,35000,4.9,69,"wifi,restaurant,parking,bar",true
+ChIJSRVrAM_v4joRnlula5tNMxc,Airport City Hotel by Sandamalee,7.1674909,79.8827932,Negombo,8000,16000,3.7,747,"wifi,parking,restaurant",true
+ChIJnYcgKyLv4joRpOA70YLHVU4,Ranmal Airport Transit Hotel,7.155411,79.8745852,Negombo,5000,9000,2.8,240,"wifi,parking",false
+ChIJ9_08SVnu4joRH46pt4j7HpI,Villa Paragon,7.1910207,79.858734,Negombo,15000,28000,4.6,31,"wifi,restaurant,parking",true
+ChIJ1b-7eQDv4joRF9NK3-K5y3s,Airport Hotel by CMB Apartments,7.2253702,79.8897169,Negombo,15000,28000,4.6,158,"wifi,parking,restaurant",true
+ChIJRSvEK_nw4joRCNyNFgfFkaY,Riverside Hotel,7.1080642,79.8803545,Negombo,14000,26000,4.4,253,"wifi,restaurant,parking",true
+ChIJZ0n3WBRb4joRr9dtckGLPxE,Moon Town Hotel Aluthgama,6.4361464,79.9967714,Bentota,18000,35000,4.9,16,"wifi,restaurant,parking",true
+ChIJt4jnLwAv4joRFwWEfGiUMnU,Chaya Hotel,6.4542817,79.978725,Bentota,10000,20000,,,"wifi,restaurant,parking",false
+ChIJbUX9ItQp4joRfsAA2MRLDec,Mango Tree Villa Bentota,6.3907893,80.0078302,Bentota,12000,23000,4.3,59,"wifi,restaurant,parking",true
+ChIJLdBiBFMr4joRdc_hA5cDIvk,Hotel Southern Blue Sapphire,6.3882831,80.0112507,Bentota,25000,45000,5,28,"wifi,pool,restaurant,bar",true
+ChIJSW_5TmIu4joRWG_UN_P6BAg,Hotel Nadee,6.4312443,79.9969409,Bentota,10000,20000,4,67,"wifi,restaurant",true
+ChIJzfH__4Yu4joR9HW8V0c9omw,Aqua Reach Hotel,6.4344995,80.000461,Bentota,8000,16000,3.6,40,"wifi,restaurant,parking",true
+ChIJZcKLmLcp4joRJ5b4cea3QGQ,Shandaru Blue Bentota,6.3909678,80.0067183,Bentota,18000,33000,4.7,193,"wifi,restaurant,pool",true
+ChIJQR7Jv5Mv4joRB5A3K1PQQyo,Riviera Tide Bentota,6.4207432,79.9971146,Bentota,16000,30000,4.5,27,"wifi,restaurant",true
+ChIJS_xWREQu4joRnFbZOiIKKJk,Paradise Bay Hotel,6.4509097,79.9791784,Bentota,20000,38000,4.9,11,"wifi,pool,beach_access,restaurant",true
+ChIJ0yp7DCst4joR_rQutrYccjc,Amarya Resort Bentota,6.417301,80.0106316,Bentota,8000,16000,3.2,53,"wifi,restaurant,pool",true
+ChIJq5ynhVwv4joRkAHcZoEd6RQ,Grand Lotus by Senilanka group,6.4332524,79.9960482,Bentota,18000,34000,4.6,92,"wifi,restaurant,pool",true
+ChIJN1AjtD4q4joRsM49RkOkhq4,The Habitat by Asia Leisure,6.3378088,80.0266917,Bentota,14000,26000,4.1,811,"wifi,restaurant,parking",true
+ChIJO46UO4Iu4joRZPJNbbu-Gx4,Lagoon Bentota,6.4311789,80.0069582,Bentota,18000,35000,4.6,160,"wifi,pool,restaurant",true
+ChIJC4GZ5Xcv4joRg3y0EMc6fvE,Anura’s Elephant,6.4491058,79.9845464,Bentota,25000,45000,5,68,"wifi,pool,restaurant,bar",true
+ChIJEbYliGYu4joRr-tflw_49Pw,Lagoon Garden Hotel,6.4451549,79.9913879,Bentota,9000,17000,3.8,119,"wifi,restaurant,parking",true
+ChIJZWL56uEr4joR-2kHxPDkZGk,Aida Beach Hotel - Induruwa,6.3783756,80.0100194,Bentota,14000,26000,4.4,14,"wifi,beach_access,restaurant",true
+ChIJIeZqWeF34ToRBU0Tx9q-b1k,Citrus Hikkaduwa,6.1295384,80.1030692,Hikkaduwa,15000,28000,4,3128,"wifi,pool,restaurant,parking",true
+ChIJR9GKDfx34ToRhS6x7ECZMeY,HOTEL THAI LANKA,6.1394273,80.1029971,Hikkaduwa,12000,24000,3.9,167,"wifi,restaurant,parking",true
+ChIJC3g5kcJ34ToRj8yAvIyA0GM,Avenra Beach Hotel,6.1238282,80.1111567,Hikkaduwa,14000,28000,4,2047,"wifi,restaurant,beach_access",true
+ChIJzSFAlOd34ToRBkIwRW6bA18,Royal Beach Hotel,6.1257579,80.1074072,Hikkaduwa,14000,28000,4,225,"wifi,pool,restaurant",true
+ChIJFfvwi-d34ToR1rhvCS5ebGE,Drifters Hotel & Beach Restaurant,6.1253743,80.1081426,Hikkaduwa,13000,26000,4,129,"wifi,beach_access,restaurant",true
+ChIJOQZtpMJ34ToRWTN_iOGdtUM,International Beach Hotel & Restaurant,6.1249643,80.1088177,Hikkaduwa,12000,23000,3.8,141,"wifi,restaurant,beach_access",true
+ChIJvVfnwuZ34ToRLoB_RCgQIiE,Coral Rock by Bansei,6.1343612,80.1000543,Hikkaduwa,18000,32000,4.3,551,"wifi,pool,restaurant",true
+ChIJsSJUxeN34ToRetlDwrw56DQ,Hotel Wewala Beach,6.1304537,80.1016522,Hikkaduwa,8000,15000,3.4,110,"wifi,beach_access,parking",true
+ChIJw3YWmf134ToRnSZhaGgMwKw,Coral Sands Hotel,6.1361546,80.0997543,Hikkaduwa,18000,35000,4.1,1299,"wifi,pool,restaurant,beach_access",true
+ChIJ3-zhUc534ToR90-_YZ12DyE,The Blue Crab Beach Hotel,6.1353571,80.0998203,Hikkaduwa,25000,45000,5,4,"wifi,beach_access,restaurant,bar",true
+ChIJu8MOiMCD4ToRj4-nqJS20Z4,Lavinia Beach Hotel,6.2119022,80.0602789,Hikkaduwa,25000,45000,5,9,"wifi,beach_access,restaurant,pool",true
+ChIJYSi1yf134ToRwKCEDw5-HwU,Traveller's Hotel Hikkaduwa,6.1389888,80.1005029,Hikkaduwa,14000,26000,4,51,"wifi,restaurant,parking",true
+ChIJyykxrkR34ToRIyYRn72rLn4,Great Villa Beach,6.0981898,80.1299209,Hikkaduwa,5000,9000,2.7,36,"wifi,parking",false
+ChIJ7fZTjud34ToRkvlUsWyJZ5I,Hansa Surf Hotel,6.125792,80.106876,Hikkaduwa,9000,17000,3.7,211,"wifi,restaurant,parking",true
+ChIJCfZb0Qd34ToRqMVqYCl6kFw,Neevana Hotel Hikkaduwa,6.1287849,80.1036741,Hikkaduwa,18000,34000,4.4,460,"wifi,pool,restaurant",true
+ChIJw4Oj6cZ34ToRkptrBVQbT0Y,At Ease Beach Hotel - Hikkaduwa,6.1182607,80.1168175,Hikkaduwa,15000,30000,4.3,204,"wifi,beach_access,pool,restaurant",true
+ChIJST_D-ud34ToRgKEZmdc5kwE,Cool Beach Hotel,6.1967433,80.0629508,Hikkaduwa,9000,17000,3.7,210,"wifi,restaurant,parking",true
+ChIJ64uiEgCD4ToRv1JH_APt0AQ,Sevenra Grand Beach Hotel,6.2089155,80.0614605,Hikkaduwa,9000,18000,3.8,22,"wifi,restaurant,parking",true
+ChIJa31cycd34ToRT79LBnRn1QA,Sapphire Seas Beachfront Hotel,6.1142831,80.1209989,Hikkaduwa,18000,35000,4.5,304,"wifi,beach_access,pool,restaurant",true
+ChIJr7m4WQC95ToRJ-Q5sUE8Piw,New Tri Star Beach Hotel,6.8427978,81.8320513,Arugam Bay,12000,23000,4.2,153,"wifi,beach_access,restaurant,parking",true
+ChIJf_7Byzq95ToRn02mECmeJww,Rupas Beach Hotel,6.8395161,81.8342182,Arugam Bay,12000,24000,4.2,205,"wifi,beach_access,restaurant",true
+ChIJMTNcBI695ToRTbnLYtGqlN8,Sea Rock Beach Hotel,6.8455483,81.8313946,Arugam Bay,15000,30000,4.5,23,"wifi,beach_access,restaurant",true
+ChIJ1zEufCW95ToR_yZvgDyVLpU,Pearl Of The Bay,6.8405365,81.8309744,Arugam Bay,9000,18000,3.9,39,"wifi,beach_access",true
+ChIJ4bjMCtpl5DoRLpJajE9eE1k,Pavilion Rooms,6.8476027,81.8302455,Arugam Bay,9000,18000,3.9,51,"wifi,parking",true
+ChIJbc6VcDq95ToR8hLr2Wzkp5k,Bay Vista Hotel,6.841668,81.8322753,Arugam Bay,18000,32000,4.4,700,"wifi,beach_access,restaurant,pool",true
+ChIJ_wTVz2u95ToRv6pWsMM3hNQ,Artist village - Arugambay,6.8487178,81.8310183,Arugam Bay,12000,25000,4.0,108,"wifi,restaurant,parking",true
+ChIJy408wR-j5ToRzrrzQt0Spz0,Jetwing Surf & Safari,6.8795811,81.8434859,Arugam Bay,20000,38000,4.5,753,"wifi,restaurant,pool,beach_access",true
+ChIJgzWCxy295ToRV3Gw_3rOOWE,Beach Wave Hotel,6.8472376,81.8314052,Arugam Bay,18000,35000,4.6,69,"wifi,restaurant,beach_access",true
+ChIJP0EZFIu95ToROr1YSiImsks,Royal Beach Hotel,6.8478637,81.8312052,Arugam Bay,10000,20000,4.0,40,"wifi,restaurant,beach_access",true
+ChIJV25dfpW95ToRIRu1Wf_W5kI,Hotel Alaskabay,6.84382,81.8309703,Arugam Bay,14000,26000,4.3,52,"wifi,restaurant,parking",true
+ChIJy_4Nw0Gi5ToR68DXG--HLdg,Exotic Beach Hotel,6.9117099,81.843449,Arugam Bay,8000,16000,3.8,23,"wifi,beach_access,parking",true
+ChIJ0Xovxi295ToRITczBu1nvmI,Surf Beach Hotel & Surf Camp,6.8471757,81.8313061,Arugam Bay,18000,33000,4.6,115,"wifi,beach_access,restaurant,parking",true
+ChIJg3Smyi295ToRXikbjAPco8Y,Garden Beach Hotel,6.8473689,81.8307585,Arugam Bay,15000,29000,4.5,68,"wifi,restaurant,beach_access",true
+ChIJ8dmybu-95ToRdg8cOexU6i0,Waypoint Arugam Bay,6.8406243,81.8324977,Arugam Bay,20000,38000,4.7,118,"wifi,beach_access,pool,restaurant,parking",true
+ChIJzZQpTQBl5DoRyn_wiK2CwVQ,Arugambay Coco Bay,6.8377144,81.8342827,Arugam Bay,9000,18000,3.9,56,"wifi,beach_access",true
+ChIJWX0CDZG95ToRpgFL2iWuF7Y,ArugamBay PodBay,6.8459494,81.8315297,Arugam Bay,8000,15000,3.8,191,"wifi,parking,restaurant",true
+ChIJ5_hw_Sy95ToRqHRMdyX8FG4,Cozy Sand Beach Hotel,6.8491786,81.8305823,Arugam Bay,12000,24000,4.2,79,"wifi,beach_access,restaurant",true
+ChIJH6YvRS695ToRMywUF9Znkb8,Arugam Bay Roccos,6.8441926,81.8311062,Arugam Bay,8000,15000,3.7,487,"wifi,restaurant,parking",true
+ChIJuSvdLSS95ToRoyl99lZQEoA,Palm Grove Holiday Inn,6.8377882,81.8285388,Arugam Bay,7000,14000,3.4,83,"wifi,restaurant",true
+ChIJM68Cwn3Y-joRZqZdvWkoUc8,KPS Hotel,7.9151443,81.5222451,Pasikudah,6000,12000,3.3,31,"wifi,restaurant,parking",true
+ChIJ566BDADZ-joRpiq9dnRmGbQ,Sunrise Pasikuda,7.925644,81.5622283,Pasikudah,20000,38000,4.7,170,"wifi,beach_access,pool,restaurant",true
+ChIJWWbUJwDZ-joRPETg9xd0TFo,Hotel UK Pasikuda,7.9213735,81.5709091,Pasikudah,15000,28000,4.4,14,"wifi,beach_access,restaurant",true
+ChIJX8RajIrX-joR-ftoJ-F7cSY,Oviya Resorts,7.8740716,81.5392905,Pasikudah,8000,16000,3.4,57,"wifi,pool,restaurant",true
+ChIJVw8VcAbZ-joRFCScB6UQgVc,Inn On The Bay Guest House Pasikudah,7.9222139,81.5685363,Pasikudah,18000,32000,4.2,253,"wifi,beach_access,restaurant",true
+ChIJzWYZ1Z3Z-joRKC5X5FMfVJ0,Baden Beach Hotel,7.9180358,81.5678248,Pasikudah,25000,45000,5,12,"wifi,beach_access,restaurant,bar",true
+ChIJJ05IPlfZ-joRQwbVnILyUSI,Breeze Pasikudah,7.9265238,81.574385,Pasikudah,15000,30000,4.0,174,"wifi,beach_access,restaurant",true
+ChIJD-kAwP_Z-joRF1cvmvdMP0o,Sana Kuna Holiday Resort,7.9232701,81.5779632,Pasikudah,22000,40000,4.8,17,"wifi,beach_access,pool,restaurant,spa",true
+ChIJwzqGB7PZ-joR6eRKrjoOzJ4,Nirmaa Shadow Inn,7.9049681,81.5627456,Pasikudah,6000,12000,3.3,116,"wifi,restaurant",true
+ChIJmUdDwwLZ-joRpWjzjz-I11A,Uga Bay,7.9268471,81.5615405,Pasikudah,20000,38000,4.7,1210,"wifi,beach_access,pool,restaurant",true
+ChIJ0QEsvHzZ-joRSfD3NVYSZ5w,Passi Nature Villa,7.9207877,81.5712329,Pasikudah,12000,24000,4.1,56,"wifi,beach_access,restaurant",true
+ChIJaaYp__7Y-joRoaUD_gHoBbs,The Newland Hotel,7.920264,81.5567386,Pasikudah,14000,26000,4.2,110,"wifi,beach_access,restaurant",true
+ChIJ0aXIaAbZ-joR3U3RMzf5sIc,Earl&#39;s Red Passikudah,7.9218964,81.5687221,Pasikudah,9000,17000,3.7,298,"wifi,beach_access,restaurant",true
+ChIJn6dQ233X-joRmACnvBX_vXg,Karpaha Sands,7.8723609,81.5669045,Pasikudah,18000,34000,4.6,536,"wifi,beach_access,pool,restaurant",true
+ChIJzYUTeR3Z-joR3haJ1qe2kYU,Anantaya Resort and Spa Passikuda,7.9310419,81.5595555,Pasikudah,25000,45000,4.5,1194,"wifi,beach_access,pool,spa,restaurant",true
+ChIJl9qqoJLX-joRLP0tt0o6bjA,KARCHANA HOTEL,7.8629557,81.5387328,Pasikudah,30000,50000,5,1,"wifi,beach_access,restaurant,bar",true
+ChIJ04gLnwXZ-joR1Knvk3HBo3A,Amaya Beach Pasikudah,7.925187,81.5694667,Pasikudah,22000,42000,4.5,3341,"wifi,beach_access,pool,restaurant,bar",true
+ChIJS18ofFvZ-joR6_mPSHGwHN4,Hotel Seashells,7.9184492,81.5660968,Pasikudah,12000,23000,4.2,25,"wifi,beach_access,restaurant",true
+ChIJP8f4hh3Z-joRX0mpNH_b90g,Amethyst Resort,7.9236628,81.564636,Pasikudah,18000,35000,4.3,1945,"wifi,beach_access,pool,restaurant",true
+ChIJx8QLWnfZ-joRdsYzP8szD-Y,Kalkudah Beach House,7.8803453,81.564638,Pasikudah,25000,45000,5,15,"wifi,beach_access,restaurant,bar",true
+ChIJqbzlFLO_-zoR25LteE8uB3w,Galaxy Beach Hotel,8.6917827,81.1936987,Trincomalee,9000,17000,4.1,24,"wifi,beach_access,parking",true
+ChIJi_QOfQC9-zoRr449tS0875g,Golden Beach Hotel & Restaurant,8.6163408,81.2185,Trincomalee,12000,24000,4.3,53,"wifi,restaurant,beach_access",true
+ChIJk0miUt69-zoRM-nAaHJEwgI,Trinco Diyash Beach Hotel,8.5945508,81.2232374,Trincomalee,18000,35000,4.7,17,"wifi,beach_access,restaurant",true
+ChIJk_iVWQC9-zoRxYKsEShGkgM,Radiance Hotel,8.6363456,81.22019,Trincomalee,18000,35000,4.7,15,"wifi,pool,restaurant",true
+ChIJO_e7uZ69-zoRjB1Nkv84RFM,Trincomalee Beach Resort & Spa,8.5979523,81.2217657,Trincomalee,8000,16000,3.4,856,"wifi,pool,restaurant,spa",true
+ChIJX5F6nY69-zoRAfbDjkyJRAU,Hotel Alas Garden,8.6152053,81.2160909,Trincomalee,8000,15000,3.5,93,"wifi,restaurant,parking",true
+ChIJa5WzcwC9-zoRmcSM9s5Aif8,Gokanna Pearl Guest & Hostels,8.6131429,81.2172198,Trincomalee,20000,38000,5,24,"wifi,beach_access,restaurant",true
+ChIJtWAQzPm8-zoRz-V8cDVnDQU,Hotel Pyramid Inn,8.6005489,81.2178151,Trincomalee,9000,18000,3.6,28,"wifi,restaurant,parking",true
+ChIJrxtm_U-8-zoRVndZL1yyUs8,Sea Lotus Park,8.614499,81.218251,Trincomalee,9000,18000,3.7,442,"wifi,beach_access,restaurant",true
+ChIJa8r8IbK8-zoRZFWYx7YZCd8,Green Park Beach Hotel,8.5671603,81.2387764,Trincomalee,9000,18000,3.7,486,"wifi,beach_access,parking",true
+ChIJJ7DsplC--zoRNrwGkd7FZt4,HOTEL CORAL BAY,8.6799212,81.2017745,Trincomalee,12000,25000,3.9,234,"wifi,restaurant,beach_access",true
+ChIJvVLEQgC9-zoR-0MHrzLEJjk,Trinco Elil Guest House,8.6328876,81.2038526,Trincomalee,15000,28000,4.6,28,"wifi,restaurant,parking",true
+ChIJPZtlhO-9-zoRe5xRJ-cgVag,Hotel Jay R,8.6113127,81.21566,Trincomalee,18000,35000,4.7,29,"wifi,beach_access,restaurant",true
+ChIJZbOUFG-9-zoRDWBcqBOjD_c,Hotel Muthukuda Lagoon Inn,8.5806118,81.2212158,Trincomalee,7000,14000,4.0,2,"wifi,parking",false
+ChIJnWfJkFC--zoRkjTE02DrHu4,Blue Whale Nilaveli,8.6798987,81.199627,Trincomalee,9000,17000,3.9,64,"wifi,beach_access",true
+ChIJr2CQITG9-zoRbvHgrR9IHqU,Resort Maya Beach & Beach Bar,8.5959318,81.2234399,Trincomalee,14000,28000,4.4,148,"wifi,beach_access,pool,restaurant",true
+ChIJSbTU-yu9-zoRSiIJnVdLlHw,The Tottam Beach Hotel Trincomalee,8.6378457,81.2215932,Trincomalee,15000,29000,4.5,79,"wifi,beach_access,restaurant",true
+ChIJeTcYx5i_-zoRMEVAWXZSZjo,Nilaveli Sheen Coast Hotel,8.6753676,81.2043023,Trincomalee,9000,18000,3.9,30,"wifi,beach_access,parking",true
+ChIJSyNlLmq9-zoRyddo4SRQaYs,Dot Bay Beach Cabana,8.6065479,81.2187465,Trincomalee,15000,30000,4.1,200,"wifi,beach_access,restaurant",true
+ChIJ8dx-FxG_-zoRYO22VnFQSQQ,Nilaveli Guest House,8.6925338,81.1853737,Trincomalee,18000,35000,4.9,321,"wifi,beach_access,restaurant",true
+ChIJs9pw8bWB4zoRLiTPt3xuPvs,Sky Hotel Nuwaraeliya,6.9321353,80.783349,Nuwara Eliya,18000,35000,4.5,54,"wifi,restaurant,parking",true
+ChIJIy0WbQCB4zoRFZsEgZLdNi4,The Panorama Green View Hotel,6.9697107,80.7693544,Nuwara Eliya,12000,24000,3.9,98,"wifi,restaurant,parking",true
+ChIJEx5JAACB4zoRnAcsA0-tVfc,Grand View Hotel,6.9431994,80.7966445,Nuwara Eliya,15000,30000,4.0,21,"wifi,restaurant,parking",true
+ChIJ_bnNlNCB4zoRucQHLyt50jo,Grand Manjari Hotel,6.964583,80.7632874,Nuwara Eliya,8000,16000,3.2,25,"wifi,restaurant",true
+ChIJx3HMED2B4zoRMl03cNc9Mo8,Montagna Luxury Hotel,6.9581515,80.769158,Nuwara Eliya,30000,55000,4.9,14,"wifi,spa,restaurant,parking",true
+ChIJUXBmg9KB4zoR1XhVSRuJ88Y,Earth and Sky Hotel,6.9466256,80.7746377,Nuwara Eliya,18000,35000,4.5,29,"wifi,restaurant,parking",true
+ChIJdSI6fih54zoRPp_ObJmF74w,Singing Hills Hotel,7.0297239,80.7127745,Nuwara Eliya,9000,18000,3.3,32,"wifi,restaurant,parking",true
+ChIJxRELOa2B4zoRHt41suW8MYc,The Grand Hotel Nuwara Eliya - Heritage Grand,6.9682991,80.7650383,Nuwara Eliya,35000,70000,4.6,4146,"wifi,pool,spa,restaurant,parking",true
+ChIJx0Zk7wKB4zoRw4ngLdAIBSE,High Garden Hotel,6.9637218,80.7650618,Nuwara Eliya,18000,35000,4.0,129,"wifi,restaurant,parking",true
+ChIJo4bCMQCB4zoRH0yRImF8IiE,The Golden Legacy Hotel,6.9652928,80.7646098,Nuwara Eliya,25000,45000,5.0,30,"wifi,pool,spa,restaurant",true
+ChIJGSVHNACB4zoRFjdMTl4nIr4,Golden Mist Hotel,6.9547481,80.7956007,Nuwara Eliya,28000,50000,4.7,21,"wifi,pool,restaurant",true
+ChIJBSAMJxuB4zoRqpxo5cjtwBs,Clitoria Hotel & Restaurant,6.9237532,80.7770671,Nuwara Eliya,10000,20000,3.7,29,"wifi,restaurant,parking",true
+ChIJ0-LfI46B4zoRepdEGCV_Evw,Pedro Barn Hotel at Little England Cottages,6.9604685,80.7917914,Nuwara Eliya,20000,38000,4.3,213,"wifi,restaurant,parking",true
+ChIJM3JubwCB4zoRZhmyCG8PtgE,MERITO GRAND HOTEL,6.9555639,80.7766005,Nuwara Eliya,30000,55000,4.8,13,"wifi,pool,spa,restaurant",true
+ChIJF35_eNWB4zoRyGk5nZy2ZPU,Hotel Bulwark,6.9647073,80.7734337,Nuwara Eliya,28000,50000,4.6,53,"wifi,pool,restaurant",true
+ChIJ0yadSFKB4zoRtNheJx0z2To,Queensland Hotel,6.959693,80.7685051,Nuwara Eliya,25000,45000,4.7,217,"wifi,pool,restaurant,parking",true
+ChIJpyQV2IOB4zoRDqNW51IqDNI,Sha Residence Hotel,6.9458098,80.7960717,Nuwara Eliya,30000,55000,4.8,33,"wifi,pool,spa,restaurant",true
+ChIJASjgdgCB4zoRTo-xHzhsmWY,The Trevene Hotel,6.970269,80.7696637,Nuwara Eliya,18000,35000,4.5,24,"wifi,restaurant,parking",true
+ChIJAXUkPQCB4zoR1NiBTz5EvQI,The Mount View Single Tree,6.9565855,80.767167,Nuwara Eliya,25000,45000,4.7,100,"wifi,restaurant,parking",true
+ChIJI_eUSquB4zoRQJ3xCUulq1k,Nat City Hotel,6.9633976,80.7657254,Nuwara Eliya,10000,20000,3.8,193,"wifi,restaurant,parking",true
+ChIJM9GlTgBx5DoRv9hLhFVMUS4,HOTEL GREEN VIEW,6.8176421,80.9825964,Haputale,8000,16000,,,"wifi,restaurant,parking",false
+ChIJn0twvpZx5DoRE343TiH_Nz8,Highcliffe Hotel Resort & Bar,6.7686821,80.959557,Haputale,12000,23000,3.8,64,"wifi,restaurant,parking",true
+ChIJg3A_kg1x5DoRHiAwWCD-x3w,Grand Glorious,6.7625999,80.9528385,Haputale,18000,32000,4.4,77,"wifi,restaurant,parking",true
+ChIJFx_WdYtx5DoRMC3mfauo03k,Hotel La Vista Sur,6.7678503,80.9586848,Haputale,14000,26000,4.0,18,"wifi,restaurant",true
+ChIJeaUxjHlx5DoRkhQkP9uTiNc,Hotel SkyFall,6.7594618,80.9379425,Haputale,18000,34000,4.2,135,"wifi,restaurant,parking",true
+ChIJTf-l-Hdv5DoRcFBkK26MwkA,Grand Jumbo Residence,6.8382548,81.0016239,Haputale,16000,30000,4.1,77,"wifi,restaurant,parking",true
+ChIJo07HIpRx5DoR-JdhmUypMMQ,SriLak View Holiday Inn,6.7680307,80.9604228,Haputale,18000,35000,4.2,345,"wifi,pool,restaurant,parking",true
+ChIJew1xaZxx5DoRonN7T_2UMSQ,Olive Hilltop Hotel,6.764927,80.94724,Haputale,16000,30000,4.1,68,"wifi,restaurant,parking",true
+ChIJ9-9gI5px5DoRzUHKBDXqQ0s,Olympus Plaza Hotel,6.7661599,80.9522337,Haputale,20000,36000,4.1,670,"wifi,pool,restaurant",true
+ChIJ8RAHfG9x5DoR5i4LWEbOKho,Blackwood Hotel & View Bungalow,6.7618935,80.9285408,Haputale,18000,35000,4.2,234,"wifi,restaurant,parking",true
+ChIJnzBsrgBv5DoRgp1p8IyZxso,Himagira Hotel,6.8304114,80.9823759,Haputale,16000,30000,4.0,42,"wifi,restaurant",true
+ChIJIZVwwZZx5DoR5wRWuOuBwpk,Lakshan View Resort,6.7683631,80.9585564,Haputale,22000,40000,4.6,477,"wifi,pool,restaurant",true
+ChIJZ47EdHVx5DoR8C5c-fDiWcE,White Home,6.7693742,80.942056,Haputale,14000,26000,4.1,95,"wifi,restaurant,parking",true
+ChIJaVkPBQBl5DoR0tt6OpWt1iE,Crystal Springs Luxury Hotel,6.8699064,81.0417481,Bandarawela,9000,17000,3.1,73,"wifi,parking,restaurant",true
+ChIJM9GlTgBx5DoRv9hLhFVMUS4,HOTEL GREEN VIEW (Ella region),6.8176421,80.9825964,Bandarawela,8000,15000,,,"wifi,parking,restaurant",false
+ChIJTf-l-Hdv5DoRcFBkK26MwkA,Grand Jumbo residence (Bandarawela),6.8382548,81.0016239,Bandarawela,16000,30000,4.1,77,"wifi,restaurant,parking",true
+ChIJe51pwphl5DoRk9yfQB4RVLk,T-More Hotel & Hostel,6.8566762,81.0381091,Bandarawela,20000,35000,4.8,37,"wifi,restaurant,parking",true
+ChIJi-nVLMJx5DoRE0Br5ILc0AI,Hotel Highnest,6.8200503,80.9803182,Bandarawela,20000,35000,4.8,78,"wifi,pool,restaurant",true
+ChIJh2r1taV65DoR6ingU5Bja4w,Bandarawela European B&B Hotel,6.8425982,80.9735568,Bandarawela,12000,23000,4.3,16,"wifi,restaurant,parking",true
+ChIJFbyhaQBl5DoR-EXmTuChFLU,Belmount Ella Hotel,6.870733,81.0531129,Bandarawela,18000,32000,4.6,54,"wifi,pool,restaurant",true
+ChIJMQILeoFv5DoRDTVeE3docTo,Grand Hill Hotel,6.8323144,81.0028073,Bandarawela,14000,26000,4.1,24,"wifi,restaurant,parking",true
+ChIJUbMvAQBl5DoRi_5UJROyrTo,The Feel Luxury Boutique Hotel,6.8835811,81.0427737,Bandarawela,20000,38000,4.6,55,"wifi,pool,restaurant",true
+ChIJc2zYrVhl5DoRpjP3-2sfg_U,Hotel Lion Inn,6.8375322,81.0031447,Bandarawela,9000,17000,3.6,337,"wifi,restaurant,parking",true
+ChIJqWqfA7Rl5DoR7_h9NN7RjoM,Hotel City Grand Ella,6.8747999,81.0484064,Bandarawela,8000,15000,3.5,551,"wifi,restaurant,parking",true
+ChIJybiKvLZl5DoRpVC1IiGGYls,Green View Ella,6.8723601,81.0485899,Bandarawela,5000,9000,2.9,57,"wifi,restaurant",false
+ChIJ7wm67iJv5DoRtbvsWjDbjfE,Hotel Kanvinra,6.8238084,81.0065117,Bandarawela,18000,32000,4.5,17,"wifi,restaurant,parking",true
+ChIJR0D_Jbll5DoRf6z4Ncp-tvA,Grand Cliff Ella,6.8694568,81.0500388,Bandarawela,16000,30000,4.3,80,"wifi,restaurant,pool",true
+ChIJI11Qer9v5DoRMVv8P97gLm0,Rock n Fall Nature Resort,6.8332156,81.0576674,Bandarawela,22000,40000,4.9,32,"wifi,pool,restaurant",true
+ChIJCWD3ALV75DoRC7pIygpaCJM,Themiya Hotel,6.8836421,80.9318285,Bandarawela,20000,38000,4.8,13,"wifi,pool,restaurant",true
+ChIJraM1rvRl5DoRXEjGBv5gtaE,Zion View Ella Green Retreat (Scenic),6.872149,81.047092,Bandarawela,22000,40000,4.7,392,"wifi,pool,restaurant",true
+ChIJd0KQcwBl5DoR0MikdLc80iY,Nat City Ella Hotel,6.8733992,81.0523449,Bandarawela,20000,38000,4.7,14,"wifi,pool,restaurant",true
+ChIJb73rCYtl5DoR-FPUUV-7LZM,HIDE ELLA HOTEL & RESORT,6.8722185,81.046657,Bandarawela,25000,45000,4.7,1167,"wifi,pool,restaurant,bar",true
+ChIJP1kJVgBv5DoRI6qUfqXkYbk,Master Villa Hotel,6.812245,81.004856,Bandarawela,30000,50000,5.0,1,"wifi,pool,restaurant,bar",true
+ChIJowSr022h_DoRaN6gqlJUhFg,Sigiriya Forest Edge By Marino Leisure,7.998619,80.7517808,Sigiriya,25000,45000,4.9,212,"wifi,pool,restaurant,parking",true
+ChIJaTMzWQCh_DoRhVM0y-gEmpI,Hotel Kamrel Sigiriya,7.9926134,80.7254065,Sigiriya,18000,35000,4.7,81,"wifi,restaurant,parking",true
+ChIJ_RKk5Jen_DoRf2YJ2zd6YY4,Hotel Sigiriyaaya,7.928171,80.7220362,Sigiriya,18000,35000,4.6,69,"wifi,restaurant,parking",true
+ChIJ02GgCgCh_DoRvYXcKJ3jpqw,Lion Gate Hotel Sigiriya,7.9470319,80.7391414,Sigiriya,25000,46000,4.8,124,"wifi,pool,restaurant,parking",true
+ChIJc1HYnimh_DoRm40h4aVAvSE,Hotel Sigiriya,7.9500937,80.7630675,Sigiriya,18000,35000,4.5,3239,"wifi,restaurant,parking",true
+ChIJIfJ0cgCh_DoRa_jadmI88m8,The Wild Elephant Resort,7.9448621,80.7660968,Sigiriya,28000,50000,4.8,16,"wifi,pool,restaurant,bar",true
+ChIJQzi-wyuh_DoRQC2MbLmNOKc,Greenwood Hotel,7.9480145,80.7618097,Sigiriya,15000,28000,4.1,16,"wifi,restaurant",true
+ChIJaV5goGKm_DoRN6NpCQh9C54,Green Paradise Agro Eco Hotel,7.899706,80.733751,Sigiriya,12000,22000,3.9,22,"wifi,breakfast,parking",true
+ChIJZUPmHcCh_DoRHBkJGtfuJC4,Hotel Samanala Sigiriya,7.9477575,80.7384163,Sigiriya,18000,34000,4.5,114,"wifi,restaurant,parking",true
+ChIJ266DmRyh_DoRnus9bv2f03E,Lina Hotel,8.0278209,80.7612553,Sigiriya,18000,34000,4.5,19,"wifi,restaurant,parking",true
+ChIJrS_RMACh_DoRt9CK25f0gDQ,Nature Bird Paradise Hotel,7.9456462,80.7594978,Sigiriya,28000,50000,5,26,"wifi,restaurant,parking,pool",true
+ChIJVU6REwCh_DoRYErvINqo2V8,Lion See Hotel Sigiriya,7.9473105,80.7522432,Sigiriya,25000,47000,4.9,35,"wifi,restaurant,parking",true
+ChIJZ05d6Gah_DoRxcSb0ntH9Gg,il Frangipane,7.9490668,80.7497417,Sigiriya,25000,45000,4.7,467,"wifi,pool,restaurant,parking",true
+ChIJh58cuwGl_DoR4cs-KFh66P4,Pavona Lake,7.9410424,80.7179407,Sigiriya,30000,55000,5,36,"wifi,pool,restaurant,parking",true
+ChIJxZPtJACf_DoR7_6aPOvfrik,Spice Village Hotel & Restaurant,8.030118,80.7744811,Sigiriya,30000,56000,4.9,21,"wifi,pool,restaurant,bar",true
+ChIJm5vudjuf_DoR-_sf7lvxL9Y,Oleena Homestay,8.0294692,80.7596217,Sigiriya,12000,22000,4.7,57,"wifi,breakfast,parking",true
+ChIJ--ML6hun_DoRMZYxa0M1xk8,Sigiri Sierra View Resort,7.9362916,80.7605673,Sigiriya,15000,28000,4.4,129,"wifi,restaurant,parking",true
+ChIJB_55lDKh_DoRzxbN0H6Ctws,Hotel Bird Paradise Sigiriya,7.9711568,80.7536478,Sigiriya,25000,45000,4.8,52,"wifi,restaurant,parking",true
+ChIJvXR074Gh_DoR1tfy71eqGtk,Atha Resort,7.9466205,80.7252531,Sigiriya,28000,50000,4.9,376,"wifi,pool,restaurant",true
+ChIJl8Gxltin_DoR3e2EbKJpckY,Royal Rock Sigiriya,7.9431963,80.751845,Sigiriya,20000,38000,4.6,263,"wifi,restaurant,parking",true
+ChIJG-jJXQCl_DoRfJcpJQhPZco,Cozy Secrets Hotel & Hostel,7.8792055,80.6457998,Dambulla,7000,12000,5,1,"wifi,parking",true
+ChIJwULlTZyv_DoR_wK5-SUeSFc,Mango Tree Hotel & Restaurant Dambulla,7.8400536,80.6540542,Dambulla,12000,22000,4.7,15,"wifi,restaurant,parking",true
+ChIJ6UlKvISl_DoR-U4TZxTUojw,Eco Pavilion Hotel & Restaurant,7.9304789,80.6834403,Dambulla,18000,35000,5,24,"wifi,pool,restaurant",true
+ChIJkwM8awCv_DoRM5pQQRSz-qc,Hotel Sunflower - Dambulla,7.8523233,80.6546118,Dambulla,18000,35000,4.8,5,"wifi,restaurant,parking",true
+ChIJjcmvEwCl_DoRm4dGaadAuss,Hotel Sunset,7.8822647,80.6550788,Dambulla,20000,38000,5,12,"wifi,pool,restaurant",true
+ChIJ3buGbGel_DoRSayzrg9W8nw,Golden Stars Hotel and Restaurant Dambulla,7.857369,80.6572765,Dambulla,28000,50000,4.9,87,"wifi,pool,restaurant,parking",true
+ChIJEaGlDQCl_DoRRIgufOdIAMc,Amba Yaalu - Kandalama,7.8689986,80.694027,Dambulla,20000,38000,4.7,203,"wifi,pool,restaurant,parking",true
+ChIJFa9q0Jil_DoRSP2c5ZuYrJw,Catch Up Dambulla,7.8434676,80.6543928,Dambulla,15000,28000,4.4,56,"wifi,restaurant,parking",true
+ChIJrRJAqLOk_DoRmoahjfPA3Io,Ambula Hotel,7.9265722,80.6355324,Dambulla,7000,12000,3.1,11,"wifi,parking,restaurant",false
+ChIJFcD3P6Gl_DoRR5-EwgXp-vs,Supreme Dambulla,7.8748007,80.647785,Dambulla,15000,28000,4.2,119,"wifi,restaurant,parking",true
+ChIJRRQ1bQCl_DoRPC05EDvYOFc,Dambulla village hotel & restaurant,7.8715179,80.6476467,Dambulla,20000,38000,4.8,32,"wifi,restaurant,parking",true
+ChIJkxDHagCl_DoRx96ClD5BzwM,Hotel Eden Grand,7.868785,80.6471937,Dambulla,22000,40000,4.7,63,"wifi,restaurant,parking",true
+ChIJ_dV8X_il_DoRs8d6LM1m13c,Pothana Village,7.9401027,80.7151077,Dambulla,15000,28000,4.3,77,"wifi,restaurant,parking",true
+ChIJaxQioA6v_DoRFpbo_BGTGms,Tourist Holiday Inn,7.8470542,80.6518317,Dambulla,15000,28000,4.6,10,"wifi,restaurant,parking",true
+ChIJ7ZL701Sl_DoRM7ql7utsNkc,Hotel Stadium,7.857604,80.6329266,Dambulla,9000,16000,3.8,10,"wifi,parking",true
+ChIJG0Bj1-6l_DoRSrEta5KK41I,Heritance Kandalama,7.8711643,80.7080307,Dambulla,40000,80000,4.7,8460,"wifi,pool,spa,restaurant,parking,bar",true
+ChIJh-fQiDOv_DoRiROusNiWEM0,Riverside Hotel,7.8905136,80.6613652,Dambulla,8000,15000,3.5,4,"wifi,parking",true
+ChIJmSU5aQCl_DoRAP3AlnnW91I,Elysia Sigiriya,7.9081554,80.6569713,Dambulla,15000,28000,4.0,127,"wifi,restaurant,parking",true
+ChIJ8xqNOFal_DoRi4xuyoH8qZo,Hanguk Villa Hotel,7.8817531,80.6532221,Dambulla,25000,42000,4.9,61,"wifi,restaurant,parking",true
+ChIJ15YKCWOK_DoRpRE0yIbV3iA,Hotel Savonrich,8.3114408,80.4149853,Anuradhapura,9000,17000,3.8,56,"wifi,restaurant,parking",true
+ChIJfS_ieTX0_DoRaQBe_9cZPM8,The Golden Park Hotel,8.3213439,80.3874708,Anuradhapura,15000,28000,4.2,156,"wifi,restaurant,parking",true
+ChIJVYLFRwD1_DoRu-TNU91Nkok,Royal Plus Hotel,8.3401932,80.415105,Anuradhapura,28000,50000,5.0,1,"wifi,restaurant,parking",true
+ChIJyenwCAb1_DoR7Y_i10xqZJo,Ceylan Lodge,8.3340334,80.4157467,Anuradhapura,12000,22000,3.7,231,"wifi,restaurant,parking",true
+ChIJTbm8D_n0_DoRHM7_zVDuTAo,Grand Crown Hotel,8.316602,80.413978,Anuradhapura,12000,23000,3.6,105,"wifi,restaurant,parking",true
+ChIJz8kKSj_1_DoRZvhoSknFtvI,The Ivy Lake,8.3368222,80.4142966,Anuradhapura,20000,35000,4.5,242,"wifi,restaurant,parking",true
+ChIJO6rsGMz1_DoR2MEEJ9uiLxQ,Sudu Nelum Holiday Resort,8.3283387,80.3812632,Anuradhapura,15000,28000,4.1,269,"wifi,pool,restaurant",true
+ChIJyyoOptH1_DoR8nl1GRoWKLw,Noble Sight Hotel - Anuradhapura,8.3481355,80.3776613,Anuradhapura,9000,17000,3.4,38,"wifi,restaurant,parking",true
+ChIJS4FmdUj1_DoR2fX6iWABlF0,Hotel Millenium,8.34803,80.4437915,Anuradhapura,12000,23000,4.0,101,"wifi,restaurant,parking",true
+ChIJEQy216D1_DoRnwnHBevl8sc,Ceybank Rest,8.3406695,80.4077667,Anuradhapura,18000,34000,4.3,1036,"wifi,restaurant,parking",true
+ChIJM0RInlD0_DoRsZ9Z9ePN1QI,Liyana Holiday Resort,8.3129133,80.4026441,Anuradhapura,15000,28000,4.0,298,"wifi,restaurant,parking",true
+ChIJrfvdZAb1_DoRXxZZgcmV1IQ,Hotel Shalini,8.3318548,80.415991,Anuradhapura,15000,28000,4.2,159,"wifi,restaurant,parking",true
+ChIJ9ThABWH1_DoR08G-nqoptAI,Freedom Palace Hotel,8.3374048,80.4055348,Anuradhapura,20000,36000,4.5,19,"wifi,restaurant,parking",true
+ChIJl9LUvs31_DoRlZTLYiRLTiU,Heritage Hotel Anuradhapura,8.3275152,80.3793055,Anuradhapura,25000,45000,4.3,2983,"wifi,pool,restaurant,parking",true
+ChIJm_FqHAD1_DoRdKnINeHmA58,Lamandu City Hotel Anuradhapura,8.3235898,80.404624,Anuradhapura,18000,34000,4.6,8,"wifi,restaurant,parking",true
+ChIJ76-Pbk71_DoRKL3SocXNojc,Hotel Miami Anuradhapura,8.3434121,80.3824618,Anuradhapura,9000,17000,3.6,21,"wifi,restaurant,parking",true
+ChIJCXTkcGX1_DoRLJewbA3lTC4,Happy Leoni Hotel,8.3577223,80.4240999,Anuradhapura,7000,14000,3.3,283,"wifi,parking,restaurant",true
+ChIJzXUsZej1_DoRgkQyFFrWyhc,Mandodari Villa - Anuradhapura,8.3249724,80.4159551,Anuradhapura,9000,17000,3.6,96,"wifi,restaurant,parking",true
+ChIJU7vq8pj1_DoR-AXRgLCJymw,Hotel Lakeside,8.3309283,80.4200243,Anuradhapura,9000,18000,3.7,41,"wifi,restaurant,parking",true
+ChIJIcTdQlD0_DoR8mz_h-C0nWw,Hotel White House Anuradhapura,8.3152291,80.4008722,Anuradhapura,18000,35000,4.1,977,"wifi,restaurant,parking",true
+ChIJ87b8KspE-zoRA7Ox5C2jCl8,Hotel Sudu Araliya,7.9232334,80.9935722,Polonnaruwa,12000,22000,3.9,1572,"wifi,restaurant,parking",true
+ChIJnx4XJ_JF-zoRsrGQP-gyBkY,Hotel Siyathma Polonnaruwa,7.9284252,80.9988176,Polonnaruwa,18000,32000,4.5,144,"wifi,pool,restaurant,parking",true
+ChIJhatD9ZtE-zoRHFfScrWHyOQ,Canel Park Hotel,7.9436532,81.0160361,Polonnaruwa,9000,16000,3.6,47,"wifi,restaurant,parking",true
+ChIJdQWTZF5E-zoRu9TVZu_R8iQ,Indra Hotel Polonnaruwa,7.9263606,81.0359036,Polonnaruwa,9000,16000,3.7,22,"wifi,restaurant,parking",true
+ChIJ3waSh7td-zoRXAGNDksXWHU,Seyara Holiday Resort,7.9630622,80.9870184,Polonnaruwa,15000,28000,4.2,328,"wifi,pool,restaurant,parking",true
+ChIJJ9sb3JpE-zoR2wl27bEnWwI,Hotel Dunhinda,7.9405908,81.0190883,Polonnaruwa,6000,12000,2.9,49,"wifi,parking",false
+ChIJLxx3y7pE-zoRrfI3I6zX0Zw,Man Guest,7.9375511,80.9996887,Polonnaruwa,18000,34000,4.6,180,"wifi,restaurant,parking",true
+ChIJHxEj_AxD-zoRJK-6keqipig,Hotel Summer Haven,7.9678602,81.0290899,Polonnaruwa,12000,24000,3.9,104,"wifi,restaurant,parking",true
+ChIJ8Qzn35hE-zoRTbB-iAcUTL0,The Paramount Lodge,7.9422579,81.0118234,Polonnaruwa,18000,32000,4.5,80,"wifi,restaurant,parking",true
+ChIJXYTuskxD-zoRyXF_mDWvPR8,Green Views Hotel,7.9637739,80.9872086,Polonnaruwa,7000,12000,3.3,3,"wifi,parking",false
+ChIJxV0lWwBF-zoRGE7zlkizTSg,Hotel Keth Pawana,7.9297089,80.9990261,Polonnaruwa,25000,45000,5,5,"wifi,pool,restaurant",true
+ChIJyxtu9N5D-zoROlMHOSiNUkM,Lake Edge Hotel,7.9571862,80.9895333,Polonnaruwa,20000,36000,4.7,12,"wifi,restaurant,parking",true
+ChIJFW10fx1D-zoRcRS7f2bNbdg,In the Wild by RoamCeylon,7.9582845,81.0065256,Polonnaruwa,28000,50000,5,7,"wifi,pool,restaurant",true
+ChIJEbrsaXBd-zoRlOLFk5AoIzY,Sunrise Lake Resort - Polonnaruwa,7.9506673,80.9829429,Polonnaruwa,28000,50000,5,22,"wifi,pool,restaurant",true
+ChIJh2piz7Bc-zoRq0WkmhRfbgI,Tishan Holiday Resort,7.9627655,80.977456,Polonnaruwa,18000,35000,4.5,414,"wifi,pool,restaurant,parking",true
+ChIJzVxphMlE-zoRa5QQ0cnDVAo,The Village Hotel,7.9246512,80.9934742,Polonnaruwa,12000,23000,3.8,158,"wifi,restaurant,parking",true
+ChIJPXc7Xb9E-zoRJsRwo-vnZis,Ruins Chaaya Hotel,7.929064,81.0047647,Polonnaruwa,15000,28000,4.0,358,"wifi,restaurant,parking",true
+ChIJfWaOBbdF-zoRCnf7Fo5-qbI,Thambara Resort,7.9267698,81.034411,Polonnaruwa,18000,35000,4.6,59,"wifi,pool,restaurant",true
+ChIJ57k824BF-zoRVLr2oXpbWDM,Honey Tree Rest Assured at Polonnaruwa,7.919215,81.0067476,Polonnaruwa,12000,24000,4.2,130,"wifi,restaurant,parking",true
+ChIJx3PZQVBD-zoRMRDFZ3WYjhQ,Hotel Mahanuge,7.9577157,80.996688,Polonnaruwa,18000,32000,4.1,730,"wifi,restaurant,parking",true
+ChIJKzrV-NOd5joRFO8MjnfZKE0,Pearl City Hotel & Restaurant,6.2781807,81.2748143,Tissamaharama,20000,40000,4.9,5,"wifi,beach_access,restaurant",true
+ChIJ17o0cQCf5joRHvOGBXY9ITw,Flamingo Lake Resort,6.2944762,81.2374421,Tissamaharama,18000,35000,4.8,37,"wifi,pool,restaurant,parking",true
+ChIJPxrfXGWd5joRRnJmMv84MU0,Hotel Grand View,6.2823522,81.2815223,Tissamaharama,18000,34000,4.7,3,"wifi,restaurant,parking",true
+ChIJs2uGMnqd5joRi6dRPIVvXq0,Chaarya Lake,6.2919215,81.3024303,Tissamaharama,28000,50000,4.7,14,"wifi,pool,restaurant,parking",true
+ChIJxwA125Cd5joRWT2nUuc3PiM,Elegant Lake Yala Safari House,6.2905103,81.2652648,Tissamaharama,30000,55000,5,185,"wifi,pool,restaurant,parking",true
+ChIJRUitdYqd5joREPbKrqXdlhQ,Rajini By The Waters,6.2998831,81.2872588,Tissamaharama,15000,28000,4.5,33,"wifi,restaurant,parking",true
+ChIJaQJVRpad5joRvXl-pcP6I2I,Coop Safari Hotel,6.2758152,81.2868812,Tissamaharama,18000,34000,4.7,15,"wifi,restaurant,parking",true
+ChIJ7RC_6o-b5joR51megg_uPrw,Aqua Hotel Yala,6.2481854,81.3305902,Tissamaharama,15000,28000,4.4,19,"wifi,restaurant,parking",true
+ChIJw4vWzjeb5joRg06fT6imKX4,Elephant Reach Hotel,6.2287913,81.3310261,Tissamaharama,12000,23000,4.0,753,"wifi,restaurant,parking",true
+ChIJgx3BSYyd5joRQfRVTmbsJEU,Olu Villa Resort,6.2921367,81.2907574,Tissamaharama,15000,28000,4.2,25,"wifi,restaurant,parking",true
+ChIJxWi7FgCd5joRqd9efJrfEyI,Cityscape Yala,6.275271,81.2856846,Tissamaharama,9000,16000,3.5,56,"wifi,parking,restaurant",true
+ChIJadRhdgCd5joRHxAIGxMGZWs,Deon Hotel and Cafe,6.3221565,81.3067076,Tissamaharama,28000,50000,4.9,50,"wifi,pool,restaurant",true
+ChIJI9YHJkWc5joRFuS9O9VlP6M,Hotel Mount Valley,6.2794499,81.2842037,Tissamaharama,12000,23000,3.8,25,"wifi,restaurant,parking",true
+ChIJAyeB76ib5joRiBuw8-kzG_E,Haritha Resort Yala,6.216715,81.3119517,Tissamaharama,12000,22000,3.6,11,"wifi,restaurant,parking",true
+ChIJCd0dVgCb5joRAYAvaiU0_6c,Yala Reach Hotel,6.2199746,81.3284029,Tissamaharama,18000,34000,4.6,11,"wifi,restaurant,parking",true
+ChIJkb0jKryd5joRht6Un5acThM,La Maison Yala Hotel,6.2808308,81.2706329,Tissamaharama,28000,50000,4.8,49,"wifi,pool,restaurant,parking",true
+ChIJhyiVN7ib5joRPb4GSxcFyE8,Wild Culture Yala,6.2208133,81.3231686,Tissamaharama,20000,36000,4.7,172,"wifi,pool,restaurant,parking",true
+ChIJeyAFMfid5joRxRtvl0TZrLM,Yala Safari River View Hotel,6.2998086,81.2555111,Tissamaharama,30000,55000,5,76,"wifi,pool,restaurant,parking",true
+ChIJD63hppid5joRwIgNwu7VYXk,JAMI River Side Hotel Tissamaharama,6.2856659,81.2629268,Tissamaharama,28000,50000,4.8,76,"wifi,pool,restaurant,parking",true
+ChIJSbPBNgCf5joRGPVK_by455o,Yala Lucas Lake Hotel,6.2993755,81.232736,Tissamaharama,30000,55000,5,41,"wifi,pool,restaurant,parking",true
+ChIJTdzDm8QH5DoRRfzNV-iuRc8,Le Green Udawalawe,6.4384622,80.8600888,Udawalawa,9000,17000,3.9,36,"wifi,restaurant,parking",true
+ChIJFa2Kk10H5DoRAi3Xv8ioR_E,Sunwin River Cabana,6.4167975,80.8421464,Udawalawa,8000,15000,3.6,54,"wifi,restaurant,parking",true
+ChIJiSeMAFwH5DoRzbzxevGEa40,Hotel Athgira,6.4263641,80.8158156,Udawalawa,12000,23000,3.8,179,"wifi,restaurant,parking",true
+ChIJy9O9VPEH5DoRn8PDOtLeEHw,Royal Tusker Hotel,6.4439167,80.8725188,Udawalawa,18000,34000,4.6,78,"wifi,pool,restaurant,parking",true
+ChIJTU0POwD54zoRM9YG_xyZX9M,Village,6.4162194,80.8272411,Udawalawa,5000,9000,2.3,22,"wifi,parking",false
+ChIJxzePxWkH5DoRoCY4IwsBOqs,Green Heaven Resort Udawalawa,6.4130706,80.8202893,Udawalawa,8000,15000,3.6,25,"wifi,restaurant,parking",true
+ChIJa_-A_MD_4zoRBNAvuUwXUHQ,Best Genius Tourist Safari Hotel,6.4184734,80.8239082,Udawalawa,5000,9000,1.7,22,"wifi,parking",false
+ChIJoR9FkiAH5DoRjfVFgasTL9M,Birds Paradise Inn,6.4289617,80.85356399999999,Udawalawa,14000,26000,4.4,151,"wifi,pool,restaurant",true
+ChIJLSydWQgH5DoRC12cpLFhHpU,Rooms,6.4227896,80.84987,Udawalawa,12000,23000,4.0,58,"wifi,restaurant,parking",true
+ChIJM7ezI_AG5DoRHt6nfOBx9T4,Hotel Niwahana,6.4433118,80.8669516,Udawalawa,15000,28000,4.1,164,"wifi,restaurant,parking",true
+ChIJbU9XjVkH5DoRdsnFUoMXcnM,Wild Lakeside Holiday Resort,6.4206403,80.8544911,Udawalawa,18000,34000,4.6,84,"wifi,pool,restaurant",true
+ChIJwZVSQTAH5DoR8dVjhWg8QXk,Cassia Udawalawe,6.4197545,80.8415785,Udawalawa,18000,34000,4.6,97,"wifi,pool,restaurant",true
+ChIJLSBfwfEG5DoRNptAc2pTSYA,Butterfly Homestead,6.4439085,80.8695162,Udawalawa,20000,38000,4.8,44,"wifi,pool,restaurant",true
+ChIJNVg3H08H5DoRNrB89RKbf5Q,Adambari Safari Resort,6.4142456,80.8314337,Udawalawa,15000,28000,4.3,36,"wifi,pool,restaurant",true
+ChIJ1Z14OvQH5DoRLPDjB0cKZs8,Centauria Wild,6.4373926,80.8593866,Udawalawa,20000,36000,4.5,311,"wifi,pool,restaurant",true
+ChIJZUEFHSQH5DoRG_xvotuQGXY,Elephant Safari Hotel,6.4260601,80.8487244,Udawalawa,12000,23000,4.0,34,"wifi,restaurant,parking",true
+ChIJizquvsCl_DoRyDlT_xso6EY,LA PENTERA,6.5431833,80.950207,Udawalawa,14000,26000,4.4,125,"wifi,pool,restaurant",true
+ChIJm2LPJgAH5DoRHKJoO6FjDsQ,The Castle Safari Cottage,6.4184734,80.8239082,Udawalawa,5000,9000,1,1,"wifi,parking",false
+ChIJf75guyEH5DoRSAvBdnrRS-k,Blue Bird Hotel,6.4226823,80.8502281,Udawalawa,8000,14000,,,"wifi,restaurant,parking",false
+ChIJ2dHDuVoH5DoRCvXfHldBZ6M,Summerland Residence,6.4221676,80.8204195,Udawalawa,18000,34000,4.5,13,"wifi,pool,restaurant",true
