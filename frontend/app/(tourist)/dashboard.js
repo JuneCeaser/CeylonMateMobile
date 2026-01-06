@@ -34,28 +34,21 @@ export default function TouristDashboard() {
     const [recommendations, setRecommendations] = useState([
         { 
             _id: '1', 
-            title: 'Ritipanna Fishing', 
+            title: 'Batik Making', 
             matchScore: 98, 
             category: 'Tradition', 
-            location: 'Ahangama',
-            images: ['https://wildnestvilla.com/images/blog/stilt_fishing_koggala_wild_nest_villa.jpg'] 
+            location: 'Kaluthara',
+            images: ['https://gpjs3bucket.s3.amazonaws.com/wp-content/uploads/2023/06/29131355/02_GPJNews_SriLanka_TI_BatikIndustry_065_L_web.jpg'] 
         },
         { 
             _id: '2', 
-            title: 'Pottery Workshop', 
+            title: 'Traditinal Dancing Experience', 
             matchScore: 88, 
-            category: 'Handicrafts', 
-            location: 'Molagoda',
-            images: ['https://images.unsplash.com/photo-1520408222757-6f9f95d87d5d?w=800'] 
+            category: 'Dancing', 
+            location: 'Kaluthara',
+            images: ['https://farm6.staticflickr.com/5817/21849643503_114cee4a38_o.png'] 
         },
-        { 
-            _id: '3', 
-            title: 'Mask Carving', 
-            matchScore: 82, 
-            category: 'Art', 
-            location: 'Ambalangoda',
-            images: ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-hp-d8pqS5NdIkaHpNhYCdFxvCOd2opnLkA&s'] 
-        },
+        
     ]);
 
     useEffect(() => {
