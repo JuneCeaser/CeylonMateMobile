@@ -77,7 +77,19 @@ export default function TouristLayout() {
             
           
             <Tabs.Screen name="3d-model" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-         
+          <Tabs.Screen
+                name="emergency-alert"
+                options={{
+                    href: null, // Emergency alert screen (for user who triggered)
+                }}
+            />
+            <Tabs.Screen
+                name="emergency-map"
+                options={{
+                    href: null, // Emergency map screen (for viewing all alerts)
+                }}
+            />
+
 <Tabs.Screen name="facts" options={{ href: null, tabBarStyle: { display: 'none' } }} />
           
 

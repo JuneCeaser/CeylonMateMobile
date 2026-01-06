@@ -22,11 +22,11 @@ export default function ItineraryGeneratorScreen() {
     const [days, setDays] = useState(3);
     const [travelers, setTravelers] = useState(2);
     const [distance, setDistance] = useState(100);
-    const [activityType, setActivityType] = useState('cultural');
+    const [activityTypes, setActivityTypes] = useState(['cultural']);
     const [season, setSeason] = useState(1);
     const [startLocation, setStartLocation] = useState('Colombo');
 
-    const activityTypes = [
+    const ACTIVITY_OPTIONS = [
         { value: 'cultural', label: 'Cultural', icon: 'temple' },
         { value: 'beach', label: 'Beach', icon: 'water' },
         { value: 'wildlife', label: 'Wildlife', icon: 'paw' },
@@ -34,6 +34,19 @@ export default function ItineraryGeneratorScreen() {
         { value: 'nature', label: 'Nature', icon: 'leaf' },
         { value: 'historical', label: 'Historical', icon: 'library' },
     ];
+
+
+    const toggleActivityType = (type) => {
+        if (activityTypes.includes(type)) {
+            // Remove if already selected
+            if (activityTypes.length > 1) { // Keep at least one selected
+                setActivityTypes(activityTypes.filter(t => t !== type));
+            }
+        } else {
+            // Add to selection
+            setActivityTypes([...activityTypes, type]);
+        }
+    };
 
     const seasons = [
         { value: 1, label: 'Dry Season (Dec-Mar)' },
@@ -48,15 +61,17 @@ export default function ItineraryGeneratorScreen() {
             availableDays: days,
             numTravelers: travelers,
             distancePreference: distance,
-            activityType,
+            activityTypes: activityTypes, // Changed from activityType to activityTypes (array)
             season,
             startLocation,
         };
 
-        // Navigate to results screen with data
         router.push({
             pathname: '/(tourist)/itinerary-results',
-            params: itineraryData,
+            params: {
+                ...itineraryData,
+                activityTypes: JSON.stringify(activityTypes),
+            },
         });
     };
 
@@ -178,28 +193,44 @@ export default function ItineraryGeneratorScreen() {
                         <Text style={styles.cardTitle}>Activity Preference</Text>
                     </View>
                     <View style={styles.activityGrid}>
-                        {activityTypes.map((activity) => (
+                        {ACTIVITY_OPTIONS.map((activity) => (
                             <TouchableOpacity
                                 key={activity.value}
                                 style={[
                                     styles.activityButton,
-                                    activityType === activity.value && styles.activityButtonActive,
+                                    activityTypes.includes(activity.value) && styles.activityButtonActive,
                                 ]}
-                                onPress={() => setActivityType(activity.value)}
+                                onPress={() => toggleActivityType(activity.value)}
                             >
                                 <Ionicons
                                     name={activity.icon}
                                     size={24}
-                                    color={activityType === activity.value ? Colors.surface : Colors.primary}
+                                    color={
+                                        activityTypes.includes(activity.value)
+                                            ? Colors.surface
+                                            : Colors.primary
+                                    }
                                 />
+
                                 <Text
                                     style={[
                                         styles.activityButtonText,
-                                        activityType === activity.value && styles.activityButtonTextActive,
+                                        activityTypes.includes(activity.value) &&
+                                        styles.activityButtonTextActive,
                                     ]}
                                 >
                                     {activity.label}
                                 </Text>
+
+                                {activityTypes.includes(activity.value) && (
+                                    <View style={styles.selectedBadge}>
+                                        <Ionicons
+                                            name="checkmark-circle"
+                                            size={16}
+                                            color={Colors.surface}
+                                        />
+                                    </View>
+                                )}
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -315,6 +346,19 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: Colors.text,
         marginLeft: Spacing.sm,
+    },
+    selectedBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: Colors.success,
+        borderRadius: 8,
+    },
+    helperText: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+        marginTop: Spacing.xs,
+        fontStyle: 'italic',
     },
     valueDisplay: {
         fontSize: 24,

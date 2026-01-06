@@ -16,9 +16,11 @@ import { ConditionalMapView, ConditionalMarker } from '../../components/MapWrapp
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, BorderRadius, Typography } from '../../constants/theme';
 import { loadAttractions } from '../../services/csvDataLoader';
+import { findBestHotels, generateItineraryName } from '../../services/hotelData';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../context/AuthContext';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +31,8 @@ export default function ItineraryResultsScreen() {
 
     const [loading, setLoading] = useState(true);
     const [attractions, setAttractions] = useState([]);
+    const [selectedHotels, setSelectedHotels] = useState([]);
+    const [itineraryName, setItineraryName] = useState('');
     const [recommendations, setRecommendations] = useState([]);
     const [estimatedTime, setEstimatedTime] = useState(0);
     const [estimatedBudget, setEstimatedBudget] = useState(0);
@@ -46,12 +50,22 @@ export default function ItineraryResultsScreen() {
             // Load attractions from CSV
             const allAttractions = await loadAttractions();
 
-            // Simple scoring algorithm (simulating ML model)
+            // Parse activity types (now an array)
+            const activityTypesArray = params.activityTypes
+                ? JSON.parse(params.activityTypes)
+                : [params.activityType]; // Fallback for single type
+
+            // Simple scoring algorithm with multiple activity types
             const scoredAttractions = allAttractions.map(attraction => {
                 let score = 0;
 
-                // Activity type match
-                if (attraction.category?.toLowerCase() === params.activityType?.toLowerCase()) {
+                // Activity type match - check if matches ANY selected type
+                const attrCategory = (attraction.category || '').toLowerCase();
+                const matchesType = activityTypesArray.some(type =>
+                    attrCategory === type.toLowerCase()
+                );
+
+                if (matchesType) {
                     score += 0.35;
                 }
 
@@ -101,7 +115,19 @@ export default function ItineraryResultsScreen() {
                 0
             );
 
+            // **NEW: Find best hotels based on attractions**
+            const recommendedHotels = findBestHotels(
+                topRecommendations,
+                parseInt(params.availableDays),
+                parseFloat(params.budget)
+            );
+
+            // **NEW: Generate smart itinerary name**
+            const name = generateItineraryName(activityTypesArray);
+
             setRecommendations(topRecommendations);
+            setSelectedHotels(recommendedHotels);
+            setItineraryName(name);
             setEstimatedTime(totalTime);
             setEstimatedBudget(totalBudget);
             setLoading(false);
@@ -116,14 +142,18 @@ export default function ItineraryResultsScreen() {
         try {
             const itineraryData = {
                 userId: user?.uid,
+                name: itineraryName, // **NEW**
                 budget: parseFloat(params.budget),
                 availableDays: parseFloat(params.availableDays),
                 numTravelers: parseFloat(params.numTravelers),
                 distancePreference: parseFloat(params.distancePreference),
-                activityType: params.activityType,
+                activityTypes: params.activityTypes
+                    ? JSON.parse(params.activityTypes)
+                    : [params.activityType], // **NEW: support both**
                 season: parseFloat(params.season),
                 startLocation: params.startLocation,
                 selectedAttractions: recommendations.map(r => r.attraction_id),
+                selectedHotels: selectedHotels.map(h => h.id), // **NEW**
                 estimatedTime,
                 estimatedBudget,
                 createdAt: new Date().toISOString(),
@@ -352,6 +382,69 @@ export default function ItineraryResultsScreen() {
                             </TouchableOpacity>
                         ))}
                     </View>
+                    {selectedHotels.length > 0 && (
+                        <View style={styles.section}>
+                            <View style={styles.sectionHeader}>
+                                <Ionicons name="bed-outline" size={24} color={Colors.primary} />
+                                <Text style={styles.sectionTitle}>
+                                    Recommended Hotels ({selectedHotels.length} nights)
+                                </Text>
+                            </View>
+
+                            {selectedHotels.map((hotel, index) => (
+                                <View key={hotel.id} style={styles.hotelCard}>
+                                    <Image
+                                        source={{ uri: hotel.image }}
+                                        style={styles.hotelImage}
+                                    />
+                                    <View style={styles.hotelInfo}>
+                                        <View style={styles.hotelHeader}>
+                                            <Text style={styles.hotelName}>{hotel.name}</Text>
+                                            <View style={styles.hotelRating}>
+                                                <Ionicons name="star" size={14} color={Colors.secondary} />
+                                                <Text style={styles.ratingText}>{hotel.rating}</Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.hotelDetails}>
+                                            <View style={styles.hotelDetail}>
+                                                <Ionicons name="location-outline" size={14} color={Colors.textSecondary} />
+                                                <Text style={styles.hotelDetailText}>{hotel.city}</Text>
+                                            </View>
+                                            <View style={styles.hotelDetail}>
+                                                <Ionicons name="navigate-outline" size={14} color={Colors.textSecondary} />
+                                                <Text style={styles.hotelDetailText}>
+                                                    {hotel.distanceToAttractions}km to attractions
+                                                </Text>
+                                            </View>
+                                        </View>
+
+                                        <View style={styles.hotelAmenities}>
+                                            {hotel.amenities.slice(0, 3).map((amenity, i) => (
+                                                <View key={i} style={styles.amenityBadge}>
+                                                    <Text style={styles.amenityText}>{amenity}</Text>
+                                                </View>
+                                            ))}
+                                        </View>
+
+                                        <View style={styles.hotelPricing}>
+                                            <Text style={styles.nightLabel}>Night {index + 1}</Text>
+                                            <Text style={styles.priceText}>
+                                                LKR {hotel.pricePerNight.toLocaleString()}/night
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))}
+
+                            <View style={styles.totalAccommodation}>
+                                <Text style={styles.totalLabel}>Total Accommodation</Text>
+                                <Text style={styles.totalValue}>
+                                    LKR {selectedHotels.reduce((sum, h) => sum + h.pricePerNight, 0).toLocaleString()}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
                 </ScrollView>
             )}
 
@@ -683,5 +776,108 @@ const styles = StyleSheet.create({
         color: Colors.surface,
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    hotelCard: {
+        flexDirection: 'row',
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        marginBottom: Spacing.md,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    hotelImage: {
+        width: 120,
+        height: 160,
+    },
+    hotelInfo: {
+        flex: 1,
+        padding: Spacing.sm,
+    },
+    hotelHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: Spacing.xs,
+    },
+    hotelName: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: Colors.text,
+    },
+    hotelRating: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    hotelDetails: {
+        gap: 4,
+        marginBottom: Spacing.xs,
+    },
+    hotelDetail: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    hotelDetailText: {
+        fontSize: 11,
+        color: Colors.textSecondary,
+    },
+    hotelAmenities: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        marginBottom: Spacing.xs,
+    },
+    amenityBadge: {
+        backgroundColor: Colors.primary + '15',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    amenityText: {
+        fontSize: 9,
+        color: Colors.primary,
+        fontWeight: '600',
+    },
+    hotelPricing: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 'auto',
+        paddingTop: Spacing.xs,
+        borderTopWidth: 1,
+        borderTopColor: Colors.border,
+    },
+    nightLabel: {
+        fontSize: 11,
+        color: Colors.textSecondary,
+        fontWeight: '600',
+    },
+    priceText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: Colors.primary,
+    },
+    totalAccommodation: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor: Colors.primary + '15',
+        padding: Spacing.md,
+        borderRadius: BorderRadius.md,
+    },
+    totalLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.text,
+    },
+    totalValue: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: Colors.primary,
     },
 });
