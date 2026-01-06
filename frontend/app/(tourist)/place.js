@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, 
-  Dimensions, Alert, FlatList // 👈 Added FlatList
+  Dimensions, Alert, FlatList 
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import ImageView from "react-native-image-viewing"; // 👈 1. Import this
 
 // REPLACE WITH YOUR ACTUAL LOCAL IP ADDRESS
 const API_URL = 'http://192.168.8.100:5000/api/places'; 
@@ -18,8 +19,12 @@ export default function PlaceScreen() {
   const [loading, setLoading] = useState(true);
   const [place, setPlace] = useState(null);
   
-  // 1. State for Carousel Dots
+  // State for Carousel Dots
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // 👇 2. State for Full Screen Viewer
+  const [visible, setVisible] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     detectLocation();
@@ -69,7 +74,6 @@ export default function PlaceScreen() {
     }
   };
 
-  // 2. Function to handle swipe scroll
   const handleScroll = (event) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const index = event.nativeEvent.contentOffset.x / slideSize;
@@ -101,8 +105,24 @@ export default function PlaceScreen() {
      );
   }
 
+  // Prepare images for the viewer
+  const formattedImages = place.images && place.images.length > 0 
+    ? place.images.map(img => ({ uri: img })) 
+    : [{ uri: 'https://via.placeholder.com/400' }];
+
   return (
     <View style={styles.container}>
+      
+      {/* 👇 3. Add the ImageView Component Here (Invisible until visible=true) */}
+      <ImageView
+        images={formattedImages}
+        imageIndex={currentImageIndex}
+        visible={visible}
+        onRequestClose={() => setVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -112,7 +132,7 @@ export default function PlaceScreen() {
         <View style={{width: 24}} /> 
       </View>
 
-      {/* 3. Image Carousel (Swipeable) */}
+      {/* Image Carousel (Swipeable) */}
       <View style={styles.imageCard}>
         <FlatList
             data={place.images && place.images.length > 0 ? place.images : ['https://via.placeholder.com/400']}
@@ -121,12 +141,21 @@ export default function PlaceScreen() {
             showsHorizontalScrollIndicator={false}
             onScroll={handleScroll}
             keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-                <Image 
-                    source={{ uri: item }} 
-                    style={{ width: width - 40, height: 250 }} // Width matches card width
-                    resizeMode="cover"
-                />
+            renderItem={({ item, index }) => ( // 👈 Get 'index' here
+                // 👇 4. Wrap Image in TouchableOpacity
+                <TouchableOpacity 
+                    activeOpacity={0.9}
+                    onPress={() => {
+                        setCurrentImageIndex(index);
+                        setVisible(true);
+                    }}
+                >
+                    <Image 
+                        source={{ uri: item }} 
+                        style={{ width: width - 40, height: 250 }} 
+                        resizeMode="cover"
+                    />
+                </TouchableOpacity>
             )}
         />
         
@@ -171,7 +200,7 @@ export default function PlaceScreen() {
             <Text style={styles.cardSubBlack}>Live Overlay</Text>
         </TouchableOpacity>
 
-        {/* 4. 3D Model Button (Updated Logic) */}
+        {/* 3D Model Button */}
         <TouchableOpacity 
             style={styles.card}
             onPress={() => {
@@ -202,7 +231,7 @@ export default function PlaceScreen() {
         <TouchableOpacity 
             style={styles.card}
             onPress={() => router.push({
-                pathname: '/place-chat', // Adjust if your file is in /tourist/place-chat.js
+                pathname: '/place-chat',
                 params: { placeId: place._id, placeName: place.name }
             })}
         >
@@ -237,35 +266,13 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 30, marginBottom: 20 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  
-  // 5. Updated Image Card Styles
-  imageCard: { 
-      position: 'relative', 
-      borderRadius: 25, 
-      overflow: 'hidden', 
-      height: 250, 
-      elevation: 5, 
-      shadowColor: '#000', 
-      shadowOpacity: 0.1, 
-      shadowRadius: 10,
-      backgroundColor: '#000' // Dark background for loading
-  },
-  
+  imageCard: { position: 'relative', borderRadius: 25, overflow: 'hidden', height: 250, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, backgroundColor: '#000' },
   gpsBadge: { position: 'absolute', bottom: 15, left: 15, backgroundColor: '#FACC15', flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignItems: 'center', gap: 5 },
   gpsText: { fontWeight: 'bold', fontSize: 12 },
-
-  // Pagination Dots
-  paginationContainer: {
-      position: 'absolute',
-      bottom: 15,
-      alignSelf: 'center', 
-      flexDirection: 'row',
-      gap: 8
-  },
+  paginationContainer: { position: 'absolute', bottom: 15, alignSelf: 'center', flexDirection: 'row', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   activeDot: { backgroundColor: '#FACC15', width: 20 },
   inactiveDot: { backgroundColor: 'rgba(255, 255, 255, 0.5)' },
-
   infoSection: { marginTop: 20, marginBottom: 20 },
   placeTitle: { fontSize: 28, fontWeight: 'bold', color: '#111' },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5, gap: 5 },
