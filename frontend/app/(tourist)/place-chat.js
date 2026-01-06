@@ -7,7 +7,6 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { Colors } from '../../constants/theme';
 
-// ⚠️ CHECK IP
 const API_URL = 'http://192.168.8.100:5000/api/places/chat';
 
 export default function PlaceChatScreen() {
@@ -20,11 +19,11 @@ export default function PlaceChatScreen() {
     'Sinhala', 
     'Tamil', 
     'French', 
-    'Spanish',   // New
-    'German',    // New
-    'Chinese',   // New
-    'Japanese',  // New
-    'Russian']; // Add more if needed
+    'Spanish',  
+    'German',    
+    'Chinese',   
+    'Japanese',  
+    'Russian']; 
 
   const [messages, setMessages] = useState([
     { id: 1, text: `Welcome to ${placeName}! I am your AI Guide. Select a language and ask me anything!`, sender: 'ai' }
