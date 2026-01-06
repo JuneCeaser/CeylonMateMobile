@@ -43,7 +43,7 @@ export default function PlaceChatScreen() {
       const response = await axios.post(API_URL, {
         placeId: placeId,
         question: userMsg.text,
-        language: selectedLang // 👈 2. Send Selected Language
+        language: selectedLang
       });
 
       const aiMsg = { id: Date.now() + 1, text: response.data.answer, sender: 'ai' };
@@ -71,7 +71,7 @@ export default function PlaceChatScreen() {
         <View style={{width: 24}} />
       </View>
 
-      {/* 👇 3. Language Selector Bar */}
+    
       <View style={styles.langContainer}>
         <FlatList 
             horizontal

@@ -7,9 +7,9 @@ import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import ImageView from "react-native-image-viewing"; // 👈 1. Import this
+import ImageView from "react-native-image-viewing"; 
 
-// REPLACE WITH YOUR ACTUAL LOCAL IP ADDRESS
+
 const API_URL = 'http://192.168.8.100:5000/api/places'; 
 
 const { width } = Dimensions.get('window');
@@ -19,10 +19,10 @@ export default function PlaceScreen() {
   const [loading, setLoading] = useState(true);
   const [place, setPlace] = useState(null);
   
-  // State for Carousel Dots
+
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // 👇 2. State for Full Screen Viewer
+
   const [visible, setVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -105,7 +105,7 @@ export default function PlaceScreen() {
      );
   }
 
-  // Prepare images for the viewer
+ 
   const formattedImages = place.images && place.images.length > 0 
     ? place.images.map(img => ({ uri: img })) 
     : [{ uri: 'https://via.placeholder.com/400' }];
@@ -113,7 +113,7 @@ export default function PlaceScreen() {
   return (
     <View style={styles.container}>
       
-      {/* 👇 3. Add the ImageView Component Here (Invisible until visible=true) */}
+     
       <ImageView
         images={formattedImages}
         imageIndex={currentImageIndex}
@@ -141,8 +141,8 @@ export default function PlaceScreen() {
             showsHorizontalScrollIndicator={false}
             onScroll={handleScroll}
             keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item, index }) => ( // 👈 Get 'index' here
-                // 👇 4. Wrap Image in TouchableOpacity
+            renderItem={({ item, index }) => ( 
+             
                 <TouchableOpacity 
                     activeOpacity={0.9}
                     onPress={() => {
