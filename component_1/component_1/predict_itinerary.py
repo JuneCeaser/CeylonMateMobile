@@ -7,7 +7,7 @@ import pandas as pd
 
 from itinerary_model import ItineraryModel, haversine_distance
 
-ROOT = os.path.join("..")
+ROOT = os.path.join("../..")
 DATA_DIR = os.path.join(ROOT, "datasets")
 MODELS_DIR = os.path.join(ROOT, "models", "component1")
 
