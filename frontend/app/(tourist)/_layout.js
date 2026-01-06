@@ -90,7 +90,8 @@ export default function TouristLayout() {
                 }}
             />
 
-<Tabs.Screen name="facts" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+            <Tabs.Screen name="facts" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+            <Tabs.Screen name="map" options={{ href: null, tabBarStyle: { display: 'none' } }} />
           
 
         </Tabs>
