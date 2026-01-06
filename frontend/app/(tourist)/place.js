@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Dimensions, Alert 
+  View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, 
+  Dimensions, Alert, FlatList // 👈 Added FlatList
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -16,6 +17,9 @@ export default function PlaceScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [place, setPlace] = useState(null);
+  
+  // 1. State for Carousel Dots
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     detectLocation();
@@ -24,7 +28,6 @@ export default function PlaceScreen() {
   const detectLocation = async () => {
     setLoading(true);
     try {
-      // 1. Request Permissions
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission Denied', 'Allow location access to find nearby places.');
@@ -32,14 +35,10 @@ export default function PlaceScreen() {
         return;
       }
 
-      // 2. Get User's REAL Current Location
       let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-      
-      // 3. Extract the real coordinates
       const { latitude, longitude } = location.coords;
       console.log("📍 Detected Real Location:", latitude, longitude);
 
-      // 4. Send REAL coordinates to Backend
       fetchNearbyPlace(latitude, longitude);
 
     } catch (error) {
@@ -57,11 +56,8 @@ export default function PlaceScreen() {
       });
 
       if (response.data.message) {
-        // No place found logic
-        console.log("Backend Response:", response.data.message);
         setPlace(null);
       } else {
-        // Place found!
         console.log("✅ Place Found:", response.data.name);
         setPlace(response.data);
       }
@@ -71,6 +67,14 @@ export default function PlaceScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 2. Function to handle swipe scroll
+  const handleScroll = (event) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    const index = event.nativeEvent.contentOffset.x / slideSize;
+    const roundIndex = Math.round(index);
+    setActiveImageIndex(roundIndex);
   };
 
   if (loading) {
@@ -87,13 +91,9 @@ export default function PlaceScreen() {
         <View style={styles.center}>
             <Ionicons name="location-outline" size={60} color="#ccc" />
             <Text style={{marginTop: 10, color: '#555'}}>No historical site detected nearby.</Text>
-            <Text style={{fontSize: 12, color: '#999', marginTop: 5}}>(Try simulating location in Emulator)</Text>
-            
             <TouchableOpacity onPress={detectLocation} style={styles.retryBtn}>
                 <Text style={{color: '#fff', fontWeight: 'bold'}}>Retry GPS</Text>
             </TouchableOpacity>
-
-            {/* Back Button for safety */}
             <TouchableOpacity onPress={() => router.back()} style={{marginTop: 20}}>
                 <Text style={{color: '#007BFF'}}>Go Back</Text>
             </TouchableOpacity>
@@ -112,19 +112,41 @@ export default function PlaceScreen() {
         <View style={{width: 24}} /> 
       </View>
 
-      {/* Main Image Card */}
+      {/* 3. Image Carousel (Swipeable) */}
       <View style={styles.imageCard}>
-        <Image 
-          source={{ uri: place.images?.[0] || 'https://via.placeholder.com/400' }} 
-          style={styles.mainImage} 
+        <FlatList
+            data={place.images && place.images.length > 0 ? place.images : ['https://via.placeholder.com/400']}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+                <Image 
+                    source={{ uri: item }} 
+                    style={{ width: width - 40, height: 250 }} // Width matches card width
+                    resizeMode="cover"
+                />
+            )}
         />
+        
         <View style={styles.gpsBadge}>
             <Ionicons name="locate" size={16} color="#000" />
             <Text style={styles.gpsText}>GPS MATCHED</Text>
         </View>
-        <TouchableOpacity style={styles.favBtn}>
-            <Ionicons name="heart" size={20} color="#fff" />
-        </TouchableOpacity>
+
+        {/* Dots Indicator */}
+        <View style={styles.paginationContainer}>
+            {(place.images || ['placeholder']).map((_, index) => (
+                <View 
+                    key={index} 
+                    style={[
+                        styles.dot, 
+                        activeImageIndex === index ? styles.activeDot : styles.inactiveDot
+                    ]} 
+                />
+            ))}
+        </View>
       </View>
 
       {/* Title Section */}
@@ -149,8 +171,26 @@ export default function PlaceScreen() {
             <Text style={styles.cardSubBlack}>Live Overlay</Text>
         </TouchableOpacity>
 
-        {/* 3D Model */}
-        <TouchableOpacity style={styles.card}>
+        {/* 4. 3D Model Button (Updated Logic) */}
+        <TouchableOpacity 
+            style={styles.card}
+            onPress={() => {
+                const nowLink = place.model3DNowUrl;
+                const thenLink = place.model3DThenUrl;
+
+                if (nowLink || thenLink) {
+                    router.push({
+                        pathname: '/3d-model',
+                        params: { 
+                            nowUrl: nowLink, 
+                            thenUrl: thenLink 
+                        } 
+                    });
+                } else {
+                    Alert.alert("Unavailable", "No 3D Model found for this location.");
+                }
+            }}
+        >
             <View style={styles.iconCircle}>
                  <Ionicons name="cube-outline" size={24} color="#000" />
             </View>
@@ -158,15 +198,12 @@ export default function PlaceScreen() {
             <Text style={styles.cardSub}>Interactive</Text>
         </TouchableOpacity>
 
-        {/* About Place -> Chatbot Link */}
+        {/* Chatbot */}
         <TouchableOpacity 
             style={styles.card}
             onPress={() => router.push({
-                pathname: '/place-chat',
-                params: { 
-                    placeId: place._id, 
-                    placeName: place.name 
-                }
+                pathname: '/place-chat', // Adjust if your file is in /tourist/place-chat.js
+                params: { placeId: place._id, placeName: place.name }
             })}
         >
             <View style={styles.iconCircle}>
@@ -177,7 +214,13 @@ export default function PlaceScreen() {
         </TouchableOpacity>
 
         {/* Facts */}
-        <TouchableOpacity style={styles.card}>
+        <TouchableOpacity 
+            style={styles.card}
+            onPress={() => router.push({
+                pathname: '/facts',
+                params: { placeData: JSON.stringify(place) }
+            })}
+        >
             <View style={styles.iconCircle}>
                  <Ionicons name="bar-chart-outline" size={24} color="#000" />
             </View>
@@ -194,11 +237,35 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 30, marginBottom: 20 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  imageCard: { position: 'relative', borderRadius: 25, overflow: 'hidden', height: 250, elevation: 5, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
-  mainImage: { width: '100%', height: '100%' },
+  
+  // 5. Updated Image Card Styles
+  imageCard: { 
+      position: 'relative', 
+      borderRadius: 25, 
+      overflow: 'hidden', 
+      height: 250, 
+      elevation: 5, 
+      shadowColor: '#000', 
+      shadowOpacity: 0.1, 
+      shadowRadius: 10,
+      backgroundColor: '#000' // Dark background for loading
+  },
+  
   gpsBadge: { position: 'absolute', bottom: 15, left: 15, backgroundColor: '#FACC15', flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignItems: 'center', gap: 5 },
   gpsText: { fontWeight: 'bold', fontSize: 12 },
-  favBtn: { position: 'absolute', bottom: 15, right: 15, backgroundColor: 'rgba(0,0,0,0.3)', padding: 10, borderRadius: 50 },
+
+  // Pagination Dots
+  paginationContainer: {
+      position: 'absolute',
+      bottom: 15,
+      alignSelf: 'center', 
+      flexDirection: 'row',
+      gap: 8
+  },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  activeDot: { backgroundColor: '#FACC15', width: 20 },
+  inactiveDot: { backgroundColor: 'rgba(255, 255, 255, 0.5)' },
+
   infoSection: { marginTop: 20, marginBottom: 20 },
   placeTitle: { fontSize: 28, fontWeight: 'bold', color: '#111' },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5, gap: 5 },

@@ -1,17 +1,11 @@
 const Place = require('../models/Place');
-// Import Groq SDK
 const Groq = require("groq-sdk");
-
-// Initialize Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// 1. Find a place near the user historical place
+// 1. Find a place near user [MOBILE]
 exports.getNearbyPlace = async (req, res) => {
   const { lat, lng } = req.query;
-
-  if (!lat || !lng) {
-    return res.status(400).json({ error: "Latitude and Longitude are required" });
-  }
+  if (!lat || !lng) return res.status(400).json({ error: "Latitude and Longitude are required" });
 
   try {
     const places = await Place.find({
@@ -22,23 +16,29 @@ exports.getNearbyPlace = async (req, res) => {
         }
       }
     });
-
     if (places.length === 0) return res.status(200).json({ message: "No historical places found nearby." });
     res.status(200).json(places[0]); 
   } catch (err) {
-    console.error("Error fetching nearby place:", err.message);
+    console.error("Error fetching nearby:", err.message);
     res.status(500).json({ error: "Server Error" });
   }
 };
 
-// 2. Add a new Place
+// 2. Add a new Place [ADMIN]
 exports.addPlace = async (req, res) => {
-  const { name, description, history, latitude, longitude, model3DUrl, arOverlayUrl, images } = req.body;
+  const { 
+    name, description, history, facts, 
+    latitude, longitude, 
+    model3DNowUrl, model3DThenUrl, 
+    arOverlayUrl, images 
+  } = req.body;
+  
   try {
     const newPlace = new Place({
-      name, description, history,
+      name, description, history, facts,
       location: { type: 'Point', coordinates: [longitude, latitude] },
-      model3DUrl, arOverlayUrl, images
+      model3DNowUrl, model3DThenUrl,
+      arOverlayUrl, images
     });
     await newPlace.save();
     res.status(201).json({ msg: "Place added successfully", place: newPlace });
@@ -48,7 +48,7 @@ exports.addPlace = async (req, res) => {
   }
 };
 
-// 3. Get details
+// 3. Get details [MOBILE & ADMIN]
 exports.getPlaceDetails = async (req, res) => {
   try {
     const place = await Place.findById(req.params.id);
@@ -59,46 +59,79 @@ exports.getPlaceDetails = async (req, res) => {
   }
 };
 
-// 4. Component 1: Context-Aware Chatbot (USING GROQ API)
+// 4. Chatbot [MOBILE]
+// 4. Chatbot [MOBILE]
 exports.chatWithPlace = async (req, res) => {
-  const { placeId, question } = req.body;
+  // 👇 1. Extract 'language' from request
+  const { placeId, question, language } = req.body; 
 
   try {
-    // A. Retrieve trusted data (The "Memory")
     const place = await Place.findById(placeId);
     if (!place) return res.status(404).json({ error: "Place not found" });
 
-    // B. Context Builder
+    // 👇 2. Add language instruction to System Prompt
     const systemPrompt = `
       You are an expert historical guide at ${place.name}.
-      Use ONLY the following context to answer the user's question.
-      If the answer is not in the context, politely say you don't know.
-      Keep your answer concise (under 3 sentences).
-
-      Context:
-      - Description: ${place.description}
-      - History: ${place.history}
+      Context: ${place.description} ${place.history}.
+      
+      IMPORTANT: Answer the user's question in ${language || "English"}.
+      Keep the answer concise (under 3 sentences).
     `;
-
-    // C. Call Groq API
+    
     const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: question }
-      ],
-      // UPDATED MODEL NAME HERE:
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: question }],
       model: "llama-3.3-70b-versatile", 
       temperature: 0.5,
       max_tokens: 200,
     });
-
-    const answer = chatCompletion.choices[0]?.message?.content || "I couldn't generate an answer.";
-
-    // Send the answer back to the app
-    res.status(200).json({ answer });
-
+    res.status(200).json({ answer: chatCompletion.choices[0]?.message?.content || "No answer." });
   } catch (err) {
-    console.error("Groq Chat Error:", err);
-    res.status(500).json({ error: "AI Service Error" });
+    console.error("Groq Error:", err);
+    res.status(500).json({ error: "AI Error" });
+  }
+};
+
+// 👇👇👇 NEW FUNCTIONS FOR ADMIN PANEL 👇👇👇
+
+// 5. GET ALL PLACES (For Admin Dashboard)
+exports.getAllPlaces = async (req, res) => {
+  try {
+    // Sort by newest first
+    const places = await Place.find().sort({ createdAt: -1 }); 
+    res.status(200).json(places);
+  } catch (err) {
+    res.status(500).json({ error: "Server Error" });
+  }
+};
+
+// 6. DELETE PLACE
+exports.deletePlace = async (req, res) => {
+  try {
+    await Place.findByIdAndDelete(req.params.id);
+    res.status(200).json({ msg: "Place deleted" });
+  } catch (err) {
+    res.status(500).json({ error: "Delete Failed" });
+  }
+};
+
+// 7. UPDATE PLACE
+exports.updatePlace = async (req, res) => {
+  try {
+    const { latitude, longitude, ...rest } = req.body;
+    
+    // Check if location data exists to update the GeoJSON
+    let updateData = { ...rest };
+    if (latitude && longitude) {
+        updateData.location = { 
+            type: 'Point', 
+            coordinates: [parseFloat(longitude), parseFloat(latitude)] 
+        };
+    }
+
+    const place = await Place.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.status(200).json(place);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Update Failed" });
   }
 };

@@ -7,14 +7,26 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { Colors } from '../../constants/theme';
 
-const API_URL = 'http://192.168.8.100:5000/api/places/chat';// Replace IP
+const API_URL = 'http://192.168.8.100:5000/api/places/chat';
 
 export default function PlaceChatScreen() {
   const router = useRouter();
   const { placeId, placeName } = useLocalSearchParams();
   
+  // 1. Language State
+  const [selectedLang, setSelectedLang] = useState('English');
+  const languages = ['English', 
+    'Sinhala', 
+    'Tamil', 
+    'French', 
+    'Spanish',  
+    'German',    
+    'Chinese',   
+    'Japanese',  
+    'Russian']; 
+
   const [messages, setMessages] = useState([
-    { id: 1, text: `Welcome to ${placeName}! I am your AI Guide. Ask me anything about the history or architecture.`, sender: 'ai' }
+    { id: 1, text: `Welcome to ${placeName}! I am your AI Guide. Select a language and ask me anything!`, sender: 'ai' }
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,14 +42,15 @@ export default function PlaceChatScreen() {
     try {
       const response = await axios.post(API_URL, {
         placeId: placeId,
-        question: userMsg.text
+        question: userMsg.text,
+        language: selectedLang // 👈 2. Send Selected Language
       });
 
       const aiMsg = { id: Date.now() + 1, text: response.data.answer, sender: 'ai' };
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
       console.error(error);
-      const errorMsg = { id: Date.now() + 1, text: "Sorry, I lost connection to the history archives.", sender: 'ai' };
+      const errorMsg = { id: Date.now() + 1, text: "Sorry, I lost connection.", sender: 'ai' };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
       setLoading(false);
@@ -56,6 +69,26 @@ export default function PlaceChatScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{placeName} Guide</Text>
         <View style={{width: 24}} />
+      </View>
+
+      {/* 👇 3. Language Selector Bar */}
+      <View style={styles.langContainer}>
+        <FlatList 
+            horizontal
+            data={languages}
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={item => item}
+            renderItem={({item}) => (
+                <TouchableOpacity 
+                    style={[styles.langBtn, selectedLang === item ? styles.langBtnActive : null]}
+                    onPress={() => setSelectedLang(item)}
+                >
+                    <Text style={[styles.langText, selectedLang === item ? styles.langTextActive : null]}>
+                        {item}
+                    </Text>
+                </TouchableOpacity>
+            )}
+        />
       </View>
 
       {/* Chat List */}
@@ -77,7 +110,7 @@ export default function PlaceChatScreen() {
 
       {loading && (
           <View style={{padding: 10, alignItems: 'flex-start'}}>
-              <Text style={{color: '#888', marginLeft: 20}}>AI Guide is typing...</Text>
+            <Text style={{color: '#888', marginLeft: 20}}>AI Guide is typing in {selectedLang}...</Text>
           </View>
       )}
 
@@ -87,7 +120,7 @@ export default function PlaceChatScreen() {
             style={styles.input}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Ask about this place..."
+            placeholder={`Ask in ${selectedLang}...`}
             placeholderTextColor="#999"
         />
         <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
@@ -100,8 +133,16 @@ export default function PlaceChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0f2f5' },
-  header: { paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20, backgroundColor: Colors.primary, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  header: { paddingTop: 50, paddingBottom: 15, paddingHorizontal: 20, backgroundColor: Colors.primary, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  
+  // Language Styles
+  langContainer: { backgroundColor: Colors.primary, paddingBottom: 10, paddingHorizontal: 10 },
+  langBtn: { paddingHorizontal: 15, paddingVertical: 6, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', marginRight: 10 },
+  langBtnActive: { backgroundColor: '#FACC15' }, // Yellow active
+  langText: { color: '#fff', fontSize: 13 },
+  langTextActive: { color: '#000', fontWeight: 'bold' },
+
   listContent: { padding: 20 },
   bubble: { padding: 15, borderRadius: 15, marginBottom: 10, maxWidth: '80%' },
   userBubble: { backgroundColor: Colors.primary, alignSelf: 'flex-end', borderBottomRightRadius: 2 },

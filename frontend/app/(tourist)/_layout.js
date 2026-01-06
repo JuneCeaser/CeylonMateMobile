@@ -69,12 +69,18 @@ export default function TouristLayout() {
                 }}
             />
             
-            {/* HIDDEN ROUTES */}
+            {/* HIDDEN ROUTES (Pages that exist but don't show on the bottom bar) */}
             <Tabs.Screen name="profile" options={{ href: null }} />
             <Tabs.Screen name="itinerary-results" options={{ href: null }} />
             <Tabs.Screen name="risk-alternatives" options={{ href: null }} />
-            // ... existing tabs ...
-<Tabs.Screen name="place-chat" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+            <Tabs.Screen name="place-chat" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+            
+          
+            <Tabs.Screen name="3d-model" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+         
+<Tabs.Screen name="facts" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+          
+
         </Tabs>
     );
 }
