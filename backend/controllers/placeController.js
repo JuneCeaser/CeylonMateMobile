@@ -59,17 +59,16 @@ exports.getPlaceDetails = async (req, res) => {
   }
 };
 
-// 4. Chatbot [MOBILE]
-// 4. Chatbot [MOBILE]
+
 exports.chatWithPlace = async (req, res) => {
-  // 👇 1. Extract 'language' from request
+ 
   const { placeId, question, language } = req.body; 
 
   try {
     const place = await Place.findById(placeId);
     if (!place) return res.status(404).json({ error: "Place not found" });
 
-    // 👇 2. Add language instruction to System Prompt
+  
     const systemPrompt = `
       You are an expert historical guide at ${place.name}.
       Context: ${place.description} ${place.history}.
@@ -91,7 +90,7 @@ exports.chatWithPlace = async (req, res) => {
   }
 };
 
-// 👇👇👇 NEW FUNCTIONS FOR ADMIN PANEL 👇👇👇
+
 
 // 5. GET ALL PLACES (For Admin Dashboard)
 exports.getAllPlaces = async (req, res) => {
