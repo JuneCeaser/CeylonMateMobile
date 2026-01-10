@@ -10,7 +10,7 @@ import axios from 'axios';
 import ImageView from "react-native-image-viewing"; 
 
 // ⚠️ IMPORTANT: Replace with your Laptop's IP Address
-const API_URL = 'http://192.168.8.100:5000/api/places'; 
+const API_URL = 'http://192.168.1.100:5000/api/places'; 
 
 const { width } = Dimensions.get('window');
 
