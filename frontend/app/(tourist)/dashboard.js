@@ -205,17 +205,39 @@ export default function TouristDashboard() {
                 style={styles.header}
             >
                 <View style={styles.headerContent}>
-                    <View>
-                        <Text style={styles.greeting}>Welcome back,</Text>
-                        <Text style={styles.userName}>{userProfile?.name || 'Traveler'}!</Text>
-                    </View>
-                    <TouchableOpacity style={styles.notificationButton}>
-                        <Ionicons name="notifications-outline" size={28} color={Colors.surface} />
-                        <View style={styles.notificationBadge}>
-                            <Text style={styles.notificationBadgeText}>2</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
+    <View>
+        <Text style={styles.greeting}>Welcome back,</Text>
+        <Text style={styles.userName}>{userProfile?.name || 'Traveler'}!</Text>
+    </View>
+
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        
+        {/* Profile Button */}
+        <TouchableOpacity
+            onPress={() => router.push('/(tourist)/profile')}
+            style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: 'rgba(255,255,255,0.3)',
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}
+        >
+            <Ionicons name="person" size={22} color={Colors.surface} />
+        </TouchableOpacity>
+
+        {/* Notifications (your old button) */}
+        <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons name="notifications-outline" size={28} color={Colors.surface} />
+            <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>2</Text>
+            </View>
+        </TouchableOpacity>
+
+    </View>
+</View>
+
 
                 {/* Quick Stats */}
                 <View style={styles.statsContainer}>

@@ -14,7 +14,7 @@ const placeSchema = new mongoose.Schema({
     coordinates: { type: [Number], required: true } 
   },
 
-  // 👇 UPDATE: We now store TWO links
+ 
   model3DNowUrl: { type: String },  // The "Modern" view
   model3DThenUrl: { type: String }, // The "Ancient" view
 
