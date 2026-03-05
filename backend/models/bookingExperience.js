@@ -96,4 +96,6 @@ const bookingExperienceSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('BookingExperience', bookingExperienceSchema);
+module.exports =
+  mongoose.models.BookingExperience ||
+  mongoose.model('BookingExperience', bookingExperienceSchema);

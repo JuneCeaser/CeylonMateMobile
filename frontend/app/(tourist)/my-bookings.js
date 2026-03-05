@@ -9,16 +9,12 @@ import {
     RefreshControl,
     TouchableOpacity,
     Alert,
-    Dimensions,
     Platform
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router'; 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient'; 
 import api from '../../constants/api';
-import { Colors } from '../../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 /**
  * MyBookingsScreen: Displays a clean, card-based history of cultural bookings
@@ -30,12 +26,15 @@ export default function MyBookingsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const router = useRouter(); 
 
-    const fetchMyBookings = async () => {
+    const fetchMyBookings = async (isRefreshing = false) => {
         try {
+            if (!isRefreshing) setLoading(true);
+
             const response = await api.get('/bookings/tourist/my-list');
-            setBookings(response.data);
+            // Ensure array always
+            setBookings(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
-            console.error("Fetch bookings error:", error);
+            console.error("Fetch bookings error:", error?.message || error);
             Alert.alert("Connection Error", "Could not refresh your booking list.");
         } finally {
             setLoading(false);
@@ -54,9 +53,15 @@ export default function MyBookingsScreen() {
                     style: "destructive",
                     onPress: async () => {
                         try {
-                            await api.patch(`/bookings/update-status/${bookingId}`, { status: 'cancelled' });
-                            fetchMyBookings(); 
+                            // ✅ FIX: match UI + backend expected status
+                            await api.patch(`/bookings/update-status/${bookingId}`, { 
+                                status: 'cancelled_by_tourist' 
+                            });
+
+                            // Refresh list after cancel
+                            fetchMyBookings(true); 
                         } catch (error) {
+                            console.error("Cancel booking error:", error?.message || error);
                             Alert.alert("Error", "Failed to cancel booking.");
                         }
                     }
@@ -67,7 +72,7 @@ export default function MyBookingsScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            fetchMyBookings();
+            fetchMyBookings(false);
         }, [])
     );
 
@@ -84,19 +89,38 @@ export default function MyBookingsScreen() {
             case 'completed': 
                 return { color: '#1565C0', icon: 'star-circle', bg: '#E3F2FD', label: 'Completed' };
             default: 
-                return { color: '#757575', icon: 'help-circle', bg: '#F5F5F5', label: status };
+                return { color: '#757575', icon: 'help-circle', bg: '#F5F5F5', label: status || 'Unknown' };
         }
     };
 
+    const safeFormatDateTime = (dateValue) => {
+        const d = new Date(dateValue);
+        const isValid = !isNaN(d.getTime());
+        if (!isValid) return "Date not available";
+
+        const datePart = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+        const timePart = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `${datePart}  •  ${timePart}`;
+    };
+
     const renderBookingItem = ({ item }) => {
-        const theme = getStatusTheme(item.status);
-        const bookingDate = new Date(item.bookingDate);
-        
+        const theme = getStatusTheme(item?.status);
+
+        const imageUrl =
+            item?.experience?.images?.[0] ||
+            'https://via.placeholder.com/150';
+
+        const title = item?.experience?.title || 'Cultural Experience';
+        const hostName = item?.hostName || 'Local Expert';
+
+        const guests = Number(item?.guests || 0);
+        const totalPrice = Number(item?.totalPrice || 0);
+
         return (
             <View style={styles.bookingCard}>
                 <View style={styles.cardMain}>
                     <Image 
-                        source={{ uri: item.experience?.images?.[0] || 'https://via.placeholder.com/150' }} 
+                        source={{ uri: imageUrl }} 
                         style={styles.experienceImage} 
                     />
                     <View style={styles.infoContainer}>
@@ -108,20 +132,18 @@ export default function MyBookingsScreen() {
                         </View>
                         
                         <Text style={styles.titleText} numberOfLines={1}>
-                            {item.experience?.title || 'Cultural Experience'}
+                            {title}
                         </Text>
                         
                         <View style={styles.detailRow}>
                             <Ionicons name="person-circle-outline" size={14} color="#666" />
-                            <Text style={styles.detailText}>Host: {item.hostName || 'Local Expert'}</Text>
+                            <Text style={styles.detailText}>Host: {hostName}</Text>
                         </View>
 
                         <View style={styles.detailRow}>
                             <Ionicons name="calendar-clear-outline" size={14} color="#666" />
                             <Text style={styles.detailText}>
-                                {bookingDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                {'  •  '}
-                                {bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {safeFormatDateTime(item?.bookingDate)}
                             </Text>
                         </View>
                     </View>
@@ -132,18 +154,23 @@ export default function MyBookingsScreen() {
                 <View style={styles.cardFooter}>
                     <View>
                         <Text style={styles.priceLabel}>Amount Paid / Due</Text>
-                        <Text style={styles.priceValue}>LKR {item.totalPrice?.toLocaleString()}</Text>
+                        <Text style={styles.priceValue}>
+                            LKR {totalPrice.toLocaleString()}
+                        </Text>
                     </View>
+
                     <View style={styles.guestPill}>
                         <Ionicons name="people" size={14} color="#555" />
-                        <Text style={styles.guestText}>{item.guests} {item.guests > 1 ? 'Guests' : 'Guest'}</Text>
+                        <Text style={styles.guestText}>
+                            {guests} {guests === 1 ? 'Guest' : 'Guests'}
+                        </Text>
                     </View>
                 </View>
 
-                {item.status === 'pending' && (
+                {item?.status === 'pending' && (
                     <TouchableOpacity 
                         style={styles.cancelAction} 
-                        onPress={() => handleCancelBooking(item._id)}
+                        onPress={() => handleCancelBooking(item?._id)}
                     >
                         <Text style={styles.cancelActionText}>Cancel Booking</Text>
                     </TouchableOpacity>
@@ -156,14 +183,25 @@ export default function MyBookingsScreen() {
         <View style={styles.container}>
             <LinearGradient colors={['#2E7D32', '#1B5E20']} style={styles.topHeader}>
                 <View style={styles.headerContent}>
-                    <TouchableOpacity onPress={() => router.replace('/(tourist)/culture')} style={styles.iconCircle}>
+                    <TouchableOpacity 
+                        onPress={() => router.replace('/(tourist)/culture')} 
+                        style={styles.iconCircle}
+                    >
                         <Ionicons name="chevron-back" size={24} color="white" />
                     </TouchableOpacity>
+
                     <View style={styles.titleWrap}>
                         <Text style={styles.mainTitle}>My Bookings</Text>
-                        <Text style={styles.subTitle}>{bookings.length} reservations found</Text>
+                        <Text style={styles.subTitle}>
+                            {bookings.length} reservations found
+                        </Text>
                     </View>
-                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={28} color="rgba(255,255,255,0.3)" />
+
+                    <MaterialCommunityIcons 
+                        name="ticket-confirmation-outline" 
+                        size={28} 
+                        color="rgba(255,255,255,0.3)" 
+                    />
                 </View>
             </LinearGradient>
 
@@ -174,12 +212,19 @@ export default function MyBookingsScreen() {
             ) : (
                 <FlatList
                     data={bookings}
-                    keyExtractor={(item) => item._id}
+                    keyExtractor={(item) => item?._id?.toString()}
                     renderItem={renderBookingItem}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchMyBookings(); }} tintColor="#2E7D32" />
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={() => {
+                                setRefreshing(true);
+                                fetchMyBookings(true);
+                            }}
+                            tintColor="#2E7D32"
+                        />
                     }
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
@@ -188,7 +233,10 @@ export default function MyBookingsScreen() {
                                 style={styles.emptyImg} 
                             />
                             <Text style={styles.emptyText}>No bookings yet</Text>
-                            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.push('/(tourist)/culture')}>
+                            <TouchableOpacity 
+                                style={styles.exploreBtn} 
+                                onPress={() => router.push('/(tourist)/culture')}
+                            >
                                 <Text style={styles.exploreBtnText}>Explore Experiences</Text>
                             </TouchableOpacity>
                         </View>

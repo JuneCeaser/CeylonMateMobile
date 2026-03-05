@@ -19,15 +19,14 @@ const AuthContext = createContext({});
  * It handles Firebase Authentication, Firestore profile syncing, and session persistence.
  */
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null); // Firebase Auth raw user object
-    const [userProfile, setUserProfile] = useState(null); // Detailed user data from Firestore (Role, Name, etc.)
-    const [loading, setLoading] = useState(true); // State to track if the app is still determining auth status
-    const [authToken, setAuthToken] = useState(null); // JWT ID token for making authorized requests to your Node.js backend
+    const [user, setUser] = useState(null); 
+    const [userProfile, setUserProfile] = useState(null); 
+    const [loading, setLoading] = useState(true); 
+    const [authToken, setAuthToken] = useState(null); 
 
     /**
      * fetchProfileWithRetry:
-     * Attempts to fetch the user's Firestore document. 
-     * Includes a retry mechanism to handle temporary network fluctuations or offline states.
+     * Attempts to fetch the user's Firestore document with retry support.
      */
     const fetchProfileWithRetry = async (uid, attempts = 3) => {
         const docRef = doc(db, 'users', uid);
@@ -37,56 +36,67 @@ export const AuthProvider = ({ children }) => {
                 if (docSnap.exists()) return docSnap.data();
                 return null;
             } catch (error) {
-                // If this was the last attempt, stop and return null
                 if (i === attempts - 1) {
                     console.error("Firestore fetch failed after maximum attempts:", error.message);
                     return null;
                 }
-                // Wait for 2 seconds before retrying
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
     };
 
     useEffect(() => {
+
         /**
-         * onAuthStateChanged: 
-         * Firebase listener that triggers whenever a user logs in, logs out, or the app refreshes.
+         * Firebase auth state listener
          */
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            setLoading(true); 
+            setLoading(true);
+
             if (firebaseUser) {
                 setUser(firebaseUser);
+
                 try {
-                    // 1. Retrieve the JWT ID token for backend API authentication
+                    // 1️⃣ Get Firebase ID token for backend authentication
                     const token = await getIdToken(firebaseUser);
+
+                    // 🔍 DEBUG: Show token in terminal
+                    console.log("TOKEN:", token);
+
                     setAuthToken(token);
                     await AsyncStorage.setItem('userToken', token);
 
-                    // 2. Fetch the corresponding user profile from Firestore (contains Role: Host/Tourist)
+                    // 2️⃣ Fetch Firestore user profile
                     const profileData = await fetchProfileWithRetry(firebaseUser.uid);
+
                     if (profileData) {
-                        setUserProfile({ uid: firebaseUser.uid, ...profileData });
+                        setUserProfile({
+                            uid: firebaseUser.uid,
+                            ...profileData
+                        });
                     }
+
                 } catch (error) {
                     console.error('❌ AuthContext Initialization Error:', error.message);
                 }
+
             } else {
-                // 3. Clear all states when the user logs out
+                // 3️⃣ Clear states when logged out
                 setUser(null);
                 setUserProfile(null);
                 setAuthToken(null);
                 await AsyncStorage.removeItem('userToken');
             }
+
             setLoading(false);
         });
 
-        // Cleanup the listener when the component is destroyed
         return unsubscribe;
+
     }, []);
 
     /**
-     * login: Authenticates existing users using email and password.
+     * Login existing user
      */
     const login = async (email, password) => {
         try {
@@ -99,40 +109,45 @@ export const AuthProvider = ({ children }) => {
     };
 
     /**
-     * register: Creates a new account in Firebase Auth and initializes a Firestore profile document.
+     * Register new user
      */
     const register = async (email, password, userData) => {
         try {
-            // 1. Create the Firebase Authentication account
+
+            // Create Firebase auth account
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
 
-            // 2. Set the display name in the Firebase Auth profile
-            await updateProfile(firebaseUser, { displayName: userData.name });
+            // Set display name
+            await updateProfile(firebaseUser, {
+                displayName: userData.name
+            });
 
-            // 3. Construct the profile document for Firestore
+            // Build Firestore profile
             const userDoc = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
                 name: userData.name || "",
                 phone: userData.phone || "",
-                userType: userData.userType, // 'tourist' or 'host'
+                userType: userData.userType,
                 createdAt: new Date().toISOString(),
             };
 
-            // Add role-specific details
             if (userData.userType === 'tourist') {
                 userDoc.country = userData.country || "";
-            } else if (userData.userType === 'host') {
+            } 
+            else if (userData.userType === 'host') {
                 userDoc.expertise = userData.expertise || "";
             }
 
-            // 4. Save the profile document to Firestore
+            // Save profile
             await setDoc(doc(db, 'users', firebaseUser.uid), userDoc);
-            
-            // 5. Update local state to reflect the new user
+
+            // Update local state
             setUserProfile(userDoc);
+
             return firebaseUser;
+
         } catch (error) {
             console.error("Registration service error:", error.message);
             throw error;
@@ -140,39 +155,43 @@ export const AuthProvider = ({ children }) => {
     };
 
     /**
-     * logout: Logs out the current user and clears local storage tokens.
+     * Logout user
      */
     const logout = async () => {
         try {
             await firebaseSignOut(auth);
-            // Local states are automatically cleared by the onAuthStateChanged listener above
         } catch (error) {
             console.error("Logout error:", error.message);
             throw error;
         }
     };
 
-    // Values to be shared across the entire application
-    const value = { 
-        user, 
-        userProfile, 
-        authToken, 
-        login, 
-        register, 
-        logout, 
-        loading 
+    const value = {
+        user,
+        userProfile,
+        authToken,
+        login,
+        register,
+        logout,
+        loading
     };
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={value}>
+            {children}
+        </AuthContext.Provider>
+    );
 };
 
 /**
- * useAuth: Custom hook to easily access auth state from any functional component.
+ * Custom hook for accessing AuthContext
  */
 export const useAuth = () => {
     const context = useContext(AuthContext);
+
     if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
+
     return context;
 };

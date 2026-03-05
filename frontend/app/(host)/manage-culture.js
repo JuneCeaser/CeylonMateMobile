@@ -8,7 +8,6 @@ import {
     Alert, 
     ActivityIndicator,
     ScrollView,
-    Dimensions 
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../constants/api';
 import { Colors } from '../../constants/theme';
-
-const { width } = Dimensions.get('window');
 
 export default function ManageCultureScreen() {
     const { user, userProfile, authToken } = useAuth(); 
@@ -32,9 +29,9 @@ export default function ManageCultureScreen() {
         try {
             setLoading(true);
             const response = await api.get('/experiences/my/list');
-            setMyListings(response.data);
-        } catch (_err) {
-            console.error("Error fetching host listings");
+            setMyListings(response.data || []);
+        } catch (err) {
+            console.error("Error fetching host listings:", err?.response?.data || err.message);
         } finally {
             setLoading(false);
         }
@@ -44,9 +41,9 @@ export default function ManageCultureScreen() {
         if (!authToken) return;
         try {
             const response = await api.get('/bookings/host/list');
-            setBookings(response.data);
+            setBookings(response.data || []);
         } catch (err) {
-            console.error("Error fetching bookings:", err.message);
+            console.error("Error fetching bookings:", err?.response?.data || err.message);
         }
     }, [authToken]);
 
@@ -63,31 +60,43 @@ export default function ManageCultureScreen() {
             "Are you sure you want to remove this listing permanently?",
             [
                 { text: "Cancel", style: "cancel" },
-                { 
-                    text: "Delete", 
-                    style: "destructive", 
+                {
+                    text: "Delete",
+                    style: "destructive",
                     onPress: async () => {
                         try {
-                            await api.delete(`/experiences/${id}`);
-                            fetchMyListings(); 
+                            console.log("Deleting experience:", id);
+                            const res = await api.delete(`/experiences/delete/${id}`);
+                            console.log("Delete success:", res.data);
+
                             Alert.alert("Success", "Experience deleted successfully");
+                            fetchMyListings();
                         } catch (err) {
-                            Alert.alert("Error", "Failed to delete experience");
+                            console.log(
+                                "DELETE ERROR:",
+                                err?.response?.status,
+                                err?.response?.data || err.message
+                            );
+
+                            Alert.alert(
+                                "Error",
+                                err?.response?.data?.error || "Failed to delete experience"
+                            );
                         }
-                    } 
-                }
+                    },
+                },
             ]
         );
     };
 
     const calculateEarnings = () => {
-        return bookings
+        return (bookings || [])
             .filter(b => b.status === 'confirmed')
             .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     };
 
-    const pendingCount = bookings.filter(b => b.status === 'pending').length;
-    const confirmedCount = bookings.filter(b => b.status === 'confirmed').length;
+    const pendingCount = (bookings || []).filter(b => b.status === 'pending').length;
+    const confirmedCount = (bookings || []).filter(b => b.status === 'confirmed').length;
 
     const renderExperienceCard = (item) => (
         <View style={styles.card} key={item._id}>
@@ -98,15 +107,23 @@ export default function ManageCultureScreen() {
             <View style={styles.info}>
                 <Text style={styles.categoryBadge}>{item.category}</Text>
                 <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-                <Text style={styles.price}>LKR {item.price.toLocaleString()}</Text>
+                <Text style={styles.price}>
+                    LKR {(Number(item.price) || 0).toLocaleString()}
+                </Text>
             </View>
             <View style={styles.actions}>
                 <TouchableOpacity 
                     style={[styles.actionBtn, styles.editBtnBg]} 
-                    onPress={() => router.push({ pathname: '/(host)/add-culture', params: { editId: item._id } })}
+                    onPress={() =>
+                        router.push({
+                            pathname: '/(host)/add-culture',
+                            params: { editId: item._id }
+                        })
+                    }
                 >
                     <Ionicons name="create" size={20} color={Colors.primary} />
                 </TouchableOpacity>
+
                 <TouchableOpacity 
                     style={[styles.actionBtn, styles.deleteBtnBg]} 
                     onPress={() => handleDelete(item._id)}
@@ -116,6 +133,8 @@ export default function ManageCultureScreen() {
             </View>
         </View>
     );
+
+    const earnings = calculateEarnings();
 
     return (
         <View style={styles.container}>
@@ -128,11 +147,13 @@ export default function ManageCultureScreen() {
                             <Text style={styles.hostName}>{userProfile?.name || "Host"}</Text>
                             <Text style={styles.headerSubtitle}>Your Smart Host Hub</Text>
                         </View>
+
                         <View style={styles.headerIcons}>
                             <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(host)/notifications')}>
                                 <Ionicons name="notifications" size={26} color="white" />
                                 {pendingCount > 0 && <View style={styles.notifBadge} />}
                             </TouchableOpacity>
+
                             <TouchableOpacity onPress={() => router.push('/(host)/profile')}>
                                 <Ionicons name="person-circle" size={44} color="white" />
                             </TouchableOpacity>
@@ -146,12 +167,14 @@ export default function ManageCultureScreen() {
                         <Text style={styles.statNumber}>{myListings.length}</Text>
                         <Text style={styles.statLabel}>Listings</Text>
                     </View>
+
                     <View style={[styles.statItem, styles.statBorder]}>
                         <Text style={[styles.statNumber, { color: Colors.secondary }]}>
-                            {calculateEarnings() >= 1000 ? (calculateEarnings()/1000).toFixed(1) + 'k' : calculateEarnings()}
+                            {earnings >= 1000 ? (earnings / 1000).toFixed(1) + 'k' : earnings}
                         </Text>
                         <Text style={styles.statLabel}>Earnings</Text>
                     </View>
+
                     <View style={[styles.statItem, styles.statBorder]}>
                         <Text style={[styles.statNumber, { color: '#FFA000' }]}>{confirmedCount}</Text>
                         <Text style={styles.statLabel}>Confirmed</Text>
@@ -162,6 +185,7 @@ export default function ManageCultureScreen() {
                 <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Manage Requests</Text>
                 </View>
+
                 <TouchableOpacity 
                     style={styles.requestNavBtn}
                     onPress={() => router.push('/(host)/booking-request')}
@@ -176,6 +200,7 @@ export default function ManageCultureScreen() {
                             <Text style={styles.requestNavSubtitle}>{pendingCount} new inquiries to handle</Text>
                         </View>
                     </View>
+
                     <View style={styles.badgeContainer}>
                         {pendingCount > 0 && (
                             <View style={styles.pendingBadge}>
@@ -192,6 +217,7 @@ export default function ManageCultureScreen() {
                         <Text style={styles.sectionTitle}>My Experiences</Text>
                         <Text style={styles.sectionSubtitle}>{myListings.length} items listed</Text>
                     </View>
+
                     <TouchableOpacity 
                         style={styles.inlineAddBtn}
                         onPress={() => router.push('/(host)/add-culture')}

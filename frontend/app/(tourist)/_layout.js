@@ -79,6 +79,7 @@ export default function TouristLayout() {
             <Tabs.Screen name="my-bookings" options={{ href: null }} />
             <Tabs.Screen name="add-moment" options={{ href: null, }}/>
             <Tabs.Screen name="moment-detail" options={{ href: null, }}/>
+            <Tabs.Screen name="qa-history" options={{ href: null }} />
         </Tabs>
     );
 }
