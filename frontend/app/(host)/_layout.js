@@ -45,9 +45,9 @@ export default function HostLayout() {
       />
 
       <Tabs.Screen
-        name="ai-experiences"
+        name="ai-questions"
         options={{
-          title: "AI",
+          title: "AI Questions",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="help-circle" size={size} color={color} />
           ),
@@ -67,8 +67,6 @@ export default function HostLayout() {
       {/* HIDDEN ROUTES (push navigation only) */}
       <Tabs.Screen name="add-culture" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="ai-questions" options={{ href: null }} />
-      <Tabs.Screen name="answer-question" options={{ href: null }} />
     </Tabs>
   );
 }
