@@ -11,10 +11,10 @@ const ensureDir = (dir) => {
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    let dest = "uploads/experiences/";
+    let dest = "uploads/experiences";
 
     if (file.fieldname === "vrImage") {
-      dest = "uploads/vr360/";
+      dest = "uploads/vr360";
     }
 
     ensureDir(dest);
@@ -23,7 +23,8 @@ const storage = multer.diskStorage({
 
   filename: function (req, file, cb) {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, unique + path.extname(file.originalname));
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, unique + ext);
   },
 });
 
@@ -36,7 +37,7 @@ const fileFilter = (req, file, cb) => {
     return cb(null, true);
   }
 
-  cb(new Error("Only image files are allowed (jpg, jpeg, png, webp)"));
+  return cb(new Error("Only image files are allowed (jpg, jpeg, png, webp)"));
 };
 
 const upload = multer({

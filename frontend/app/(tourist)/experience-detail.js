@@ -21,6 +21,7 @@ import Markdown from "react-native-markdown-display";
 import { LinearGradient } from "expo-linear-gradient";
 import { Calendar } from "react-native-calendars";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../constants/api";
 
@@ -53,6 +54,7 @@ export default function ExperienceDetailScreen() {
   const [guestCount, setGuestCount] = useState(1);
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState(new Date());
+  const [tempTime, setTempTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [disabledDates, setDisabledDates] = useState({});
   const [isBooking, setIsBooking] = useState(false);
@@ -92,13 +94,22 @@ export default function ExperienceDetailScreen() {
     }
   };
 
+  const toLocalDateKey = (value) => {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchExperienceAvailability = async () => {
     try {
       const res = await api.get(`/bookings/experience-availability/${id}`);
 
       const marked = {};
       (res.data || []).forEach((booking) => {
-        const dateKey = (booking.bookingDate || "").split("T")[0];
+        const dateKey = toLocalDateKey(booking.bookingDate);
         if (!dateKey) return;
 
         marked[dateKey] = {
@@ -252,8 +263,14 @@ export default function ExperienceDetailScreen() {
     }
 
     router.push({
-      pathname: "/vr-viewer",
-      params: { imageUrl: exp.vrPreview.url },
+      pathname: "/(tourist)/vr-viewer",
+      params: {
+        imageUrl: exp.vrPreview.url,
+        title: exp.title || "360° Cultural Preview",
+        experienceId: exp._id,
+        returnTo: "/(tourist)/experience-detail",
+        viewerKey: Date.now().toString(),
+      },
     });
   };
 
@@ -405,7 +422,9 @@ export default function ExperienceDetailScreen() {
         setAiVisible(true);
         speakAnswer(answer);
       } else {
-        setAiText("I could not generate a helpful answer. Please try asking in a different way.");
+        setAiText(
+          "I could not generate a helpful answer. Please try asking in a different way."
+        );
         setAiVisible(true);
       }
     } catch (error) {
@@ -447,6 +466,36 @@ export default function ExperienceDetailScreen() {
     router.push("/(tourist)/qa-history");
   };
 
+  const openTimePicker = () => {
+    setTempTime(selectedTime);
+    setShowTimePicker(true);
+  };
+
+  const confirmIOSPickerTime = () => {
+    setSelectedTime(tempTime);
+    setShowTimePicker(false);
+  };
+
+  const handleTimeChange = (event, date) => {
+    if (Platform.OS === "android") {
+      if (event?.type === "dismissed") {
+        setShowTimePicker(false);
+        return;
+      }
+
+      if (date) {
+        setSelectedTime(date);
+      }
+
+      setShowTimePicker(false);
+      return;
+    }
+
+    if (date) {
+      setTempTime(date);
+    }
+  };
+
   const handleConfirmBooking = async () => {
     if (!user) {
       Alert.alert("Login Required", "Please sign in to book.");
@@ -466,10 +515,17 @@ export default function ExperienceDetailScreen() {
     setIsBooking(true);
 
     try {
-      const finalBookingDate = new Date(selectedDate);
-      finalBookingDate.setHours(selectedTime.getHours());
-      finalBookingDate.setMinutes(selectedTime.getMinutes());
-      finalBookingDate.setSeconds(0);
+      const [year, month, day] = selectedDate.split("-").map(Number);
+
+      const finalBookingDate = new Date(
+        year,
+        month - 1,
+        day,
+        selectedTime.getHours(),
+        selectedTime.getMinutes(),
+        0,
+        0
+      );
 
       const bookingData = {
         experience: exp._id,
@@ -528,6 +584,7 @@ export default function ExperienceDetailScreen() {
         .join(", ");
 
   const assistantStatus = getAssistantStatusLabel(assistantMeta);
+  const formattedSelectedTime = format(selectedTime, "hh:mm a");
 
   return (
     <View style={styles.container}>
@@ -1015,7 +1072,7 @@ export default function ExperienceDetailScreen() {
                 </View>
 
                 <Calendar
-                  minDate={new Date().toISOString().split("T")[0]}
+                  minDate={toLocalDateKey(new Date())}
                   markedDates={{
                     ...disabledDates,
                     ...(selectedDate
@@ -1056,17 +1113,25 @@ export default function ExperienceDetailScreen() {
                     <Ionicons name="time" size={18} color="#2E7D32" />
                     <Text style={styles.cardTitle}>Time</Text>
                   </View>
+
                   <TouchableOpacity
                     style={styles.timeSelector}
-                    onPress={() => setShowTimePicker(true)}
+                    onPress={openTimePicker}
+                    activeOpacity={0.85}
                   >
-                    <Text style={styles.timeVal}>
-                      {selectedTime.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </Text>
+                    <Text style={styles.timeVal}>{formattedSelectedTime}</Text>
+                    <Text style={styles.timeHelpText}>Tap to change time</Text>
                   </TouchableOpacity>
+
+                  {showTimePicker && Platform.OS === "android" && (
+                    <DateTimePicker
+                      value={selectedTime}
+                      mode="time"
+                      is24Hour={false}
+                      display="clock"
+                      onChange={handleTimeChange}
+                    />
+                  )}
                 </View>
 
                 <View
@@ -1103,18 +1168,6 @@ export default function ExperienceDetailScreen() {
                   </View>
                 </View>
               </View>
-
-              {showTimePicker && (
-                <DateTimePicker
-                  value={selectedTime}
-                  mode="time"
-                  is24Hour={false}
-                  onChange={(e, date) => {
-                    setShowTimePicker(false);
-                    if (date) setSelectedTime(date);
-                  }}
-                />
-              )}
 
               <LinearGradient
                 colors={["#2E7D32", "#1B5E20"]}
@@ -1157,6 +1210,43 @@ export default function ExperienceDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      {Platform.OS === "ios" && (
+        <Modal
+          visible={showTimePicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowTimePicker(false)}
+        >
+          <View style={styles.timeModalOverlay}>
+            <View style={styles.timeModalCard}>
+              <View style={styles.timeModalHeader}>
+                <Text style={styles.timeModalTitle}>Select Time</Text>
+                <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                  <Ionicons name="close-circle" size={28} color="#BDBDBD" />
+                </TouchableOpacity>
+              </View>
+
+              <DateTimePicker
+                value={tempTime}
+                mode="time"
+                is24Hour={false}
+                display="spinner"
+                onChange={handleTimeChange}
+                style={styles.timePicker}
+              />
+
+              <TouchableOpacity
+                style={styles.timeDoneBtn}
+                onPress={confirmIOSPickerTime}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.timeDoneBtnText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -1903,11 +1993,19 @@ const styles = StyleSheet.create({
   timeSelector: {
     paddingVertical: 10,
     paddingHorizontal: 5,
+    minHeight: 64,
+    justifyContent: "center",
   },
   timeVal: {
     fontSize: 18,
     fontWeight: "800",
     color: "#2E7D32",
+  },
+  timeHelpText: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "600",
   },
 
   guestCounter: {
@@ -1950,6 +2048,46 @@ const styles = StyleSheet.create({
   mConfirmText: {
     color: "#FFF",
     fontSize: 16,
+    fontWeight: "800",
+  },
+
+  timeModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  timeModalCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 18,
+  },
+  timeModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  timeModalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1A1A1A",
+  },
+  timePicker: {
+    alignSelf: "center",
+  },
+  timeDoneBtn: {
+    marginTop: 12,
+    backgroundColor: "#2E7D32",
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  timeDoneBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "800",
   },
 });

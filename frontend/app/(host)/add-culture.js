@@ -57,12 +57,14 @@ export default function AddCultureScreen() {
 
   const [image, setImage] = useState(null);
   const [existingImages, setExistingImages] = useState([]);
-  const [vrImage, setVrImage] = useState(null);
-  const [existingVrPreview, setExistingVrPreview] = useState("");
+  const [vrImage, setVrImage] = useState(null); // newly selected local 360 image
+  const [existingVrPreview, setExistingVrPreview] = useState(""); // already saved backend URL
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [gettingLocation, setGettingLocation] = useState(false);
+
+  const vrPreviewDisplay = vrImage || existingVrPreview || null;
 
   const categories = [
     { label: "🍳  Cooking", value: "Cooking" },
@@ -157,7 +159,7 @@ export default function AddCultureScreen() {
 
         const vrUrl = exp.vrPreview?.url || "";
         setExistingVrPreview(vrUrl);
-        setVrImage(vrUrl || null);
+        setVrImage(null);
 
         const hasHidden =
           !!exp.hostFullNotes ||
@@ -206,11 +208,22 @@ export default function AddCultureScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
-      quality: 0.8,
+      quality: 1,
     });
 
     if (!result.canceled) {
-      setVrImage(result.assets[0].uri);
+      const asset = result.assets[0];
+      const ratio = asset.width && asset.height ? asset.width / asset.height : 0;
+
+      if (ratio && (ratio < 1.8 || ratio > 2.2)) {
+        Alert.alert(
+          "Invalid 360 Image",
+          "Please select a panoramic 360 image with a wide 2:1 ratio, like 2048 × 1024."
+        );
+        return;
+      }
+
+      setVrImage(asset.uri);
     }
   };
 
@@ -336,10 +349,6 @@ export default function AddCultureScreen() {
       payload.append("duration", formData.duration.trim());
       payload.append("hostName", hostName);
 
-      /**
-       * PRIVATE HOST NOTES
-       * This is hidden from tourists and only used for AI assistant quality.
-       */
       payload.append("hostFullNotes", formData.hostFullNotes.trim());
 
       const assistantKnowledge = {
@@ -390,10 +399,6 @@ export default function AddCultureScreen() {
         payload.append("image", imageFile);
       }
 
-      /**
-       * 360 preview image only
-       * No VR video should be used for tourists.
-       */
       const vrImageFile = buildImageFile(vrImage, "vr-preview.jpg");
       if (vrImageFile) {
         payload.append("vrImage", vrImageFile);
@@ -614,7 +619,7 @@ export default function AddCultureScreen() {
           <SectionHeader
             step="3"
             title="Pricing & 360 Preview"
-            hint="Upload one optional 360 image preview. Do not upload a VR video here."
+            hint="Set a price & add a 360° image to give tourists a sneak peek."
           />
 
           <Text style={styles.label}>
@@ -640,13 +645,13 @@ export default function AddCultureScreen() {
           </Text>
 
           <TouchableOpacity
-            style={[styles.imagePickerSmall, vrImage && styles.imagePickerFilled]}
+            style={[styles.imagePickerSmall, vrPreviewDisplay && styles.imagePickerFilled]}
             onPress={pickVrImage}
             activeOpacity={0.85}
           >
-            {vrImage ? (
+            {vrPreviewDisplay ? (
               <View style={{ width: "100%", height: "100%" }}>
-                <Image source={{ uri: vrImage }} style={styles.previewImage} />
+                <Image source={{ uri: vrPreviewDisplay }} style={styles.previewImage} />
                 <View style={styles.imageOverlay}>
                   <Ionicons name="images-outline" size={18} color="#fff" />
                   <Text style={styles.imageOverlayText}>Change 360 Preview</Text>
@@ -659,20 +664,22 @@ export default function AddCultureScreen() {
                 </View>
                 <Text style={styles.placeholderTitle}>Upload 360 Preview Image</Text>
                 <Text style={styles.placeholderSub}>
-                  This is only a preview image for tourists, not a video
+                  Use a panoramic 360 image for immersive preview
                 </Text>
               </View>
             )}
           </TouchableOpacity>
 
           {!!existingVrPreview && !vrImage && (
-            <Text style={styles.miniHelp}>Existing 360 preview already saved.</Text>
+            <Text style={styles.miniHelp}>
+              Existing 360 preview already saved. Select a new image only if you want to replace it.
+            </Text>
           )}
 
           <View style={styles.infoBox}>
             <Ionicons name="information-circle-outline" size={15} color="#3B82F6" />
             <Text style={styles.infoText}>
-              Tourists will only see a 360 preview image. VR videos are not used on the tourist side.
+              Use a wide 2:1 panoramic image like 2048 × 1024. This gives tourists an immersive 360° preview of your experience.
             </Text>
           </View>
         </View>
