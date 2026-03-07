@@ -1,29 +1,133 @@
-const BookingExperience = require('../models/bookingExperience');
+const BookingExperience = require("../models/bookingExperience");
+const Experience = require("../models/experience");
 
 /**
- * @desc    Get host availability (Blocks both Confirmed and Pending slots)
+ * @desc    Get host availability using hostId
  * @route   GET /api/bookings/host-availability/:hostId
  * @access  Public/Private
  */
 const getHostAvailability = async (req, res) => {
-    try {
-        const { hostId } = req.params;
+  try {
+    const { hostId } = req.params;
 
-        /**
-         * We fetch bookings where status is 'confirmed' OR 'pending'.
-         * This ensures that as soon as a tourist makes a request, 
-         * that time slot is reserved and hidden from others until the host decides.
-         */
-        const bookings = await BookingExperience.find({
-            host: hostId,
-            status: { $in: ['confirmed', 'pending'] }
-        }).select('bookingDate'); // We only need the date to block the calendar
+    const bookings = await BookingExperience.find({
+      host: hostId,
+      status: { $in: ["confirmed", "pending"] },
+    }).select("bookingDate");
 
-        res.status(200).json(bookings);
-    } catch (err) {
-        console.error("Availability Fetch Error:", err.message);
-        res.status(500).json({ error: "Failed to fetch host availability" });
+    res.status(200).json(bookings);
+  } catch (err) {
+    console.error("Availability Fetch Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch host availability" });
+  }
+};
+
+/**
+ * @desc    Get availability by experienceId
+ * @route   GET /api/bookings/experience-availability/:experienceId
+ * @access  Public
+ */
+const getExperienceAvailability = async (req, res) => {
+  try {
+    const { experienceId } = req.params;
+
+    const exp = await Experience.findById(experienceId).select("host");
+    if (!exp) {
+      return res.status(404).json({ error: "Experience not found" });
     }
+
+    const bookings = await BookingExperience.find({
+      host: exp.host,
+      status: { $in: ["confirmed", "pending"] },
+    }).select("bookingDate");
+
+    res.status(200).json(bookings);
+  } catch (err) {
+    console.error("Experience Availability Fetch Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch experience availability" });
+  }
+};
+
+/**
+ * @desc    Create a new booking
+ * @route   POST /api/bookings/add
+ * @access  Private (Tourist)
+ */
+const createBooking = async (req, res) => {
+  try {
+    const touristId = req.user.id;
+
+    const {
+      experience,
+      touristName,
+      touristImage,
+      bookingDate,
+      guests,
+      totalPrice,
+      specialRequests,
+    } = req.body;
+
+    if (!experience || !bookingDate || !guests || !totalPrice) {
+      return res.status(400).json({
+        error: "experience, bookingDate, guests, and totalPrice are required",
+      });
+    }
+
+    const exp = await Experience.findById(experience);
+    if (!exp) {
+      return res.status(404).json({ error: "Experience not found" });
+    }
+
+    const existingBooking = await BookingExperience.findOne({
+      tourist: touristId,
+      experience: exp._id,
+      bookingDate: new Date(bookingDate),
+      status: {
+        $nin: ["cancelled_by_tourist", "cancelled_by_host", "cancelled"],
+      },
+    });
+
+    if (existingBooking) {
+      return res.status(400).json({
+        error:
+          "You have already sent a booking request for this experience at this specific time.",
+      });
+    }
+
+    const reservedSlot = await BookingExperience.findOne({
+      host: exp.host,
+      bookingDate: new Date(bookingDate),
+      status: { $in: ["pending", "confirmed"] },
+    });
+
+    if (reservedSlot) {
+      return res.status(400).json({
+        error: "This time slot is already reserved. Please choose another time.",
+      });
+    }
+
+    const newBooking = await BookingExperience.create({
+      experience: exp._id,
+      tourist: touristId,
+      touristName: touristName || "Traveler",
+      touristImage: touristImage || "",
+      host: exp.host,
+      hostName: exp.hostName || "Host",
+      bookingDate: new Date(bookingDate),
+      guests: Number(guests),
+      totalPrice: Number(totalPrice),
+      specialRequests: specialRequests || "",
+      status: "pending",
+    });
+
+    res.status(201).json({
+      msg: "Booking request created successfully",
+      newBooking,
+    });
+  } catch (err) {
+    console.error("Booking POST Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
 };
 
 /**
@@ -32,17 +136,16 @@ const getHostAvailability = async (req, res) => {
  * @access  Private (Host only)
  */
 const getHostBookings = async (req, res) => {
-    try {
-        // Find all bookings for this host and include experience details (title, price, image)
-        const bookings = await BookingExperience.find({ host: req.user.id })
-            .populate('experience', 'title price images') 
-            .sort({ createdAt: -1 }); // Newest requests first
+  try {
+    const bookings = await BookingExperience.find({ host: req.user.id })
+      .populate("experience", "title price images")
+      .sort({ createdAt: -1 });
 
-        res.status(200).json(bookings);
-    } catch (err) {
-        console.error("Fetch Host Bookings Error:", err.message);
-        res.status(500).json({ error: "Failed to fetch booking requests" });
-    }
+    res.status(200).json(bookings);
+  } catch (err) {
+    console.error("Fetch Host Bookings Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch booking requests" });
+  }
 };
 
 /**
@@ -51,84 +154,99 @@ const getHostBookings = async (req, res) => {
  * @access  Private (Host or Tourist)
  */
 const updateStatus = async (req, res) => {
-    try {
-        const { status } = req.body; // Incoming status: 'confirmed' or 'cancelled'
-        const bookingId = req.params.id;
-        const userId = req.user.id;
+  try {
+    const { status } = req.body;
+    const bookingId = req.params.id;
+    const userId = req.user.id;
 
-        // 1. Verify if the booking exists
-        const booking = await BookingExperience.findById(bookingId).populate('experience', 'title');
-        if (!booking) {
-            return res.status(404).json({ error: "Booking request not found" });
-        }
+    const booking = await BookingExperience.findById(bookingId).populate(
+      "experience",
+      "title"
+    );
 
-        // 2. Determine user ownership
-        const isHost = booking.host.toString() === userId.toString();
-        const isTourist = booking.tourist.toString() === userId.toString();
-
-        // 3. Authorization Check
-        if (status === 'confirmed' && !isHost) {
-            return res.status(403).json({ error: "Only the host can confirm this booking" });
-        }
-
-        if (status === 'cancelled' && !isHost && !isTourist) {
-            return res.status(403).json({ error: "Unauthorized to cancel this booking" });
-        }
-
-        // 4. Prepare Status Updates
-        let updateData = { status: status };
-
-        // Handle logical status for cancellations
-        if (status === 'cancelled') {
-            if (isHost) {
-                updateData.status = 'cancelled_by_host';
-                updateData.cancelledBy = 'host';
-            } else if (isTourist) {
-                updateData.status = 'cancelled_by_tourist';
-                updateData.cancelledBy = 'tourist';
-            }
-        }
-
-        /**
-         * 5. Double Booking Prevention (Race Condition)
-         * Before confirming, we re-check if any other booking was confirmed 
-         * at this exact time while this request was 'pending'.
-         */
-        if (status === 'confirmed') {
-            const conflict = await BookingExperience.findOne({
-                _id: { $ne: bookingId }, // Ignore current booking
-                host: booking.host,
-                bookingDate: booking.bookingDate,
-                status: 'confirmed'
-            });
-
-            if (conflict) {
-                return res.status(400).json({ 
-                    error: "Availability mismatch: This slot was recently confirmed for another tourist." 
-                });
-            }
-        }
-
-        // 6. Update the record
-        const updatedBooking = await BookingExperience.findByIdAndUpdate(
-            bookingId,
-            updateData,
-            { new: true, runValidators: false } 
-        ).populate('experience', 'title images');
-
-        res.status(200).json({ 
-            msg: `Booking successfully updated to: ${updateData.status}`, 
-            booking: updatedBooking 
-        });
-
-    } catch (err) {
-        console.error("Update Status Error:", err.message);
-        res.status(500).json({ error: "Server error occurred during status update" });
+    if (!booking) {
+      return res.status(404).json({ error: "Booking request not found" });
     }
+
+    const isHost = booking.host.toString() === userId.toString();
+    const isTourist = booking.tourist.toString() === userId.toString();
+
+    if (status === "confirmed" && !isHost) {
+      return res
+        .status(403)
+        .json({ error: "Only the host can confirm this booking" });
+    }
+
+    if (status === "cancelled" && !isHost && !isTourist) {
+      return res.status(403).json({ error: "Unauthorized to cancel this booking" });
+    }
+
+    let updateData = { status };
+
+    if (status === "cancelled") {
+      if (isHost) {
+        updateData.status = "cancelled_by_host";
+        updateData.cancelledBy = "host";
+      } else if (isTourist) {
+        updateData.status = "cancelled_by_tourist";
+        updateData.cancelledBy = "tourist";
+      }
+    }
+
+    if (status === "confirmed") {
+      const conflict = await BookingExperience.findOne({
+        _id: { $ne: bookingId },
+        host: booking.host,
+        bookingDate: booking.bookingDate,
+        status: "confirmed",
+      });
+
+      if (conflict) {
+        return res.status(400).json({
+          error:
+            "Availability mismatch: This slot was recently confirmed for another tourist.",
+        });
+      }
+    }
+
+    const updatedBooking = await BookingExperience.findByIdAndUpdate(
+      bookingId,
+      updateData,
+      { new: true, runValidators: false }
+    ).populate("experience", "title images");
+
+    res.status(200).json({
+      msg: `Booking successfully updated to: ${updateData.status}`,
+      booking: updatedBooking,
+    });
+  } catch (err) {
+    console.error("Update Status Error:", err.message);
+    res.status(500).json({ error: "Server error occurred during status update" });
+  }
+};
+
+/**
+ * @desc    Get tourist bookings
+ * @route   GET /api/bookings/tourist/my-list
+ * @access  Private
+ */
+const getTouristBookings = async (req, res) => {
+  try {
+    const bookings = await BookingExperience.find({ tourist: req.user.id })
+      .populate("experience")
+      .sort({ createdAt: -1 });
+
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({ error: "Server Error" });
+  }
 };
 
 module.exports = {
-    getHostAvailability, // Exported to be used in routes
-    getHostBookings,
-    updateStatus
+  getHostAvailability,
+  getExperienceAvailability,
+  createBooking,
+  getHostBookings,
+  updateStatus,
+  getTouristBookings,
 };

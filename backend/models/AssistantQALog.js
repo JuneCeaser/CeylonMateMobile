@@ -1,20 +1,67 @@
 const mongoose = require("mongoose");
 
-const assistantQALogSchema = new mongoose.Schema({
-  touristId: { type: String, required: true, index: true },
-  experienceId: { type: mongoose.Schema.Types.ObjectId, ref: "Experience", required: true, index: true },
+const assistantQALogSchema = new mongoose.Schema(
+  {
+    touristId: {
+      type: String,
+      required: true,
+      index: true,
+      trim: true,
+    },
 
-  question: { type: String, required: true },
-  answer: { type: String, default: "" },
+    experienceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Experience",
+      required: true,
+      index: true,
+    },
 
-  intent: { type: String, default: "OTHER" },
-  action: { type: String, enum: ["ANSWER", "CLARIFY", "REFUSE"], default: "ANSWER" },
-  route: { type: String, enum: ["VERIFIED_QA", "EXPERIENCE", "NONE"], default: "EXPERIENCE" },
+    question: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  confidence: { type: Number, default: 0 },
-  verifier: { type: String, enum: ["SUPPORTED", "UNSUPPORTED", "SKIPPED"], default: "SKIPPED" },
+    answer: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-  createdAt: { type: Date, default: Date.now }
-});
+    intent: {
+      type: String,
+      default: "OTHER",
+      trim: true,
+    },
 
-module.exports = mongoose.model("AssistantQALog", assistantQALogSchema);
+    action: {
+      type: String,
+      enum: ["ANSWER", "CLARIFY", "REFUSE"],
+      default: "ANSWER",
+      index: true,
+    },
+
+    route: {
+      type: String,
+      enum: ["VERIFIED_QA", "EXPERIENCE", "NONE"],
+      default: "EXPERIENCE",
+      index: true,
+    },
+
+    confidence: {
+      type: Number,
+      default: 0,
+    },
+
+    verifier: {
+      type: String,
+      enum: ["SUPPORTED", "UNSUPPORTED", "SKIPPED"],
+      default: "SKIPPED",
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports =
+  mongoose.models.AssistantQALog ||
+  mongoose.model("AssistantQALog", assistantQALogSchema);

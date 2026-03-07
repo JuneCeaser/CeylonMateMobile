@@ -8,13 +8,7 @@ import { Colors } from "../../constants/theme";
 export default function NotificationsScreen() {
   const router = useRouter();
 
-  // Later replace with API data:
-  // Suggested notification types:
-  // - AI: new unanswered questions, verified QA saved
-  // - Booking updates (non-request): cancelled, completed, rescheduled
-  // - System: payouts, verification, approvals
   const notifications = useMemo(() => [], []);
-
   const hasItems = notifications.length > 0;
 
   return (
@@ -28,10 +22,9 @@ export default function NotificationsScreen() {
 
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.title}>Notifications</Text>
-            <Text style={styles.subtitle}>AI updates & important alerts</Text>
+            <Text style={styles.subtitle}>Important updates</Text>
           </View>
 
-          {/* Optional future action: mark all read */}
           <TouchableOpacity onPress={() => {}} style={styles.headerAction} activeOpacity={0.85} disabled>
             <Ionicons name="checkmark-done" size={20} color={"rgba(255,255,255,0.6)"} />
           </TouchableOpacity>
@@ -39,8 +32,8 @@ export default function NotificationsScreen() {
 
         {/* Info pill */}
         <View style={styles.infoPill}>
-          <Ionicons name="sparkles-outline" size={14} color={Colors.primary} />
-          <Text style={styles.infoText}>AI alerts, cancellations, and system updates appear here.</Text>
+          <Ionicons name="notifications-outline" size={14} color={Colors.primary} />
+          <Text style={styles.infoText}>Your recent updates will appear here.</Text>
         </View>
       </LinearGradient>
 
@@ -54,7 +47,7 @@ export default function NotificationsScreen() {
 
             <Text style={styles.emptyTitle}>No notifications yet</Text>
             <Text style={styles.emptyText}>
-              When you receive AI questions, booking cancellations, or important system alerts, you’ll see them here.
+              When important updates arrive, you will see them here.
             </Text>
 
             <View style={styles.ctaRow}>
@@ -76,22 +69,10 @@ export default function NotificationsScreen() {
                 <Text style={styles.secondaryBtnText}>Back to Dashboard</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={styles.hintBox}>
-              <Ionicons name="information-circle-outline" size={16} color={Colors.primary} />
-              <Text style={styles.hintText}>
-                Booking requests are managed in <Text style={styles.hintStrong}>Bookings</Text>, not here.
-              </Text>
-            </View>
           </View>
         ) : (
           <View style={{ paddingTop: 8 }}>
-            {/* When you add API, render notifications list here */}
-            {/* Example UI idea:
-                - AI notification card
-                - cancellation card
-                - system card
-            */}
+            {/* Future notifications list */}
           </View>
         )}
       </ScrollView>
@@ -102,9 +83,10 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
-  // Header
   header: { paddingTop: 62, paddingBottom: 16, paddingHorizontal: 16 },
+
   headerTop: { flexDirection: "row", alignItems: "center" },
+
   roundBackBtn: {
     width: 40,
     height: 40,
@@ -113,13 +95,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   title: { fontSize: 20, fontWeight: "700", color: Colors.surface },
+
   subtitle: {
     fontSize: 12,
     color: "rgba(255,255,255,0.85)",
     marginTop: 2,
     fontWeight: "400",
   },
+
   headerAction: { padding: 6 },
 
   infoPill: {
@@ -135,9 +120,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+
   infoText: { fontSize: 12, color: Colors.text, fontWeight: "400" },
 
-  // Body
   body: { flexGrow: 1, padding: 16 },
 
   emptyWrap: {
@@ -163,7 +148,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
 
-  emptyTitle: { marginTop: 12, fontSize: 16, fontWeight: "700", color: Colors.text },
+  emptyTitle: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.text,
+  },
 
   emptyText: {
     marginTop: 6,
@@ -190,7 +180,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
   },
-  primaryBtnText: { color: Colors.surface, fontWeight: "700", fontSize: 13 },
+
+  primaryBtnText: {
+    color: Colors.surface,
+    fontWeight: "700",
+    fontSize: 13,
+  },
 
   secondaryBtn: {
     flexDirection: "row",
@@ -204,20 +199,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  secondaryBtnText: { color: Colors.primary, fontWeight: "700", fontSize: 13 },
 
-  hintBox: {
-    marginTop: 14,
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "flex-start",
-    columnGap: 8,
-    backgroundColor: Colors.primary + "10",
-    borderWidth: 1,
-    borderColor: Colors.primary + "20",
-    padding: 12,
-    borderRadius: 14,
+  secondaryBtnText: {
+    color: Colors.primary,
+    fontWeight: "700",
+    fontSize: 13,
   },
-  hintText: { flex: 1, color: Colors.text, fontSize: 12, lineHeight: 18, fontWeight: "400" },
-  hintStrong: { fontWeight: "700", color: Colors.text },
 });

@@ -31,6 +31,7 @@ app.use("/api/ai", aiRoutes); // Updated: Use AI routes for RAG
 app.use('/api/moments', momentRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use("/api/assistant", assistantRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // Health Check
 app.get("/", (req, res) => res.send("Ceylon Mate API Running Successfully"));
