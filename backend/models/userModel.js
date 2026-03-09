@@ -78,6 +78,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // 🔹 Added for recommender system
+    recommendationProfile: {
+      interests: {
+        type: [String],
+        default: [],
+      },
+    },
   },
   { timestamps: true }
 );
