@@ -315,7 +315,20 @@ export default function TouristDashboard() {
                     </View>
                 </View>
 
-
+                {/* ── Knowledge Graph Card ── */}
+                <TouchableOpacity
+                    style={styles.kgCard}
+                    onPress={() => router.push('/(tourist)/knowledge-graph')}
+                >
+                    <View style={styles.kgIconWrap}>
+                        <Ionicons name="git-network" size={26} color="#fff" />
+                    </View>
+                    <View style={styles.kgTextWrap}>
+                        <Text style={styles.kgTitle}>Heritage Knowledge Graph</Text>
+                        <Text style={styles.kgSubtitle}>Explore kings, temples & relationships · Neo4j</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#ffffff88" />
+                </TouchableOpacity>
 
                 {/* Featured Destinations */}
                 <View style={styles.section}>
@@ -812,5 +825,44 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: Colors.surface,
+    },
+
+    // ── Knowledge Graph Card ──
+    kgCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1A1A2E',
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.md,
+        marginBottom: Spacing.xl,
+        borderWidth: 1,
+        borderColor: '#2E86AB44',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    kgIconWrap: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#2E86AB',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: Spacing.md,
+    },
+    kgTextWrap: {
+        flex: 1,
+    },
+    kgTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#fff',
+        marginBottom: 2,
+    },
+    kgSubtitle: {
+        fontSize: 12,
+        color: '#ffffff88',
     },
 });
