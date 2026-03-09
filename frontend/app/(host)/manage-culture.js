@@ -19,6 +19,7 @@ import { Colors } from "../../constants/theme";
 import { useAuth } from "../../context/AuthContext";
 
 const ORANGE = "#F59E0B";
+const HEADER_HEIGHT = 250;
 
 export default function ManageCulture() {
   const router = useRouter();
@@ -27,6 +28,9 @@ export default function ManageCulture() {
   const [loading, setLoading] = useState(true);
   const [experiences, setExperiences] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [unansweredCount, setUnansweredCount] = useState(0);
+
+  const profileInitial = (userProfile?.name || "H").trim().charAt(0).toUpperCase();
 
   const loadData = useCallback(async () => {
     try {
@@ -38,10 +42,35 @@ export default function ManageCulture() {
       const bookRes = await api.get("/bookings/host/list");
       const myBookings = Array.isArray(bookRes.data) ? bookRes.data : [];
 
+      let totalUnknowns = 0;
+
+      for (const exp of myExps) {
+        try {
+          const unknownRes = await api.get(`/assistant/unknown/${exp._id}`);
+          const unknownList = Array.isArray(unknownRes.data) ? unknownRes.data : [];
+
+          const filteredList = unknownList.filter(
+            (item) => !item?.type || item.type === "NEEDS_HOST"
+          );
+
+          totalUnknowns += filteredList.length;
+        } catch (err) {
+          console.log(
+            "Unknown fetch failed for experience:",
+            exp?._id,
+            err?.response?.data || err?.message
+          );
+        }
+      }
+
       setExperiences(myExps);
       setBookings(myBookings);
+      setUnansweredCount(totalUnknowns);
     } catch (e) {
       console.log("Host dashboard load error:", e?.response?.data || e.message);
+      setExperiences([]);
+      setBookings([]);
+      setUnansweredCount(0);
     } finally {
       setLoading(false);
     }
@@ -87,7 +116,7 @@ export default function ManageCulture() {
         <Ionicons name={icon} size={20} color={Colors.surface} />
       </View>
 
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.actionTitle} numberOfLines={1}>
           {title}
         </Text>
@@ -106,7 +135,6 @@ export default function ManageCulture() {
     </TouchableOpacity>
   );
 
-  // ✅ Card like your screenshot (compact, small image, divider, right-side buttons)
   const ExperienceCompactCard = ({ exp }) => {
     const imageUrl = exp.images?.[0] || "https://via.placeholder.com/300x300";
     const cat = (exp.category || "EXPERIENCE").toUpperCase();
@@ -118,12 +146,10 @@ export default function ManageCulture() {
 
     return (
       <TouchableOpacity activeOpacity={0.92} onPress={goEdit} style={styles.expCard}>
-        {/* Left image */}
         <View style={styles.expImgWrap}>
           <Image source={{ uri: imageUrl }} style={styles.expImg} resizeMode="cover" />
         </View>
 
-        {/* Middle content */}
         <View style={styles.expMid}>
           <Text style={styles.expCategory} numberOfLines={1}>
             {cat}
@@ -136,10 +162,8 @@ export default function ManageCulture() {
           </Text>
         </View>
 
-        {/* Divider */}
         <View style={styles.expDivider} />
 
-        {/* Right actions */}
         <View style={styles.expActions}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.editBtn]}
@@ -165,64 +189,72 @@ export default function ManageCulture() {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-        {/* HEADER */}
-        <LinearGradient colors={[Colors.primary, Colors.success]} style={styles.header}>
-          <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.greeting}>Ayubowan 🙏</Text>
-              <Text style={styles.name}>{userProfile?.name || "Host"}</Text>
-              <Text style={styles.subtitle}>Your Smart Host Hub</Text>
-            </View>
+      <LinearGradient colors={[Colors.primary, Colors.success]} style={styles.header}>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greeting}>Ayubowan 🙏</Text>
+            <Text style={styles.name}>{userProfile?.name || "Host"}</Text>
+            <Text style={styles.subtitle}>Your Smart Host Hub</Text>
+          </View>
 
-            <View style={styles.headerIcons}>
-              <TouchableOpacity
-                onPress={() => router.push("notifications")}
-                style={styles.headerIconBtn}
-                activeOpacity={0.85}
-              >
-                <View style={{ position: "relative" }}>
-                  <Ionicons name="notifications" size={22} color={Colors.surface} />
-                  {pendingCount > 0 ? <View style={styles.badgeDot} /> : null}
+          <View style={styles.headerIcons}>
+            <TouchableOpacity
+              onPress={() => router.push("notifications")}
+              style={styles.headerIconBtn}
+              activeOpacity={0.85}
+            >
+              <View style={{ position: "relative" }}>
+                <Ionicons name="notifications" size={22} color={Colors.surface} />
+                {pendingCount > 0 ? <View style={styles.badgeDot} /> : null}
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("profile")}
+              style={styles.headerIconBtn}
+              activeOpacity={0.85}
+            >
+              {userProfile?.profileImage ? (
+                <Image
+                  source={{ uri: userProfile.profileImage }}
+                  style={styles.headerProfileImage}
+                />
+              ) : (
+                <View style={styles.headerProfileFallback}>
+                  <Text style={styles.headerProfileFallbackText}>{profileInitial}</Text>
                 </View>
-              </TouchableOpacity>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
 
-              <TouchableOpacity
-                onPress={() => router.push("profile")}
-                style={styles.headerIconBtn}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="person" size={22} color={Colors.surface} />
-              </TouchableOpacity>
-            </View>
+        <View style={styles.kpiWrap}>
+          <View style={styles.kpiItem}>
+            <Text style={styles.kpiValue}>{experiences.length}</Text>
+            <Text style={styles.kpiLabel}>Listings</Text>
           </View>
 
-          {/* KPI BAR */}
-          <View style={styles.kpiWrap}>
-            <View style={styles.kpiItem}>
-              <Text style={styles.kpiValue}>{experiences.length}</Text>
-              <Text style={styles.kpiLabel}>Listings</Text>
-            </View>
+          <View style={styles.kpiDivider} />
 
-            <View style={styles.kpiDivider} />
-
-            <View style={styles.kpiItem}>
-              <Text style={[styles.kpiValue, { color: Colors.secondary }]}>{earningsText}</Text>
-              <Text style={styles.kpiLabel}>Earnings</Text>
-            </View>
-
-            <View style={styles.kpiDivider} />
-
-            <View style={styles.kpiItem}>
-              <Text style={[styles.kpiValue, { color: Colors.accent }]}>{confirmedCount}</Text>
-              <Text style={styles.kpiLabel}>Confirmed</Text>
-            </View>
+          <View style={styles.kpiItem}>
+            <Text style={[styles.kpiValue, { color: Colors.secondary }]}>{earningsText}</Text>
+            <Text style={styles.kpiLabel}>Earnings</Text>
           </View>
-        </LinearGradient>
 
-        {/* BODY */}
+          <View style={styles.kpiDivider} />
+
+          <View style={styles.kpiItem}>
+            <Text style={[styles.kpiValue, { color: Colors.accent }]}>{confirmedCount}</Text>
+            <Text style={styles.kpiLabel}>Confirmed</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.body}>
-          {/* ✅ little bit bold like your screenshot */}
           <Text style={styles.sectionTitleStrong}>Quick Actions</Text>
 
           <View style={styles.actionsCard}>
@@ -236,17 +268,16 @@ export default function ManageCulture() {
             />
             <View style={styles.rowDivider} />
 
-            {/* ✅ AI icon orange (not blue) with shadow */}
             <ActionRow
               icon="sparkles"
               iconWrapStyle={styles.aiIconWrap}
               title="AI Questions"
-              sub="Answer and train your assistant"
+              sub={`${unansweredCount} unanswered questions`}
+              badge={unansweredCount}
               onPress={() => router.push("ai-questions")}
             />
           </View>
 
-          {/* MY EXPERIENCES */}
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionTitleStrong}>My Experiences</Text>
@@ -283,7 +314,7 @@ export default function ManageCulture() {
                 scrollEnabled={false}
                 numColumns={1}
                 ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-                contentContainerStyle={{ paddingBottom: 6 }}
+                contentContainerStyle={{ paddingBottom: 24 }}
               />
             </View>
           )}
@@ -296,12 +327,34 @@ export default function ManageCulture() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
-  header: { paddingTop: 58, paddingBottom: 16, paddingHorizontal: 18 },
+  header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    elevation: 10,
+    paddingTop: 58,
+    paddingBottom: 16,
+    paddingHorizontal: 18,
+    height: HEADER_HEIGHT,
+  },
+
+  scrollContent: {
+    paddingTop: HEADER_HEIGHT - 18,
+    paddingBottom: 20,
+  },
+
   headerRow: { flexDirection: "row", alignItems: "center" },
 
   greeting: { color: Colors.surface, fontSize: 14, fontWeight: "500" },
   name: { color: Colors.surface, fontSize: 28, fontWeight: "700", marginTop: 2 },
-  subtitle: { color: "rgba(255,255,255,0.88)", fontSize: 13, fontWeight: "500", marginTop: 8 },
+  subtitle: {
+    color: "rgba(255,255,255,0.88)",
+    fontSize: 13,
+    fontWeight: "500",
+    marginTop: 8,
+  },
 
   headerIcons: { flexDirection: "row", alignItems: "center", columnGap: 12 },
   headerIconBtn: {
@@ -311,7 +364,30 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.16)",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
+
+  headerProfileImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+
+  headerProfileFallback: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  headerProfileFallbackText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
   badgeDot: {
     position: "absolute",
     top: -2,
@@ -340,9 +416,8 @@ const styles = StyleSheet.create({
   kpiLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 2, fontWeight: "500" },
   kpiDivider: { width: 1, height: 36, backgroundColor: Colors.border },
 
-  body: { paddingHorizontal: 16, paddingTop: 16 },
+  body: { paddingHorizontal: 16, paddingTop: 40 },
 
-  // ✅ “little bit bold”
   sectionTitleStrong: {
     fontSize: 20,
     fontWeight: "700",
@@ -415,7 +490,6 @@ const styles = StyleSheet.create({
   },
   addBtnText: { color: Colors.surface, fontWeight: "600", fontSize: 13 },
 
-  // ✅ Experience card (like screenshot)
   expCard: {
     flexDirection: "row",
     backgroundColor: Colors.surface,
@@ -426,7 +500,6 @@ const styles = StyleSheet.create({
     minHeight: 88,
     paddingHorizontal: 10,
     paddingVertical: 10,
-
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 10,
@@ -506,7 +579,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.danger + "22",
   },
 
-  // Empty state
   emptyBox: {
     marginTop: 12,
     backgroundColor: Colors.surface,

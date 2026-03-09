@@ -1,6 +1,31 @@
 const BookingExperience = require("../models/bookingExperience");
 const Experience = require("../models/experience");
 
+const normalizeBookingDate = (value) => {
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const formatRequestedTime = (value) => {
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
+
+  return d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 /**
  * @desc    Get host availability using hostId
  * @route   GET /api/bookings/host-availability/:hostId
@@ -12,7 +37,7 @@ const getHostAvailability = async (req, res) => {
 
     const bookings = await BookingExperience.find({
       host: hostId,
-      status: { $in: ["confirmed", "pending"] },
+      status: "confirmed",
     }).select("bookingDate");
 
     res.status(200).json(bookings);
@@ -38,7 +63,7 @@ const getExperienceAvailability = async (req, res) => {
 
     const bookings = await BookingExperience.find({
       host: exp.host,
-      status: { $in: ["confirmed", "pending"] },
+      status: "confirmed",
     }).select("bookingDate");
 
     res.status(200).json(bookings);
@@ -73,6 +98,14 @@ const createBooking = async (req, res) => {
       });
     }
 
+    const normalizedBookingDate = normalizeBookingDate(bookingDate);
+
+    if (!normalizedBookingDate) {
+      return res.status(400).json({ error: "Invalid booking date" });
+    }
+
+    const requestedTime = formatRequestedTime(bookingDate);
+
     const exp = await Experience.findById(experience);
     if (!exp) {
       return res.status(404).json({ error: "Experience not found" });
@@ -81,7 +114,7 @@ const createBooking = async (req, res) => {
     const existingBooking = await BookingExperience.findOne({
       tourist: touristId,
       experience: exp._id,
-      bookingDate: new Date(bookingDate),
+      bookingDate: normalizedBookingDate,
       status: {
         $nin: ["cancelled_by_tourist", "cancelled_by_host", "cancelled"],
       },
@@ -89,20 +122,19 @@ const createBooking = async (req, res) => {
 
     if (existingBooking) {
       return res.status(400).json({
-        error:
-          "You have already sent a booking request for this experience at this specific time.",
+        error: "You have already sent a booking request for this date.",
       });
     }
 
-    const reservedSlot = await BookingExperience.findOne({
+    const confirmedDate = await BookingExperience.findOne({
       host: exp.host,
-      bookingDate: new Date(bookingDate),
-      status: { $in: ["pending", "confirmed"] },
+      bookingDate: normalizedBookingDate,
+      status: "confirmed",
     });
 
-    if (reservedSlot) {
+    if (confirmedDate) {
       return res.status(400).json({
-        error: "This time slot is already reserved. Please choose another time.",
+        error: "This date is already booked. Please choose another date.",
       });
     }
 
@@ -113,7 +145,8 @@ const createBooking = async (req, res) => {
       touristImage: touristImage || "",
       host: exp.host,
       hostName: exp.hostName || "Host",
-      bookingDate: new Date(bookingDate),
+      bookingDate: normalizedBookingDate,
+      requestedTime,
       guests: Number(guests),
       totalPrice: Number(totalPrice),
       specialRequests: specialRequests || "",
@@ -203,8 +236,7 @@ const updateStatus = async (req, res) => {
 
       if (conflict) {
         return res.status(400).json({
-          error:
-            "Availability mismatch: This slot was recently confirmed for another tourist.",
+          error: "This date has already been confirmed for another tourist.",
         });
       }
     }

@@ -36,7 +36,8 @@ export default function VRViewerScreen() {
   const webLoadedRef = useRef(false);
 
   const imageUrl = pickParam(params.imageUrl);
-  const title = pickParam(params.title, "360° Cultural Preview");
+  const shortTitle = pickParam(params.title, "360° Cultural Preview");
+  const fullTitle = pickParam(params.fullTitle, shortTitle || "360° Cultural Preview");
   const experienceId = pickParam(params.experienceId);
   const returnTo = pickParam(
     params.returnTo,
@@ -46,6 +47,8 @@ export default function VRViewerScreen() {
 
   const actualImageUrl =
     imageUrl || "http://192.168.8.195:5000/uploads/vr360/sample-360.jpg";
+
+  const displayTitle = fullTitle || shortTitle || "360° Cultural Preview";
 
   const webViewInstanceKey = useMemo(() => {
     return viewerKey || `${actualImageUrl}-${experienceId || "no-id"}`;
@@ -120,11 +123,6 @@ export default function VRViewerScreen() {
         const dt = Math.min((now - (lastTsRef.current || now)) / 1000, 0.05);
         lastTsRef.current = now;
 
-        /**
-         * Tune here if needed:
-         * If left-right feels reversed, change += to -= for yaw.
-         * If up-down feels reversed, change += to -= for pitch.
-         */
         yawRef.current += z * dt * 57.2958;
         pitchRef.current += x * dt * 57.2958;
 
@@ -368,7 +366,7 @@ export default function VRViewerScreen() {
           <>
             <View style={styles.topBar} pointerEvents="box-none">
               <TouchableOpacity
-                style={styles.backBtn}
+                style={styles.sideBtn}
                 onPress={handleBack}
                 activeOpacity={0.85}
               >
@@ -379,13 +377,13 @@ export default function VRViewerScreen() {
               </TouchableOpacity>
 
               <View style={styles.titleWrap}>
-                <Text numberOfLines={1} style={styles.titleText}>
-                  {title}
+                <Text numberOfLines={2} style={styles.titleText}>
+                  {displayTitle}
                 </Text>
               </View>
 
               <TouchableOpacity
-                style={styles.resetBtn}
+                style={styles.sideBtn}
                 onPress={resetView}
                 activeOpacity={0.85}
               >
@@ -472,19 +470,23 @@ const styles = StyleSheet.create({
   topBar: {
     position: "absolute",
     top: TOP_OFFSET,
-    left: 14,
-    right: 14,
+    left: 12,
+    right: 12,
     zIndex: 40,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
 
-  backBtn: {},
+  sideBtn: {
+    width: 88,
+  },
+
   backBtnInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    height: 46,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    minHeight: 46,
     borderRadius: 23,
     backgroundColor: "rgba(0,0,0,0.42)",
     borderWidth: 1,
@@ -499,27 +501,30 @@ const styles = StyleSheet.create({
 
   titleWrap: {
     flex: 1,
-    marginHorizontal: 10,
+    marginHorizontal: 8,
     backgroundColor: "rgba(0,0,0,0.36)",
     borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+    minHeight: 46,
+    justifyContent: "center",
   },
   titleText: {
     color: "white",
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "700",
     textAlign: "center",
+    lineHeight: 18,
   },
 
-  resetBtn: {},
   resetBtnInner: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    height: 46,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    minHeight: 46,
     borderRadius: 23,
     backgroundColor: "rgba(0,0,0,0.42)",
     borderWidth: 1,

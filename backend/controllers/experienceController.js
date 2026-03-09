@@ -64,6 +64,10 @@ function normalizeLocation(location) {
   return normalized;
 }
 
+function buildFileUrl(req, folderName, filename) {
+  return `${req.protocol}://${req.get("host")}/uploads/${folderName}/${filename}`;
+}
+
 function toPublicExperience(experienceDoc) {
   if (!experienceDoc) return null;
 
@@ -280,18 +284,20 @@ const createExperience = async (req, res) => {
     experienceData.stepsText = normalizeStringArray(experienceData.stepsText);
     experienceData.rulesText = normalizeStringArray(experienceData.rulesText);
 
+    // Normal experience image
     if (req.files?.image?.[0]) {
       experienceData.images = [
-        `${req.protocol}://${req.get("host")}/uploads/experiences/${req.files.image[0].filename}`,
+        buildFileUrl(req, "experiences", req.files.image[0].filename),
       ];
     } else if (!Array.isArray(experienceData.images)) {
       experienceData.images = [];
     }
 
+    // Separate 360 VR image
     if (req.files?.vrImage?.[0]) {
       experienceData.vrPreview = {
         type: "image",
-        url: `${req.protocol}://${req.get("host")}/uploads/vr360/${req.files.vrImage[0].filename}`,
+        url: buildFileUrl(req, "vr360", req.files.vrImage[0].filename),
       };
     } else {
       const parsedVrPreview = parsePossiblyJson(experienceData.vrPreview);
@@ -300,6 +306,7 @@ const createExperience = async (req, res) => {
         : { type: "image", url: "" };
     }
 
+    // Backward compatibility only
     experienceData.vrVideoUrl = "";
 
     const newExperience = new Experience({
@@ -473,21 +480,28 @@ const updateExperience = async (req, res) => {
       updateData.price = Number(updateData.price);
     }
 
-    updateData.stepsText = normalizeStringArray(updateData.stepsText);
-    updateData.rulesText = normalizeStringArray(updateData.rulesText);
+    if (updateData.stepsText !== undefined) {
+      updateData.stepsText = normalizeStringArray(updateData.stepsText);
+    }
 
+    if (updateData.rulesText !== undefined) {
+      updateData.rulesText = normalizeStringArray(updateData.rulesText);
+    }
+
+    // Normal experience image
     if (req.files?.image?.[0]) {
       updateData.images = [
-        `${req.protocol}://${req.get("host")}/uploads/experiences/${req.files.image[0].filename}`,
+        buildFileUrl(req, "experiences", req.files.image[0].filename),
       ];
     } else {
       updateData.images = Array.isArray(experience.images) ? experience.images : [];
     }
 
+    // Separate 360 VR image
     if (req.files?.vrImage?.[0]) {
       updateData.vrPreview = {
         type: "image",
-        url: `${req.protocol}://${req.get("host")}/uploads/vr360/${req.files.vrImage[0].filename}`,
+        url: buildFileUrl(req, "vr360", req.files.vrImage[0].filename),
       };
     } else {
       const parsedVrPreview = parsePossiblyJson(updateData.vrPreview);
@@ -496,6 +510,7 @@ const updateExperience = async (req, res) => {
         : experience.vrPreview || { type: "image", url: "" };
     }
 
+    // Backward compatibility only
     updateData.vrVideoUrl = "";
 
     experience = await Experience.findByIdAndUpdate(

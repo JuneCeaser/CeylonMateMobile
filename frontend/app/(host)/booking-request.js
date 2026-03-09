@@ -39,14 +39,15 @@ export default function BookingRequestsScreen() {
 
   const filteredBookings = useMemo(() => {
     if (activeTab === "history") {
-      // History includes everything EXCEPT pending
-      return bookings.filter((b) => b.status !== "pending");
+      return bookings.filter((b) => b.status !== "pending" && b.status !== "confirmed");
     }
+
     return bookings.filter((b) => b.status === activeTab);
   }, [bookings, activeTab]);
 
   const handleAction = async (id, status) => {
     const actionLabel = status === "confirmed" ? "Accept" : "Decline";
+
     Alert.alert(`${actionLabel} Request`, `Proceed with this action?`, [
       { text: "Cancel", style: "cancel" },
       {
@@ -56,7 +57,10 @@ export default function BookingRequestsScreen() {
             await api.patch(`/bookings/update-status/${id}`, { status });
             fetchBookings();
           } catch (err) {
-            Alert.alert("Error", "Failed to update.");
+            Alert.alert(
+              "Error",
+              err?.response?.data?.error || "Failed to update booking."
+            );
           }
         },
       },
@@ -65,18 +69,55 @@ export default function BookingRequestsScreen() {
 
   const getStatusTheme = (status) => {
     switch (status) {
+      case "pending":
+        return {
+          color: "#A16207",
+          icon: "clock-outline",
+          bg: "#FEF3C7",
+          label: "Pending",
+        };
       case "confirmed":
-        return { color: "#2E7D32", icon: "check-decagram", bg: "#E8F5E9", label: "Accepted" };
+        return {
+          color: "#2E7D32",
+          icon: "check-decagram",
+          bg: "#E8F5E9",
+          label: "Accepted",
+        };
       case "completed":
-        return { color: "#1565C0", icon: "flag-checkered", bg: "#E3F2FD", label: "Completed" };
+        return {
+          color: "#1565C0",
+          icon: "flag-checkered",
+          bg: "#E3F2FD",
+          label: "Completed",
+        };
       case "cancelled_by_host":
-        return { color: "#D32F2F", icon: "close-octagon", bg: "#FFEBEE", label: "Cancelled by Host" };
+        return {
+          color: "#D32F2F",
+          icon: "close-octagon",
+          bg: "#FFEBEE",
+          label: "Cancelled by Host",
+        };
       case "cancelled_by_tourist":
-        return { color: "#D32F2F", icon: "account-cancel", bg: "#FFEBEE", label: "Cancelled by Tourist" };
+        return {
+          color: "#D32F2F",
+          icon: "account-cancel",
+          bg: "#FFEBEE",
+          label: "Cancelled by Tourist",
+        };
       case "cancelled":
-        return { color: "#D32F2F", icon: "close-circle", bg: "#FFEBEE", label: "Cancelled" };
+        return {
+          color: "#D32F2F",
+          icon: "close-circle",
+          bg: "#FFEBEE",
+          label: "Cancelled",
+        };
       default:
-        return { color: "#757575", icon: "history", bg: "#F5F5F5", label: "Past Booking" };
+        return {
+          color: "#757575",
+          icon: "history",
+          bg: "#F5F5F5",
+          label: "Past Booking",
+        };
     }
   };
 
@@ -92,10 +133,25 @@ export default function BookingRequestsScreen() {
     }
   };
 
+  const formatTime = (item) => {
+    if (item?.requestedTime) return item.requestedTime;
+
+    try {
+      return new Date(item.bookingDate).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "";
+    }
+  };
+
   const renderItem = ({ item }) => {
     const theme = getStatusTheme(item.status);
     const firstLetter = (item.touristName || "T").charAt(0).toUpperCase();
-    const guestsText = `${item.guests || 0} ${(item.guests || 0) === 1 ? "Guest" : "Guests"}`;
+    const guestsCount = Number(item.guests) || 0;
+    const guestsText = `${guestsCount} ${guestsCount === 1 ? "Guest" : "Guests"}`;
 
     return (
       <View style={styles.card}>
@@ -114,29 +170,43 @@ export default function BookingRequestsScreen() {
           </View>
         </View>
 
-        <View style={styles.metaRow}>
-          <View style={styles.metaLeft}>
-            <View style={styles.metaItem}>
-              <Ionicons name="calendar-clear-outline" size={13} color={Colors.primary} />
-              <Text style={styles.metaText}>{formatDate(item.bookingDate)}</Text>
+        <View style={styles.infoBlock}>
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Ionicons
+                name="calendar-clear-outline"
+                size={15}
+                color={Colors.primary}
+              />
+              <Text style={styles.infoText}>{formatDate(item.bookingDate)}</Text>
             </View>
 
-            <View style={styles.dot} />
-
-            <View style={styles.metaItem}>
-              <Ionicons name="people-outline" size={13} color="#6B7280" />
-              <Text style={styles.metaText}>{guestsText}</Text>
+            <View style={styles.infoItem}>
+              <Ionicons name="time-outline" size={15} color="#2563EB" />
+              <Text style={styles.infoText}>{formatTime(item)}</Text>
             </View>
           </View>
 
-          <Text style={styles.priceText}>LKR {(Number(item.totalPrice) || 0).toLocaleString()}</Text>
+          <View style={styles.infoRow}>
+            <View style={styles.infoItem}>
+              <Ionicons name="people-outline" size={15} color="#6B7280" />
+              <Text style={styles.infoText}>{guestsText}</Text>
+            </View>
+
+            <View style={styles.infoItem}>
+              <Ionicons name="cash-outline" size={15} color="#2E7D32" />
+              <Text style={styles.priceText}>
+                LKR {(Number(item.totalPrice) || 0).toLocaleString()}
+              </Text>
+            </View>
+          </View>
         </View>
 
         {item.status === "pending" ? (
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={[styles.flexBtn, styles.declineBtn]}
-              onPress={() => handleAction(item._id, "cancelled_by_host")}
+              onPress={() => handleAction(item._id, "cancelled")}
               activeOpacity={0.85}
             >
               <Text style={styles.declineText}>Decline</Text>
@@ -151,9 +221,20 @@ export default function BookingRequestsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.statusBadge, { backgroundColor: theme.bg, borderColor: theme.bg }]}>
-            <MaterialCommunityIcons name={theme.icon} size={14} color={theme.color} />
-            <Text style={[styles.statusText, { color: theme.color }]}>{theme.label}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: theme.bg, borderColor: theme.bg },
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={theme.icon}
+              size={14}
+              color={theme.color}
+            />
+            <Text style={[styles.statusText, { color: theme.color }]}>
+              {theme.label}
+            </Text>
           </View>
         )}
       </View>
@@ -164,7 +245,11 @@ export default function BookingRequestsScreen() {
     <View style={styles.container}>
       <LinearGradient colors={["#1B5E20", "#0A2A0C"]} style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.roundBackBtn} activeOpacity={0.85}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.roundBackBtn}
+            activeOpacity={0.85}
+          >
             <Ionicons name="chevron-back" size={22} color="white" />
           </TouchableOpacity>
 
@@ -173,8 +258,16 @@ export default function BookingRequestsScreen() {
             <Text style={styles.subtitle}>Management Portal</Text>
           </View>
 
-          <TouchableOpacity onPress={fetchBookings} style={styles.refreshIcon} activeOpacity={0.85}>
-            <Ionicons name="sync" size={20} color="rgba(255,255,255,0.85)" />
+          <TouchableOpacity
+            onPress={fetchBookings}
+            style={styles.refreshIcon}
+            activeOpacity={0.85}
+          >
+            <Ionicons
+              name="sync"
+              size={20}
+              color="rgba(255,255,255,0.85)"
+            />
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -182,6 +275,7 @@ export default function BookingRequestsScreen() {
       <View style={styles.tabContainer}>
         {["pending", "confirmed", "history"].map((tab) => {
           const isActive = activeTab === tab;
+
           return (
             <TouchableOpacity
               key={tab}
@@ -209,7 +303,9 @@ export default function BookingRequestsScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Text style={styles.empty}>No bookings in this section</Text>}
+          ListEmptyComponent={
+            <Text style={styles.empty}>No bookings in this section</Text>
+          }
         />
       )}
     </View>
@@ -217,11 +313,20 @@ export default function BookingRequestsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F6F7FB" },
+  container: {
+    flex: 1,
+    backgroundColor: "#F6F7FB",
+  },
 
-  // Header
-  header: { paddingTop: 62, paddingBottom: 34, paddingHorizontal: 16 },
-  headerTop: { flexDirection: "row", alignItems: "center" },
+  header: {
+    paddingTop: 62,
+    paddingBottom: 34,
+    paddingHorizontal: 16,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   roundBackBtn: {
     width: 40,
     height: 40,
@@ -230,12 +335,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  titleContent: { flex: 1, marginLeft: 12 },
-  title: { fontSize: 20, fontWeight: "700", color: "#fff" },
-  subtitle: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 2, fontWeight: "400" },
-  refreshIcon: { padding: 6 },
+  titleContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  subtitle: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 2,
+    fontWeight: "400",
+  },
+  refreshIcon: {
+    padding: 6,
+  },
 
-  // Tabs
   tabContainer: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -245,21 +363,45 @@ const styles = StyleSheet.create({
     padding: 6,
     borderWidth: 1,
     borderColor: "#EEF2F7",
-
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
-  tabItem: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 12 },
-  activeTabItem: { backgroundColor: "#F1F8F1", borderWidth: 1, borderColor: "#CDE7CD" },
-  tabLabel: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
-  activeTabLabel: { color: Colors.primary, fontWeight: "600" },
-  tabDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.primary, marginTop: 4 },
+  tabItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  activeTabItem: {
+    backgroundColor: "#F1F8F1",
+    borderWidth: 1,
+    borderColor: "#CDE7CD",
+  },
+  tabLabel: {
+    fontSize: 13,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  activeTabLabel: {
+    color: Colors.primary,
+    fontWeight: "600",
+  },
+  tabDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.primary,
+    marginTop: 4,
+  },
 
-  // List & cards
-  list: { padding: 16, paddingTop: 22, paddingBottom: 30 },
+  list: {
+    padding: 16,
+    paddingTop: 22,
+    paddingBottom: 30,
+  },
 
   card: {
     backgroundColor: "#fff",
@@ -268,7 +410,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: "#EEF2F7",
-
     shadowColor: "#000",
     shadowOpacity: 0.04,
     shadowRadius: 10,
@@ -276,7 +417,11 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
 
-  cardTopRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
 
   avatar: {
     width: 42,
@@ -288,32 +433,65 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CDE7CD",
   },
-  avatarText: { color: Colors.primary, fontWeight: "700", fontSize: 16 },
+  avatarText: {
+    color: Colors.primary,
+    fontWeight: "700",
+    fontSize: 16,
+  },
 
-  nameContainer: { flex: 1, marginLeft: 12 },
-  touristName: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  expTitle: { fontSize: 12, color: "#6B7280", marginTop: 2, fontWeight: "400" },
+  nameContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  touristName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  expTitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginTop: 2,
+    fontWeight: "400",
+  },
 
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  infoBlock: {
     backgroundColor: "#F3F4F6",
-    paddingVertical: 9,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
-  metaLeft: { flexDirection: "row", alignItems: "center" },
-  metaItem: { flexDirection: "row", alignItems: "center", columnGap: 6 },
-  metaText: { fontSize: 11, color: "#374151", fontWeight: "400" },
-  dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: "#D1D5DB", marginHorizontal: 10 },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  infoItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 4,
+  },
+  infoText: {
+    marginLeft: 6,
+    fontSize: 12,
+    color: "#374151",
+    fontWeight: "500",
+  },
+  priceText: {
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.primary,
+  },
 
-  priceText: { fontSize: 12, fontWeight: "600", color: Colors.primary },
-
-  // Actions
-  actionRow: { flexDirection: "row", columnGap: 12, marginTop: 12 },
+  actionRow: {
+    flexDirection: "row",
+    columnGap: 12,
+    marginTop: 12,
+  },
   flexBtn: {
     flex: 1,
     height: 40,
@@ -322,12 +500,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
   },
-  acceptBtn: { backgroundColor: "#EAF6EE", borderColor: "#CDE7CD" },
-  declineBtn: { backgroundColor: "#FDECEC", borderColor: "#F5C2C7" },
-  acceptText: { color: "#2E7D32", fontSize: 13, fontWeight: "600" },
-  declineText: { color: "#D32F2F", fontSize: 13, fontWeight: "600" },
+  acceptBtn: {
+    backgroundColor: "#EAF6EE",
+    borderColor: "#CDE7CD",
+  },
+  declineBtn: {
+    backgroundColor: "#FDECEC",
+    borderColor: "#F5C2C7",
+  },
+  acceptText: {
+    color: "#2E7D32",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  declineText: {
+    color: "#D32F2F",
+    fontSize: 13,
+    fontWeight: "600",
+  },
 
-  // Status badge
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -338,9 +529,21 @@ const styles = StyleSheet.create({
     columnGap: 8,
     borderWidth: 1,
   },
-  statusText: { fontSize: 12, fontWeight: "600" },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
 
-  // Loader & empty
-  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-  empty: { textAlign: "center", color: "#6B7280", marginTop: 40, fontSize: 13, fontWeight: "400" },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  empty: {
+    textAlign: "center",
+    color: "#6B7280",
+    marginTop: 40,
+    fontSize: 13,
+    fontWeight: "400",
+  },
 });

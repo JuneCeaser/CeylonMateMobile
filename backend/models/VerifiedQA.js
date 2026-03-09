@@ -12,7 +12,7 @@ const verifiedQASchema = new mongoose.Schema(
     hostId: {
       type: String,
       required: true,
-    }, // firebase uid
+    },
 
     question: {
       type: String,
@@ -20,11 +20,17 @@ const verifiedQASchema = new mongoose.Schema(
       trim: true,
     },
 
-    // Normalized version of question to prevent duplicates
     questionNorm: {
       type: String,
       required: true,
       trim: true,
+    },
+
+    intent: {
+      type: String,
+      default: "OTHER",
+      trim: true,
+      index: true,
     },
 
     answer: {
@@ -53,21 +59,16 @@ const verifiedQASchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-/**
- * Prevent duplicate question for the same experience
- */
 verifiedQASchema.index(
   { experienceId: 1, questionNorm: 1 },
   { unique: true }
 );
 
-/**
- * Text search index for assistant retrieval
- */
 verifiedQASchema.index({
   question: "text",
   answer: "text",
   evidence: "text",
 });
 
-module.exports = mongoose.model("VerifiedQA", verifiedQASchema);
+module.exports =
+  mongoose.models.VerifiedQA || mongoose.model("VerifiedQA", verifiedQASchema);

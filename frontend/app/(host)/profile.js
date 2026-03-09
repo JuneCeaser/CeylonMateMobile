@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -66,7 +67,6 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* HEADER */}
         <LinearGradient colors={["#1B5E20", "#0A2A0C"]} style={styles.header}>
           <View style={styles.headerTop}>
             <TouchableOpacity
@@ -82,9 +82,13 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.profileInfo}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
+            {userProfile?.profileImage ? (
+              <Image source={{ uri: userProfile.profileImage }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initial}</Text>
+              </View>
+            )}
 
             <Text style={styles.name}>{displayName}</Text>
             {!!email && <Text style={styles.email}>{email}</Text>}
@@ -97,7 +101,6 @@ export default function ProfileScreen() {
           </View>
         </LinearGradient>
 
-        {/* CONTENT */}
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>Account</Text>
 
@@ -105,7 +108,7 @@ export default function ProfileScreen() {
             icon="person-outline"
             title="Edit Profile"
             subtitle="Update your name and details"
-            onPress={() => Alert.alert("Coming soon", "Edit Profile screen can be added next.")}
+            onPress={() => router.push("edit-profile")}
           />
 
           <MenuItem
@@ -146,15 +149,20 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F6F7FB" },
 
-  // Header
   header: {
     paddingTop: 58,
     paddingBottom: 26,
     paddingHorizontal: 16,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
-  headerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
   roundBackBtn: {
     width: 40,
     height: 40,
@@ -163,6 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   headerTitle: { fontSize: 18, fontWeight: "700", color: "#fff" },
 
   profileInfo: { alignItems: "center", marginTop: 10 },
@@ -177,6 +186,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+
   avatarText: { color: "#fff", fontSize: 32, fontWeight: "700" },
 
   name: { marginTop: 12, fontSize: 20, fontWeight: "700", color: "#fff" },
@@ -187,9 +197,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     columnGap: 6,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: "#FF6F00",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
+    borderColor: "#FF6F00",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
@@ -197,10 +207,15 @@ const styles = StyleSheet.create({
   badgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
   badgeFlag: { color: "#fff", fontSize: 12 },
 
-  // Content
   content: { padding: 16 },
 
-  sectionTitle: { fontSize: 12, color: "#6B7280", fontWeight: "600", marginBottom: 10, marginTop: 10 },
+  sectionTitle: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "600",
+    marginBottom: 10,
+    marginTop: 10,
+  },
 
   menuItem: {
     flexDirection: "row",
@@ -212,6 +227,7 @@ const styles = StyleSheet.create({
     borderColor: "#EEF2F7",
     marginBottom: 10,
   },
+
   menuItemDanger: { borderColor: "#FAD1D5" },
 
   menuIconBox: {
@@ -223,6 +239,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
+
   menuIconBoxDanger: { backgroundColor: "#FDECEC" },
 
   menuTitle: { fontSize: 14, fontWeight: "600", color: "#111827" },
@@ -230,5 +247,11 @@ const styles = StyleSheet.create({
 
   divider: { height: 1, backgroundColor: "#EEF2F7", marginVertical: 14 },
 
-  versionText: { textAlign: "center", color: "#9CA3AF", fontSize: 12, marginTop: 18, fontWeight: "400" },
+  versionText: {
+    textAlign: "center",
+    color: "#9CA3AF",
+    fontSize: 12,
+    marginTop: 18,
+    fontWeight: "400",
+  },
 });

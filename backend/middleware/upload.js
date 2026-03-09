@@ -1,4 +1,3 @@
-// backend/middleware/upload.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -15,6 +14,10 @@ const storage = multer.diskStorage({
 
     if (file.fieldname === "vrImage") {
       dest = "uploads/vr360";
+    }
+
+    if (file.fieldname === "profileImage") {
+      dest = "uploads/profile-images";
     }
 
     ensureDir(dest);
@@ -44,7 +47,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
+    fileSize: 10 * 1024 * 1024,
   },
 });
 

@@ -7,6 +7,87 @@ const AssistantQALog = require("../models/AssistantQALog");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const ANSWER_THRESHOLD = 0.75;
+const CLARIFY_THRESHOLD = 0.5;
+
+const STOPWORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "but",
+  "by",
+  "can",
+  "could",
+  "did",
+  "do",
+  "does",
+  "for",
+  "from",
+  "get",
+  "give",
+  "had",
+  "has",
+  "have",
+  "how",
+  "i",
+  "in",
+  "into",
+  "is",
+  "it",
+  "its",
+  "me",
+  "my",
+  "of",
+  "on",
+  "or",
+  "please",
+  "should",
+  "tell",
+  "that",
+  "the",
+  "their",
+  "them",
+  "this",
+  "to",
+  "was",
+  "we",
+  "what",
+  "when",
+  "where",
+  "which",
+  "who",
+  "why",
+  "with",
+  "would",
+  "you",
+  "your",
+  "about",
+  "explain",
+  "mean",
+  "means",
+  "meaning",
+  "there",
+  "here",
+  "these",
+  "those",
+  "am",
+  "will",
+  "just",
+  "like",
+  "more",
+  "less",
+  "very",
+  "really",
+  "traditional",
+  "culture",
+  "cultural",
+  "experience",
+]);
+
 async function getAssistantExperience(experienceId) {
   return Experience.findById(experienceId).select(
     "+assistantKnowledge +hostFullNotes +vrVideoUrl"
@@ -27,215 +108,334 @@ function normalizeQuestion(q = "") {
 
 function tokenize(text = "") {
   return normalizeQuestion(text)
-    .split(" ")
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
     .map((w) => w.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((w) => w.length > 1)
+    .filter((w) => !STOPWORDS.has(w));
 }
 
-function keywordOverlapScore(a = "", b = "") {
+function uniqueStrings(values = []) {
+  return [
+    ...new Set(
+      values
+        .filter(Boolean)
+        .map((v) => String(v).trim())
+        .filter(Boolean)
+    ),
+  ];
+}
+
+function keywordOverlapDetails(a = "", b = "") {
   const aTokens = new Set(tokenize(a));
   const bTokens = new Set(tokenize(b));
 
-  if (!aTokens.size || !bTokens.size) return 0;
-
-  let overlap = 0;
-  for (const t of aTokens) {
-    if (bTokens.has(t)) overlap += 1;
+  if (!aTokens.size || !bTokens.size) {
+    return {
+      score: 0,
+      overlapCount: 0,
+      overlapTokens: [],
+      aSize: aTokens.size,
+      bSize: bTokens.size,
+    };
   }
 
-  return overlap / Math.max(aTokens.size, 1);
+  const overlapTokens = [];
+  for (const token of aTokens) {
+    if (bTokens.has(token)) overlapTokens.push(token);
+  }
+
+  return {
+    score: overlapTokens.length / Math.max(aTokens.size, 1),
+    overlapCount: overlapTokens.length,
+    overlapTokens,
+    aSize: aTokens.size,
+    bSize: bTokens.size,
+  };
 }
 
 function detectIntent(qRaw = "") {
   const q = qRaw.toLowerCase().trim();
 
   if (!q) return "OTHER";
+
+  if (q.includes("tool") || q.includes("tools") || q.includes("equipment")) {
+    return "TOOLS";
+  }
+
+  if (
+    q.includes("material") ||
+    q.includes("materials") ||
+    q.includes("ingredient") ||
+    q.includes("ingredients") ||
+    q.includes("fabric") ||
+    q.includes("wax") ||
+    q.includes("dye") ||
+    q.includes("colors") ||
+    q.includes("colour")
+  ) {
+    return "MATERIALS";
+  }
+
+  if (
+    q.includes("step") ||
+    q.includes("steps") ||
+    q.includes("process") ||
+    q.includes("procedure")
+  ) {
+    return "STEPS";
+  }
+
+  if (
+    q.includes("history") ||
+    q.includes("origin") ||
+    q.includes("originate") ||
+    q.includes("developed") ||
+    q.includes("century") ||
+    q.includes("started")
+  ) {
+    return "HISTORY";
+  }
+
   if (q.includes("why")) return "WHY";
   if (q.includes("how")) return "HOW";
+
   if (q.includes("when") || q.includes("time") || q.includes("period")) {
     return "WHEN";
   }
-  if (q.includes("where") || q.includes("place") || q.includes("origin")) {
+
+  if (q.includes("where") || q.includes("place")) {
     return "WHERE";
   }
+
   if (q.includes("who")) return "WHO";
+
   if (
     q.includes("rule") ||
     q.includes("allowed") ||
     q.includes("not allowed") ||
     q.includes("can i") ||
     q.includes("should i") ||
-    q.includes("must i")
+    q.includes("must i") ||
+    q.includes("safe") ||
+    q.includes("respect") ||
+    q.includes("etiquette")
   ) {
     return "RULES";
   }
+
   if (q.includes("which")) return "WHICH";
-  if (q.startsWith("what") || q.includes("what is") || q.includes("meaning")) {
+
+  if (
+    q.startsWith("what") ||
+    q.includes("what is") ||
+    q.includes("meaning") ||
+    q.includes("mean")
+  ) {
     return "WHAT";
   }
+
   return "OTHER";
 }
 
 function getIntentInstruction(intent = "OTHER") {
   switch (intent) {
+    case "TOOLS":
+      return "Focus only on tools or equipment used in this experience.";
+    case "MATERIALS":
+      return "Focus only on materials, ingredients, fabric, wax, dyes, or physical items used.";
+    case "STEPS":
+      return "Focus on step-by-step process or sequence.";
+    case "HISTORY":
+      return "Focus on historical background, development, or origin.";
     case "WHY":
       return "Focus on reasons, purpose, meaning, or cultural significance.";
     case "HOW":
-      return "Focus on method, process, steps, or how something is done.";
+      return "Focus on method, process, or how something is done.";
     case "WHERE":
       return "Focus on place of origin, source, or location.";
     case "WHEN":
-      return "Focus on time, historical period, or when something became common.";
+      return "Focus on time, period, or when something happens.";
     case "WHO":
       return "Focus on people or groups involved.";
     case "RULES":
       return "Focus on rules, etiquette, safety, respect, or what is allowed.";
     case "WHAT":
-      return "Focus on definition, identity, material, or general explanation.";
+      return "Focus on definition, identity, or general explanation.";
+    case "WHICH":
+      return "Help the user identify or choose the correct item using the provided information.";
     default:
       return "Answer the question directly using only the provided information.";
   }
 }
 
-function isClearlyRelevant(question = "", exp = {}) {
-  const q = normalizeQuestion(question);
+function isWeakTranscript(text = "") {
+  const q = normalizeQuestion(text);
 
-  const title = normalizeQuestion(exp.title || "");
-  const category = normalizeQuestion(exp.category || "");
+  if (!q) return true;
+  if (q.length < 4) return true;
 
-  const keywords = Array.isArray(exp.assistantKnowledge?.keywords)
-    ? exp.assistantKnowledge.keywords.map((k) => normalizeQuestion(k))
-    : [];
+  const blockedExact = new Set([
+    "thank you",
+    "thank you for watching",
+    "thanks",
+    "thanks for watching",
+    "okay",
+    "ok",
+    "hello",
+    "hi",
+    "hmm",
+    "um",
+    "huh",
+    "yes",
+    "no",
+  ]);
 
-  const commonCulturalTerms = [
-    "batik",
-    "wax",
-    "dye",
-    "fabric",
-    "cloth",
-    "textile",
-    "pattern",
-    "art",
-    "handicraft",
-    "traditional art",
-    "tradition",
-    "cultural",
-    "history",
-    "origin",
-    "workshop",
-  ];
+  if (blockedExact.has(q)) return true;
 
-  const allTerms = [
-    ...keywords,
-    ...commonCulturalTerms,
-    title,
-    category,
-    ...tokenize(title),
-    ...tokenize(category),
-  ].filter(Boolean);
+  const tokens = tokenize(q);
+  if (tokens.length === 0) return true;
 
-  return allTerms.some((term) => term && q.includes(term));
+  return false;
 }
 
-function isClearlyOffTopic(question = "", exp = {}) {
-  const q = normalizeQuestion(question);
+function buildExperienceProfile(exp = {}) {
+  const ak = exp.assistantKnowledge || {};
 
-  const experienceTerms = [
-    normalizeQuestion(exp.title || ""),
-    normalizeQuestion(exp.category || ""),
-    ...(Array.isArray(exp.assistantKnowledge?.keywords)
-      ? exp.assistantKnowledge.keywords.map((k) => normalizeQuestion(k))
-      : []),
-  ].filter(Boolean);
-
-  const categorySpecificTerms = {
-    handicraft: [
-      "batik",
-      "wax",
-      "dye",
-      "fabric",
-      "cloth",
-      "textile",
-      "pattern",
-      "design",
-      "handicraft",
-      "art",
-      "painting",
-      "studio",
-      "workshop",
-    ],
-    dancing: ["dance", "dancing", "dancer", "steps", "performance", "rhythm"],
-    cooking: ["cook", "cooking", "food", "recipe", "meal", "ingredients"],
-    fishing: ["fish", "fishing", "boat", "net", "sea", "catch"],
-    farming: ["farm", "farming", "crop", "paddy", "harvest", "field"],
-  };
-
-  const currentCategory = normalizeQuestion(exp.category || "");
-  const relevantTerms = [
-    ...experienceTerms,
-    ...(currentCategory.includes("handicraft")
-      ? categorySpecificTerms.handicraft
-      : currentCategory.includes("dancing")
-        ? categorySpecificTerms.dancing
-        : currentCategory.includes("cooking")
-          ? categorySpecificTerms.cooking
-          : currentCategory.includes("fishing")
-            ? categorySpecificTerms.fishing
-            : currentCategory.includes("farming")
-              ? categorySpecificTerms.farming
-              : []),
+  const rawTerms = [
+    exp.title,
+    exp.category,
+    exp.publicSummary,
+    exp.description,
+    exp.hostFullNotes,
+    ...(ak.keywords || []),
+    ...(ak.ingredients || []).flatMap((x) => [
+      x?.name,
+      x?.what,
+      x?.why,
+      x?.notes,
+    ]),
+    ...(ak.tools || []).flatMap((x) => [x?.name, x?.what, x?.how, x?.notes]),
+    ...(ak.rituals || []).flatMap((x) => [x?.name, x?.why, x?.when, x?.rules]),
+    ...(ak.steps || []).flatMap((x) => [
+      x?.title,
+      x?.how,
+      x?.content,
+      x?.description,
+    ]),
+    ...(ak.sections || []).flatMap((x) => [
+      x?.title,
+      x?.content,
+      ...(x?.tags || []),
+    ]),
+    ...(ak.faq || []).flatMap((x) => [x?.q, x?.a, ...(x?.tags || [])]),
+    ak?.origins?.where,
+    ak?.origins?.history,
+    ak?.culturalBackground,
+    ak?.longDescription,
+    exp?.location?.placeName,
+    exp?.location?.city,
+    exp?.location?.district,
   ];
 
-  const mentionsRelevantTerm = relevantTerms.some(
-    (term) => term && q.includes(term)
-  );
+  const textParts = uniqueStrings(rawTerms);
+  const tokens = uniqueStrings(textParts.flatMap((part) => tokenize(part)));
 
-  const unrelatedTopicGroups = {
-    dancing: ["dance", "dancing", "dancer", "traditional dance", "dance moves"],
-    cooking: ["cook", "cooking", "food", "recipe", "ingredients", "meal"],
-    fishing: ["fish", "fishing", "boat", "net", "sea"],
-    farming: ["farm", "farming", "crop", "paddy", "harvest"],
+  return {
+    text: textParts.join("\n"),
+    textParts,
+    tokens,
   };
+}
 
-  const matchedOtherTopic = Object.entries(unrelatedTopicGroups).find(
-    ([topic, terms]) => {
-      const currentTitle = normalizeQuestion(exp.title || "");
-      const currentCategoryText = normalizeQuestion(exp.category || "");
+function judgeRelevanceHeuristically(question = "", exp = {}) {
+  const qTokens = tokenize(question);
+  const profile = buildExperienceProfile(exp);
+  const profileTokenSet = new Set(profile.tokens);
 
-      if (currentTitle.includes(topic) || currentCategoryText.includes(topic)) {
-        return false;
-      }
+  const matchedTokens = qTokens.filter((t) => profileTokenSet.has(t));
+  const overlapScore =
+    qTokens.length > 0 ? matchedTokens.length / Math.max(qTokens.length, 1) : 0;
 
-      return terms.some((term) => q.includes(term));
-    }
-  );
+  const normalizedQ = normalizeQuestion(question);
+  const normalizedTitle = normalizeQuestion(exp.title || "");
+  const normalizedCategory = normalizeQuestion(exp.category || "");
 
-  return !mentionsRelevantTerm && !!matchedOtherTopic;
+  const strongTitleMatch =
+    normalizedTitle.length > 0 && normalizedQ.includes(normalizedTitle);
+
+  const strongCategoryMatch =
+    normalizedCategory.length > 0 && normalizedQ.includes(normalizedCategory);
+
+  const relevant =
+    strongTitleMatch ||
+    strongCategoryMatch ||
+    matchedTokens.length >= 2 ||
+    overlapScore >= 0.45;
+
+  const likelyOffTopic =
+    !relevant && qTokens.length >= 2 && matchedTokens.length === 0;
+
+  return {
+    relevant,
+    likelyOffTopic,
+    overlapScore,
+    matchedTokens: uniqueStrings(matchedTokens),
+    questionTokenCount: qTokens.length,
+  };
 }
 
 async function checkRelevanceLLM({ question, exp }) {
-  const expText = `
-Title: ${exp.title}
-Category: ${exp.category}
-Summary: ${exp.publicSummary || ""}
-Description: ${exp.description || ""}
-Host notes: ${exp.hostFullNotes || ""}
-Keywords: ${(exp.assistantKnowledge?.keywords || []).join(", ")}
+  const ak = exp.assistantKnowledge || {};
+
+  const compactContext = `
+Title: ${cleanText(exp.title)}
+Category: ${cleanText(exp.category)}
+Summary: ${cleanText(exp.publicSummary)}
+Description: ${cleanText(exp.description)}
+Host Notes: ${cleanText(exp.hostFullNotes)}
+Keywords: ${(ak.keywords || []).join(", ")}
+FAQ Questions: ${(ak.faq || [])
+    .map((x) => x?.q)
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(" | ")}
+Section Titles: ${(ak.sections || [])
+    .map((x) => x?.title)
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(" | ")}
+Tools: ${(ak.tools || [])
+    .map((x) => x?.name)
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(", ")}
+Ingredients: ${(ak.ingredients || [])
+    .map((x) => x?.name)
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(", ")}
+Rituals: ${(ak.rituals || [])
+    .map((x) => x?.name)
+    .filter(Boolean)
+    .slice(0, 8)
+    .join(", ")}
 `;
 
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
     temperature: 0,
-    max_tokens: 10,
+    max_tokens: 12,
     messages: [
       {
         role: "system",
         content:
-          "Decide if the QUESTION is about THIS cultural experience. Return exactly one word: RELEVANT or NOT_RELEVANT.",
+          "Decide whether the QUESTION is specifically about THIS cultural experience. Return exactly one word: RELEVANT or NOT_RELEVANT.",
       },
       {
         role: "user",
-        content: `EXPERIENCE:\n${expText}\n\nQUESTION:\n${question}`,
+        content: `EXPERIENCE:\n${compactContext}\n\nQUESTION:\n${question}`,
       },
     ],
   });
@@ -247,165 +447,324 @@ Keywords: ${(exp.assistantKnowledge?.keywords || []).join(", ")}
   return out.includes("NOT") ? "NOT_RELEVANT" : "RELEVANT";
 }
 
-function buildEvidenceFromKnowledge(assistantKnowledge = {}, intent = "OTHER") {
-  const evidenceParts = [];
+function makeEvidenceItem(label, text, sourceKey, question = "") {
+  const clean = cleanText(text);
+  if (!clean) return null;
 
-  const add = (label, text) => {
-    const t = cleanText(text);
-    if (t) evidenceParts.push(`${label}: ${t}`);
+  const overlap = keywordOverlapDetails(question, `${label} ${clean}`);
+  return {
+    label,
+    text: clean,
+    sourceKey,
+    overlapScore: overlap.score,
+    overlapCount: overlap.overlapCount,
+    overlapTokens: overlap.overlapTokens,
+  };
+}
+
+function collectEvidenceCandidates(exp = {}, question = "", intent = "OTHER") {
+  const ak = exp.assistantKnowledge || {};
+  const items = [];
+
+  const push = (label, text, sourceKey) => {
+    const item = makeEvidenceItem(label, text, sourceKey, question);
+    if (item) items.push(item);
   };
 
-  const ingredients = assistantKnowledge.ingredients || [];
-  const tools = assistantKnowledge.tools || [];
-  const rituals = assistantKnowledge.rituals || [];
-  const steps = assistantKnowledge.steps || [];
-  const dosDonts = assistantKnowledge.dosDonts || {};
-  const origins = assistantKnowledge.origins || {};
-  const sections = assistantKnowledge.sections || [];
-  const faq = assistantKnowledge.faq || [];
+  push("Title", exp.title, "title");
+  push("Category", exp.category, "category");
+  push("Summary", exp.publicSummary, "publicSummary");
+  push("Description", exp.description, "description");
+  push("Host notes", exp.hostFullNotes, "hostFullNotes");
+  push("Duration", exp.duration, "duration");
+  push("Location place", exp?.location?.placeName, "location.placeName");
+  push("Location city", exp?.location?.city, "location.city");
+  push("Location district", exp?.location?.district, "location.district");
 
-  if (intent === "WHY") {
-    add("Long description", assistantKnowledge.longDescription);
-    add("Cultural background", assistantKnowledge.culturalBackground);
+  push(
+    "Long description",
+    ak.longDescription,
+    "assistantKnowledge.longDescription"
+  );
+  push(
+    "Cultural background",
+    ak.culturalBackground,
+    "assistantKnowledge.culturalBackground"
+  );
+  push("Origin - where", ak?.origins?.where, "assistantKnowledge.origins.where");
+  push(
+    "Origin - history",
+    ak?.origins?.history,
+    "assistantKnowledge.origins.history"
+  );
 
-    ingredients.forEach((i) => {
-      add(`Ingredient - ${i.name} (why)`, i.why);
-      add(`Ingredient - ${i.name} (notes)`, i.notes);
-    });
+  (ak.keywords || []).forEach((k, idx) => {
+    push(`Keyword ${idx + 1}`, k, `assistantKnowledge.keywords.${idx}`);
+  });
 
-    rituals.forEach((r) => {
-      add(`Ritual - ${r.name} (why)`, r.why);
-    });
-
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  } else if (intent === "HOW") {
-    add("Long description", assistantKnowledge.longDescription);
-
-    steps.forEach((s) => {
-      add(`Step ${s.step}`, s.how || s.content || s.description);
-    });
-
-    tools.forEach((t) => {
-      add(`Tool - ${t.name} (how)`, t.how);
-      add(`Tool - ${t.name} (what)`, t.what);
-    });
-
-    ingredients.forEach((i) => {
-      add(`Ingredient - ${i.name} (what)`, i.what);
-    });
-
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  } else if (intent === "RULES") {
-    (dosDonts.do || []).forEach((d) => add("Do", d));
-    (dosDonts.dont || []).forEach((d) => add("Don't", d));
-
-    rituals.forEach((r) => add(`Ritual - ${r.name} (rules)`, r.rules));
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  } else if (intent === "WHERE") {
-    add("Origin - where", origins.where);
-    add("Origin - history", origins.history);
-    add("Long description", assistantKnowledge.longDescription);
-    add("Cultural background", assistantKnowledge.culturalBackground);
-
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  } else if (intent === "WHEN") {
-    add("Origin - history", origins.history);
-    add("Long description", assistantKnowledge.longDescription);
-    add("Cultural background", assistantKnowledge.culturalBackground);
-
-    rituals.forEach((r) => add(`Ritual - ${r.name} (when)`, r.when));
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  } else if (intent === "WHO") {
-    add("Long description", assistantKnowledge.longDescription);
-    add("Cultural background", assistantKnowledge.culturalBackground);
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  } else {
-    add("Long description", assistantKnowledge.longDescription);
-    add("Cultural background", assistantKnowledge.culturalBackground);
-
-    ingredients.forEach((i) => {
-      add(`Ingredient - ${i.name} (what)`, i.what);
-      add(`Ingredient - ${i.name} (notes)`, i.notes);
-    });
-
-    tools.forEach((t) => add(`Tool - ${t.name} (what)`, t.what));
-
-    rituals.forEach((r) =>
-      add(`Ritual - ${r.name}`, `${r.why || ""} ${r.rules || ""}`)
+  (ak.ingredients || []).forEach((x, idx) => {
+    push(
+      `Ingredient - ${x?.name} name`,
+      x?.name,
+      `assistantKnowledge.ingredients.${idx}.name`
     );
+    push(
+      `Ingredient - ${x?.name} what`,
+      x?.what,
+      `assistantKnowledge.ingredients.${idx}.what`
+    );
+    push(
+      `Ingredient - ${x?.name} why`,
+      x?.why,
+      `assistantKnowledge.ingredients.${idx}.why`
+    );
+    push(
+      `Ingredient - ${x?.name} notes`,
+      x?.notes,
+      `assistantKnowledge.ingredients.${idx}.notes`
+    );
+  });
 
-    steps.slice(0, 5).forEach((s) => add(`Step ${s.step}`, s.how));
-    add("Origin - where", origins.where);
-    add("Origin - history", origins.history);
-    sections.forEach((s) => add(`Section - ${s.title}`, s.content));
-    faq.slice(0, 8).forEach((f) => add(`FAQ - ${f.q}`, f.a));
-  }
+  (ak.tools || []).forEach((x, idx) => {
+    push(
+      `Tool - ${x?.name} name`,
+      x?.name,
+      `assistantKnowledge.tools.${idx}.name`
+    );
+    push(
+      `Tool - ${x?.name} what`,
+      x?.what,
+      `assistantKnowledge.tools.${idx}.what`
+    );
+    push(
+      `Tool - ${x?.name} how`,
+      x?.how,
+      `assistantKnowledge.tools.${idx}.how`
+    );
+    push(
+      `Tool - ${x?.name} notes`,
+      x?.notes,
+      `assistantKnowledge.tools.${idx}.notes`
+    );
+  });
 
-  return evidenceParts.join("\n").slice(0, 5000);
-}
+  (ak.rituals || []).forEach((x, idx) => {
+    push(
+      `Ritual - ${x?.name} why`,
+      x?.why,
+      `assistantKnowledge.rituals.${idx}.why`
+    );
+    push(
+      `Ritual - ${x?.name} when`,
+      x?.when,
+      `assistantKnowledge.rituals.${idx}.when`
+    );
+    push(
+      `Ritual - ${x?.name} rules`,
+      x?.rules,
+      `assistantKnowledge.rituals.${idx}.rules`
+    );
+  });
 
-function buildEvidenceFromPublicExperience(exp = {}) {
-  const parts = [];
+  (ak.steps || []).forEach((x, idx) => {
+    push(
+      `Step ${x?.step || idx + 1}`,
+      x?.how || x?.content || x?.description,
+      `assistantKnowledge.steps.${idx}`
+    );
+  });
 
-  const add = (label, text) => {
-    const t = cleanText(text);
-    if (t) parts.push(`${label}: ${t}`);
+  (ak.dosDonts?.do || []).forEach((item, idx) => {
+    push(`Do ${idx + 1}`, item, `assistantKnowledge.dosDonts.do.${idx}`);
+  });
+
+  (ak.dosDonts?.dont || []).forEach((item, idx) => {
+    push(`Don't ${idx + 1}`, item, `assistantKnowledge.dosDonts.dont.${idx}`);
+  });
+
+  (ak.sections || []).forEach((x, idx) => {
+    push(
+      `Section - ${x?.title}`,
+      x?.content,
+      `assistantKnowledge.sections.${idx}.content`
+    );
+    (x?.tags || []).forEach((tag, tagIdx) => {
+      push(
+        `Section tag - ${x?.title}`,
+        tag,
+        `assistantKnowledge.sections.${idx}.tags.${tagIdx}`
+      );
+    });
+  });
+
+  (ak.faq || []).forEach((x, idx) => {
+    push(`FAQ Question - ${x?.q}`, x?.q, `assistantKnowledge.faq.${idx}.q`);
+    push(`FAQ - ${x?.q}`, x?.a, `assistantKnowledge.faq.${idx}.a`);
+    (x?.tags || []).forEach((tag, tagIdx) => {
+      push(
+        `FAQ tag - ${x?.q}`,
+        tag,
+        `assistantKnowledge.faq.${idx}.tags.${tagIdx}`
+      );
+    });
+  });
+
+  const intentPreferredKeys = {
+    TOOLS: ["tools", "tool", "equipment"],
+    MATERIALS: [
+      "ingredients",
+      "material",
+      "materials",
+      "fabric",
+      "wax",
+      "dye",
+      "colors",
+    ],
+    STEPS: ["steps", "step", "how", "process", "procedure"],
+    HISTORY: ["origins", "history", "background", "when"],
+    WHY: ["why", "culturalBackground", "origins.history", "rituals"],
+    HOW: ["steps", "tools", "how", "process"],
+    WHERE: ["origins.where", "location", "place"],
+    WHEN: ["origins.history", "when", "rituals"],
+    WHO: ["host", "people", "rituals"],
+    RULES: ["dos", "dont", "rules", "safety", "respect"],
+    WHAT: ["what", "description", "summary", "background"],
+    WHICH: ["faq", "tools", "ingredients", "steps"],
+    OTHER: ["description", "summary", "background"],
   };
 
-  add("Title", exp.title);
-  add("Category", exp.category);
-  add("Summary", exp.publicSummary);
-  add("Description", exp.description);
-  add("Host notes", exp.hostFullNotes);
-  add("Duration", exp.duration);
+  const preferred = intentPreferredKeys[intent] || intentPreferredKeys.OTHER;
 
-  if (exp.location) {
-    add("Location place", exp.location.placeName);
-    add("Location city", exp.location.city);
-    add("Location district", exp.location.district);
-  }
+  const sorted = items
+    .map((item) => {
+      let bonus = 0;
+      const keyText = `${item.label} ${item.sourceKey}`.toLowerCase();
 
-  return parts.join("\n").slice(0, 2500);
+      if (preferred.some((p) => keyText.includes(String(p).toLowerCase()))) {
+        bonus += 0.18;
+      }
+
+      if (item.overlapCount >= 2) bonus += 0.18;
+      else if (item.overlapCount === 1) bonus += 0.08;
+
+      if (item.text.length > 15 && item.text.length < 450) bonus += 0.05;
+
+      return {
+        ...item,
+        rankScore: item.overlapScore + bonus,
+      };
+    })
+    .sort((a, b) => b.rankScore - a.rankScore);
+
+  return sorted;
 }
 
-function computeConfidence(evidenceText = "") {
-  const len = evidenceText.trim().length;
-  if (len > 1200) return 0.9;
-  if (len > 800) return 0.8;
-  if (len > 500) return 0.7;
-  if (len > 250) return 0.55;
-  if (len > 120) return 0.45;
-  return 0.25;
+function buildEvidenceBundle(exp = {}, question = "", intent = "OTHER") {
+  const ranked = collectEvidenceCandidates(exp, question, intent);
+  const topRelevant = ranked.filter((x) => x.rankScore > 0.08).slice(0, 10);
+  const fallback = ranked.slice(0, 6);
+  const selected = topRelevant.length ? topRelevant : fallback;
+
+  const evidenceText = selected
+    .map((x) => `${x.label}: ${x.text}`)
+    .join("\n")
+    .slice(0, 5000);
+
+  const matchedEvidenceCount = selected.filter((x) => x.overlapCount > 0).length;
+  const bestRankScore = selected[0]?.rankScore || 0;
+  const matchedTokens = uniqueStrings(
+    selected.flatMap((x) => x.overlapTokens || [])
+  );
+
+  return {
+    evidenceText,
+    selected,
+    matchedEvidenceCount,
+    bestRankScore,
+    matchedTokens,
+  };
 }
 
-async function findBestVerifiedQA(experienceId, cleanQuestion) {
+function computeConfidence({
+  exactVerified = false,
+  fuzzyScore = 0,
+  relevanceScore = 0,
+  evidenceMatchCount = 0,
+  evidenceBestScore = 0,
+}) {
+  if (exactVerified) return 0.95;
+  if (fuzzyScore >= 0.86) return 0.9;
+
+  let score = 0.18;
+
+  score += Math.min(fuzzyScore, 0.45) * 0.3;
+  score += Math.min(relevanceScore, 1) * 0.25;
+  score += Math.min(evidenceBestScore, 1) * 0.25;
+  score += Math.min(evidenceMatchCount / 5, 1) * 0.2;
+
+  return Number(Math.max(0, Math.min(0.92, score)).toFixed(2));
+}
+
+async function findExactVerifiedQA(experienceId, cleanQuestion) {
   const questionNorm = normalizeQuestion(cleanQuestion);
 
-  const exact = await VerifiedQA.findOne({
+  return VerifiedQA.findOne({
     experienceId,
     questionNorm,
   });
+}
 
-  if (exact) return exact;
-
+async function findBestVerifiedQA(experienceId, cleanQuestion, intent) {
   const candidates = await VerifiedQA.find({ experienceId })
     .sort({ updatedAt: -1, createdAt: -1 })
-    .limit(30);
+    .limit(60);
 
   let best = null;
   let bestScore = 0;
 
   for (const item of candidates) {
-    const s1 = keywordOverlapScore(cleanQuestion, item.question || "");
-    const s2 = keywordOverlapScore(cleanQuestion, item.evidence || "");
-    const s3 = keywordOverlapScore(cleanQuestion, item.answer || "");
-    const score = Math.max(s1, s2 * 0.7, s3 * 0.5);
+    const itemIntent = item.intent || detectIntent(item.question || "");
+
+    if (
+      intent !== "OTHER" &&
+      itemIntent !== "OTHER" &&
+      itemIntent !== intent
+    ) {
+      continue;
+    }
+
+    const qVsQuestion = keywordOverlapDetails(cleanQuestion, item.question || "");
+    const qVsEvidence = keywordOverlapDetails(cleanQuestion, item.evidence || "");
+    const qVsAnswer = keywordOverlapDetails(cleanQuestion, item.answer || "");
+
+    const overlapCount = Math.max(
+      qVsQuestion.overlapCount,
+      qVsEvidence.overlapCount,
+      qVsAnswer.overlapCount
+    );
+
+    if (overlapCount < 2) continue;
+
+    let score = Math.max(
+      qVsQuestion.score,
+      qVsEvidence.score * 0.72,
+      qVsAnswer.score * 0.42
+    );
+
+    if (itemIntent === intent) {
+      score += 0.12;
+    }
+
+    const normalizedItemQuestion = normalizeQuestion(item.question || "");
+    const normalizedUserQuestion = normalizeQuestion(cleanQuestion || "");
+
+    if (
+      normalizedItemQuestion &&
+      normalizedUserQuestion &&
+      normalizedItemQuestion === normalizedUserQuestion
+    ) {
+      score += 0.2;
+    }
 
     if (score > bestScore) {
       bestScore = score;
@@ -413,11 +772,11 @@ async function findBestVerifiedQA(experienceId, cleanQuestion) {
     }
   }
 
-  if (best && bestScore >= 0.45) {
-    return best;
+  if (best && bestScore >= 0.78) {
+    return { item: best, score: Number(bestScore.toFixed(2)) };
   }
 
-  return null;
+  return { item: null, score: 0 };
 }
 
 async function generateAnswerLLM({
@@ -430,8 +789,8 @@ async function generateAnswerLLM({
 
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
-    temperature: 0.2,
-    max_tokens: 260,
+    temperature: 0.12,
+    max_tokens: 220,
     messages: [
       {
         role: "system",
@@ -439,21 +798,21 @@ async function generateAnswerLLM({
 
 CRITICAL RULES:
 - Answer ONLY using the information provided.
-- Focus tightly on the user's exact question.
+- Focus tightly on the exact question.
 - ${intentInstruction}
-- If the information does not clearly contain the answer, say you do not have enough verified detail.
-- Do not give a generic summary unless the question asks for a general explanation.
-- Keep the response voice-friendly.
-- Use simple English.
-- Keep the answer concise: maximum 2 short paragraphs.
+- Prefer a direct answer first, especially for yes/no questions.
+- If the information does not clearly contain the answer, say exactly: "I do not have enough verified detail yet."
+- Do not invent or assume.
+- Do not give a generic summary unless asked.
+- Keep it easy to understand.
+- Maximum 2 short paragraphs.
 - Never mention being an AI.
-- Never mention "evidence" or "context".`,
+- Never mention "evidence", "context", "database", or "retrieval".`,
       },
       {
         role: "user",
         content: `Experience: ${experienceTitle}
 Intent: ${intent}
-
 Question: ${question}
 
 INFORMATION:
@@ -479,7 +838,12 @@ async function verifyAnswer({ question, evidence, answer }) {
         role: "system",
         content: `You are a strict verifier.
 
-Decide if the ANSWER is fully supported by the INFORMATION.
+Decide whether the ANSWER is fully supported by the INFORMATION.
+
+Important:
+- If the answer adds facts not present in the information, mark UNSUPPORTED.
+- If the answer is more specific than the information allows, mark UNSUPPORTED.
+- If the answer is a reasonable restatement of the information, mark SUPPORTED.
 
 Return exactly in this format:
 VERDICT: SUPPORTED or UNSUPPORTED
@@ -527,11 +891,21 @@ async function saveUnknownQuestion({
   type = "NEEDS_HOST",
 }) {
   try {
-    await UnknownQuestion.create({
+    const questionNorm = normalizeQuestion(question);
+
+    const existing = await UnknownQuestion.findOne({
+      experienceId,
+      questionNorm,
+      type,
+    });
+
+    if (existing) return existing;
+
+    return UnknownQuestion.create({
       experienceId,
       touristId,
       question,
-      questionNorm: normalizeQuestion(question),
+      questionNorm,
       intent,
       confidence,
       reason,
@@ -539,7 +913,20 @@ async function saveUnknownQuestion({
     });
   } catch (e) {
     console.log("UnknownQuestion save skipped:", e?.message || e);
+    return null;
   }
+}
+
+function buildClarifyMessage(exp = {}) {
+  return `I need a little more detail to answer correctly about "${exp.title}". Please ask in a more specific way, for example about the materials, tools, steps, meaning, history, or rules.`;
+}
+
+function buildOffTopicMessage(exp = {}) {
+  return `That question seems unrelated to this experience. Please ask something specifically about "${exp.title}".`;
+}
+
+function buildUnknownMessage() {
+  return "That is a good question. I do not have enough verified detail yet, but I’ll save it so the host can add a trusted answer later.";
 }
 
 exports.askAssistant = async (req, res) => {
@@ -565,16 +952,31 @@ exports.askAssistant = async (req, res) => {
     }
 
     const cleanQuestion = cleanText(question);
+
+    if (isWeakTranscript(cleanQuestion)) {
+      return res.status(400).json({
+        error:
+          "No clear question detected. Please ask a short question about this experience.",
+        recognizedText: cleanQuestion,
+        meta: {
+          intent: "OTHER",
+          action: "REFUSE",
+          route: "NONE",
+          confidence: 0.1,
+          verifier: "SKIPPED",
+        },
+      });
+    }
+
     const intent = detectIntent(cleanQuestion);
 
-    const verified = await findBestVerifiedQA(exp._id, cleanQuestion);
-
-    if (verified && verified.answer) {
+    const exactVerified = await findExactVerifiedQA(exp._id, cleanQuestion);
+    if (exactVerified?.answer) {
       const log = await AssistantQALog.create({
         touristId,
         experienceId: exp._id,
         question: cleanQuestion,
-        answer: verified.answer,
+        answer: exactVerified.answer,
         intent,
         action: "ANSWER",
         route: "VERIFIED_QA",
@@ -584,7 +986,7 @@ exports.askAssistant = async (req, res) => {
 
       return res.json({
         recognizedText: cleanQuestion,
-        answer: verified.answer,
+        answer: exactVerified.answer,
         meta: {
           intent,
           action: "ANSWER",
@@ -596,17 +998,12 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
-    let relevance = "RELEVANT";
+    const relevanceHeuristic = judgeRelevanceHeuristically(cleanQuestion, exp);
+    let relevance = relevanceHeuristic.relevant ? "RELEVANT" : "UNCERTAIN";
 
-    const clearlyRelevant = isClearlyRelevant(cleanQuestion, exp);
-    const clearlyOffTopic = isClearlyOffTopic(cleanQuestion, exp);
-
-    if (clearlyOffTopic) {
+    if (relevanceHeuristic.likelyOffTopic) {
       relevance = "NOT_RELEVANT";
-    } else if (
-      !clearlyRelevant &&
-      ["OTHER", "WHICH", "WHY", "HOW", "WHEN", "WHERE", "WHAT"].includes(intent)
-    ) {
+    } else if (!relevanceHeuristic.relevant) {
       relevance = await checkRelevanceLLM({
         question: cleanQuestion,
         exp,
@@ -614,7 +1011,17 @@ exports.askAssistant = async (req, res) => {
     }
 
     if (relevance === "NOT_RELEVANT") {
-      const msg = `That seems unrelated to this experience. Ask me something about "${exp.title}", and I’ll help.`;
+      const msg = buildOffTopicMessage(exp);
+
+      await saveUnknownQuestion({
+        experienceId: exp._id,
+        touristId,
+        question: cleanQuestion,
+        intent,
+        confidence: 0.2,
+        reason: "Question is unrelated to this specific experience.",
+        type: "OFF_TOPIC",
+      });
 
       const log = await AssistantQALog.create({
         touristId,
@@ -642,31 +1049,63 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
-    const knowledgeEvidence = buildEvidenceFromKnowledge(
-      exp.assistantKnowledge || {},
+    const fuzzyVerified = await findBestVerifiedQA(
+      exp._id,
+      cleanQuestion,
       intent
     );
 
-    const publicEvidence = buildEvidenceFromPublicExperience(exp);
+    if (fuzzyVerified.item?.answer) {
+      const fuzzyConfidence = fuzzyVerified.score >= 0.86 ? 0.9 : 0.82;
 
-    const combinedEvidence = [knowledgeEvidence, publicEvidence]
-      .filter(Boolean)
-      .join("\n\n")
-      .trim();
+      const log = await AssistantQALog.create({
+        touristId,
+        experienceId: exp._id,
+        question: cleanQuestion,
+        answer: fuzzyVerified.item.answer,
+        intent,
+        action: "ANSWER",
+        route: "VERIFIED_QA",
+        confidence: fuzzyConfidence,
+        verifier: "SKIPPED",
+      });
 
-    let confidence = computeConfidence(combinedEvidence);
+      return res.json({
+        recognizedText: cleanQuestion,
+        answer: fuzzyVerified.item.answer,
+        meta: {
+          intent,
+          action: "ANSWER",
+          route: "VERIFIED_QA",
+          confidence: fuzzyConfidence,
+          verifier: "SKIPPED",
+          logId: log._id,
+        },
+      });
+    }
 
-    if (confidence < 0.45) {
-      const fallback =
-        "That is a good question. I do not have enough verified detail yet, but I’ll save it so the host can add a trusted answer later.";
+    const evidenceBundle = buildEvidenceBundle(exp, cleanQuestion, intent);
+
+    let confidence = computeConfidence({
+      exactVerified: false,
+      fuzzyScore: fuzzyVerified.score,
+      relevanceScore: relevanceHeuristic.overlapScore,
+      evidenceMatchCount: evidenceBundle.matchedEvidenceCount,
+      evidenceBestScore: evidenceBundle.bestRankScore,
+    });
+
+    if (!evidenceBundle.evidenceText || confidence < CLARIFY_THRESHOLD) {
+      const fallback = buildUnknownMessage();
+      const finalConfidence = Math.min(confidence, 0.4);
 
       await saveUnknownQuestion({
         experienceId: exp._id,
         touristId,
         question: cleanQuestion,
         intent,
-        confidence,
-        reason: "Not enough verified knowledge found for this question.",
+        confidence: finalConfidence,
+        reason:
+          "Relevant question but not enough verified evidence for safe answering.",
         type: "NEEDS_HOST",
       });
 
@@ -678,7 +1117,7 @@ exports.askAssistant = async (req, res) => {
         intent,
         action: "REFUSE",
         route: "NONE",
-        confidence,
+        confidence: finalConfidence,
         verifier: "SKIPPED",
       });
 
@@ -689,6 +1128,46 @@ exports.askAssistant = async (req, res) => {
           intent,
           action: "REFUSE",
           route: "NONE",
+          confidence: finalConfidence,
+          verifier: "SKIPPED",
+          logId: log._id,
+        },
+      });
+    }
+
+    if (confidence >= CLARIFY_THRESHOLD && confidence < ANSWER_THRESHOLD) {
+      const clarifyMsg = buildClarifyMessage(exp);
+
+      await saveUnknownQuestion({
+        experienceId: exp._id,
+        touristId,
+        question: cleanQuestion,
+        intent,
+        confidence,
+        reason:
+          "Relevant cultural question but assistant lacked enough verified knowledge.",
+        type: "NEEDS_HOST",
+      });
+
+      const log = await AssistantQALog.create({
+        touristId,
+        experienceId: exp._id,
+        question: cleanQuestion,
+        answer: clarifyMsg,
+        intent,
+        action: "CLARIFY",
+        route: "NONE",
+        confidence,
+        verifier: "SKIPPED",
+      });
+
+      return res.json({
+        recognizedText: cleanQuestion,
+        answer: clarifyMsg,
+        meta: {
+          intent,
+          action: "CLARIFY",
+          route: "NONE",
           confidence,
           verifier: "SKIPPED",
           logId: log._id,
@@ -698,62 +1177,86 @@ exports.askAssistant = async (req, res) => {
 
     const answer = await generateAnswerLLM({
       question: cleanQuestion,
-      evidence: combinedEvidence,
+      evidence: evidenceBundle.evidenceText,
       experienceTitle: exp.title,
       intent,
     });
 
-    const v = await verifyAnswer({
+    const answerLooksUnknown =
+      !cleanText(answer) ||
+      /i do not have enough verified detail yet/i.test(answer) ||
+      /not enough verified detail/i.test(answer) ||
+      /i do not know/i.test(answer);
+
+    if (answerLooksUnknown) {
+      const fallback = buildUnknownMessage();
+      const finalConfidence = Math.min(confidence, 0.45);
+
+      await saveUnknownQuestion({
+        experienceId: exp._id,
+        touristId,
+        question: cleanQuestion,
+        intent,
+        confidence: finalConfidence,
+        reason:
+          "Generator could not produce a supported answer from current experience evidence.",
+        type: "NEEDS_HOST",
+      });
+
+      const log = await AssistantQALog.create({
+        touristId,
+        experienceId: exp._id,
+        question: cleanQuestion,
+        answer: fallback,
+        intent,
+        action: "REFUSE",
+        route: "NONE",
+        confidence: Math.min(finalConfidence, 0.4),
+        verifier: "SKIPPED",
+      });
+
+      return res.json({
+        recognizedText: cleanQuestion,
+        answer: fallback,
+        meta: {
+          intent,
+          action: "REFUSE",
+          route: "NONE",
+          confidence: Math.min(finalConfidence, 0.4),
+          verifier: "SKIPPED",
+          logId: log._id,
+        },
+      });
+    }
+
+    const verification = await verifyAnswer({
       question: cleanQuestion,
-      evidence: combinedEvidence,
+      evidence: evidenceBundle.evidenceText,
       answer,
     });
 
     let finalAction = "ANSWER";
+    let finalRoute = "EXPERIENCE";
     let finalAnswer = answer;
-    let route = "EXPERIENCE";
+    let finalConfidence = confidence;
 
-    const answerLooksUnknown =
-      !cleanText(answer) ||
-      /do not have enough verified detail/i.test(answer) ||
-      /don't have enough verified detail/i.test(answer) ||
-      /not enough verified detail/i.test(answer) ||
-      /not fully sure/i.test(answer);
-
-    if (answerLooksUnknown) {
+    if (verification.verdict === "UNSUPPORTED") {
       finalAction = "REFUSE";
-      finalAnswer =
-        "That is a good question. I do not have enough verified detail yet, but I’ll save it so the host can add a trusted answer later.";
-      route = "NONE";
+      finalRoute = "NONE";
+      finalAnswer = buildUnknownMessage();
+      finalConfidence = Math.min(confidence, 0.4);
 
       await saveUnknownQuestion({
         experienceId: exp._id,
         touristId,
         question: cleanQuestion,
         intent,
-        confidence,
-        reason: "Generated answer indicates missing verified detail.",
+        confidence: finalConfidence,
+        reason: `Verifier blocked answer: ${
+          verification.reason || "unsupported"
+        }`,
         type: "NEEDS_HOST",
       });
-    } else if (v.verdict === "UNSUPPORTED") {
-      finalAction = "REFUSE";
-      finalAnswer =
-        "That is a good question. I’m not fully sure based on the verified details I have right now, so I’ll save it for host verification.";
-      route = "NONE";
-
-      await saveUnknownQuestion({
-        experienceId: exp._id,
-        touristId,
-        question: cleanQuestion,
-        intent,
-        confidence,
-        reason: `Verifier blocked answer: ${v.reason || "unsupported"}`,
-        type: "NEEDS_HOST",
-      });
-    }
-
-    if (finalAction === "REFUSE") {
-      confidence = Math.min(confidence, 0.4);
     }
 
     const log = await AssistantQALog.create({
@@ -763,9 +1266,10 @@ exports.askAssistant = async (req, res) => {
       answer: finalAnswer,
       intent,
       action: finalAction,
-      route,
-      confidence,
-      verifier: v.verdict === "SKIPPED" ? "SKIPPED" : v.verdict,
+      route: finalRoute,
+      confidence: finalConfidence,
+      verifier:
+        verification.verdict === "SKIPPED" ? "SKIPPED" : verification.verdict,
     });
 
     return res.json({
@@ -774,9 +1278,10 @@ exports.askAssistant = async (req, res) => {
       meta: {
         intent,
         action: finalAction,
-        route,
-        confidence,
-        verifier: v.verdict === "SKIPPED" ? "SKIPPED" : v.verdict,
+        route: finalRoute,
+        confidence: finalConfidence,
+        verifier:
+          verification.verdict === "SKIPPED" ? "SKIPPED" : verification.verdict,
         logId: log._id,
       },
     });
@@ -811,9 +1316,18 @@ exports.voiceAssistant = async (req, res) => {
 
     const recognizedText = cleanText(transcription?.text);
 
-    if (!recognizedText) {
+    if (!recognizedText || isWeakTranscript(recognizedText)) {
       return res.status(400).json({
-        error: "Could not recognize speech. Please speak clearly and try again.",
+        error:
+          "No clear question detected. Please ask a short question about this experience.",
+        recognizedText: recognizedText || "",
+        meta: {
+          intent: "OTHER",
+          action: "REFUSE",
+          route: "NONE",
+          confidence: 0.1,
+          verifier: "SKIPPED",
+        },
       });
     }
 
@@ -881,6 +1395,7 @@ exports.addVerifiedQA = async (req, res) => {
 
     const cleanQ = cleanText(question);
     const questionNorm = normalizeQuestion(cleanQ);
+    const detectedIntent = detectIntent(cleanQ);
 
     const doc = await VerifiedQA.findOneAndUpdate(
       {
@@ -892,6 +1407,7 @@ exports.addVerifiedQA = async (req, res) => {
           hostId,
           question: cleanQ,
           questionNorm,
+          intent: detectedIntent,
           answer: cleanText(answer),
           evidence: cleanText(evidence || ""),
           source: "host_answered_unknown",
@@ -908,7 +1424,6 @@ exports.addVerifiedQA = async (req, res) => {
       await UnknownQuestion.deleteMany({
         experienceId: exp._id,
         questionNorm,
-        type: "NEEDS_HOST",
       });
     } catch (cleanupErr) {
       console.log(

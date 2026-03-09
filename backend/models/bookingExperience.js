@@ -1,82 +1,91 @@
 const mongoose = require("mongoose");
 
-const bookingExperienceSchema = new mongoose.Schema({
-  experience: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Experience",
-    required: true,
-  },
+const bookingExperienceSchema = new mongoose.Schema(
+  {
+    experience: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Experience",
+      required: true,
+    },
 
-  tourist: {
-    type: String,
-    required: true,
-    index: true,
-  },
+    tourist: {
+      type: String,
+      required: true,
+      index: true,
+    },
 
-  touristName: {
-    type: String,
-    required: true,
-  },
+    touristName: {
+      type: String,
+      required: true,
+    },
 
-  touristImage: {
-    type: String,
-    default: "",
-  },
+    touristImage: {
+      type: String,
+      default: "",
+    },
 
-  host: {
-    type: String,
-    required: true,
-    index: true,
-  },
+    host: {
+      type: String,
+      required: true,
+      index: true,
+    },
 
-  hostName: {
-    type: String,
-    required: true,
-  },
+    hostName: {
+      type: String,
+      required: true,
+    },
 
-  bookingDate: {
-    type: Date,
-    required: true,
-  },
+    bookingDate: {
+      type: Date,
+      required: true,
+      index: true,
+    },
 
-  status: {
-    type: String,
-    enum: [
-      "pending",
-      "confirmed",
-      "cancelled",
-      "cancelled_by_host",
-      "cancelled_by_tourist",
-      "completed",
-    ],
-    default: "pending",
-  },
+    requestedTime: {
+      type: String,
+      default: "",
+    },
 
-  cancelledBy: {
-    type: String,
-    enum: ["host", "tourist", null],
-    default: null,
-  },
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "confirmed",
+        "cancelled",
+        "cancelled_by_host",
+        "cancelled_by_tourist",
+        "completed",
+      ],
+      default: "pending",
+    },
 
-  guests: {
-    type: Number,
-    default: 1,
-    min: 1,
-  },
+    cancelledBy: {
+      type: String,
+      enum: ["host", "tourist", null],
+      default: null,
+    },
 
-  totalPrice: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
+    guests: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
 
-  specialRequests: {
-    type: String,
-    default: "",
+    totalPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    specialRequests: {
+      type: String,
+      default: "",
+    },
   },
-}, {
-  timestamps: true,
-});
+  {
+    timestamps: true,
+  }
+);
 
 module.exports =
   mongoose.models.BookingExperience ||

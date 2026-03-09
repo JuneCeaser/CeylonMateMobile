@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const connectDB = require("./config/db");
 
 // Import Route Files
@@ -8,9 +9,9 @@ const userRoutes = require("./routes/userRoutes");
 const placeRoutes = require("./routes/placeRoutes");
 const experienceRoutes = require("./routes/experienceRoutes");
 const bookingExperienceRoutes = require("./routes/bookingExperienceRoutes");
-const aiRoutes = require("./routes/aiRoutes"); // Added: Import AI routes
-const momentRoutes = require('./routes/momentRoutes');
-const recommendationRoutes = require('./routes/recommendationRoutes');
+const aiRoutes = require("./routes/aiRoutes");
+const momentRoutes = require("./routes/momentRoutes");
+const recommendationRoutes = require("./routes/recommendationRoutes");
 const assistantRoutes = require("./routes/assistantRoutes");
 
 const app = express();
@@ -19,19 +20,21 @@ const app = express();
 connectDB();
 
 // Global Middlewares
-app.use(cors({ origin: "*" })); 
+app.use(cors({ origin: "*" }));
 app.use(express.json());
+
+// Static uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/places", placeRoutes);
 app.use("/api/experiences", experienceRoutes);
-app.use("/api/bookings", bookingExperienceRoutes); 
-app.use("/api/ai", aiRoutes); // Updated: Use AI routes for RAG
-app.use('/api/moments', momentRoutes);
-app.use('/api/recommendations', recommendationRoutes);
+app.use("/api/bookings", bookingExperienceRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/moments", momentRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/assistant", assistantRoutes);
-app.use("/uploads", express.static("uploads"));
 
 // Health Check
 app.get("/", (req, res) => res.send("Ceylon Mate API Running Successfully"));
@@ -43,8 +46,8 @@ app.use((req, res) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err.stack);
-  res.status(500).json({ error: "Internal Server Error" });
+  console.error("Server Error:", err.stack || err);
+  res.status(500).json({ error: err.message || "Internal Server Error" });
 });
 
 const PORT = process.env.PORT || 5000;

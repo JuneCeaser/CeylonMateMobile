@@ -1,5 +1,3 @@
-// frontend/app/(tourist)/culture.js
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -17,6 +15,10 @@ import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import api from "../../constants/api";
+
+const GREEN = "#2E7D32";
+const DARK_GREEN = "#1B5E20";
+const BG = "#F6F8F7";
 
 export default function CultureScreen() {
   const router = useRouter();
@@ -68,14 +70,14 @@ export default function CultureScreen() {
     const coverImage =
       item?.images?.[0] ||
       item?.vrPreview?.url ||
-      "https://via.placeholder.com/150";
+      "https://via.placeholder.com/300x300";
 
     const safePrice = Number(item?.price || 0);
     const safeRating = Number(item?.rating || 0);
 
     return (
       <TouchableOpacity
-        style={styles.ultraCompactCard}
+        style={styles.card}
         activeOpacity={0.9}
         onPress={() =>
           router.push({
@@ -87,37 +89,37 @@ export default function CultureScreen() {
         <View style={styles.imageBox}>
           <Image source={{ uri: coverImage }} style={styles.thumbImage} />
 
-          <View style={styles.miniCategory}>
-            <Text style={styles.miniCategoryText}>
-              {item?.category || "Experience"}
-            </Text>
-          </View>
-
           {!!item?.vrPreview?.url && (
-            <View style={styles.vrMiniBadge}>
-              <Ionicons name="glasses-outline" size={10} color="#fff" />
-              <Text style={styles.vrMiniBadgeText}>360</Text>
+            <View style={styles.vrBadge}>
+              <Ionicons name="glasses-outline" size={12} color="#fff" />
+              <Text style={styles.vrBadgeText}>360</Text>
             </View>
           )}
+
+          <View style={styles.categoryOverlay}>
+            <Text style={styles.categoryOverlayText} numberOfLines={1}>
+              {(item?.category || "Experience").toUpperCase()}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.textContainer}>
-          <View>
-            <View style={styles.topRow}>
+        <View style={styles.contentBox}>
+          <View style={styles.topContent}>
+            <View style={styles.titleRow}>
               <Text style={styles.titleMain} numberOfLines={2}>
                 {item?.title || "Untitled Experience"}
               </Text>
 
-              <View style={styles.ratingRow}>
-                <Ionicons name="star" size={10} color="#FFA000" />
-                <Text style={styles.ratingVal}>
+              <View style={styles.ratingBadge}>
+                <Ionicons name="star" size={12} color="#F59E0B" />
+                <Text style={styles.ratingText}>
                   {safeRating > 0 ? safeRating.toFixed(1) : "New"}
                 </Text>
               </View>
             </View>
 
             <View style={styles.hostRow}>
-              <Ionicons name="person-circle-outline" size={14} color="#2E7D32" />
+              <Ionicons name="person-circle-outline" size={15} color={GREEN} />
               <Text style={styles.hostNameText} numberOfLines={1}>
                 Hosted by {item?.hostName || "Local Guide"}
               </Text>
@@ -125,14 +127,16 @@ export default function CultureScreen() {
           </View>
 
           <View style={styles.bottomSection}>
-            <View>
+            <View style={styles.priceWrap}>
               <Text style={styles.priceHead}>Price per guest</Text>
-              <Text style={styles.priceValText}>LKR {safePrice.toLocaleString()}</Text>
+              <Text style={styles.priceValText}>
+                LKR {safePrice.toLocaleString()}
+              </Text>
             </View>
 
-            <View style={styles.insightBtn}>
-              <Text style={styles.insightBtnText}>Explore</Text>
-              <Ionicons name="chevron-forward" size={13} color="#FFF" />
+            <View style={styles.exploreBtn}>
+              <Text style={styles.exploreBtnText}>Explore</Text>
+              <Ionicons name="chevron-forward" size={14} color="#FFF" />
             </View>
           </View>
         </View>
@@ -142,9 +146,9 @@ export default function CultureScreen() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={["#2E7D32", "#1B5E20"]} style={styles.header}>
+      <LinearGradient colors={[GREEN, DARK_GREEN]} style={styles.header}>
         <View style={styles.headerTopRow}>
-          <View>
+          <View style={{ flex: 1, paddingRight: 12 }}>
             <Text style={styles.headerTitle}>Culture Hub</Text>
             <Text style={styles.headerSubtitle}>
               Discover authentic Sri Lankan traditions 🇱🇰
@@ -154,6 +158,7 @@ export default function CultureScreen() {
           <TouchableOpacity
             style={styles.bookIcon}
             onPress={() => router.push("/(tourist)/my-bookings")}
+            activeOpacity={0.85}
           >
             <Ionicons name="calendar-outline" size={24} color="#FFF" />
             <View style={styles.notificationDot} />
@@ -161,11 +166,11 @@ export default function CultureScreen() {
         </View>
 
         <View style={styles.searchWrapper}>
-          <Ionicons name="search" size={18} color="#666" />
+          <Ionicons name="search" size={20} color="#6B7280" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search experiences..."
-            placeholderTextColor="#999"
+            placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -181,6 +186,7 @@ export default function CultureScreen() {
           <TouchableOpacity
             style={[styles.chip, !selectedCategory && styles.activeChip]}
             onPress={() => setSelectedCategory("")}
+            activeOpacity={0.85}
           >
             <Text style={[styles.chipText, !selectedCategory && styles.activeChipText]}>
               All
@@ -192,6 +198,7 @@ export default function CultureScreen() {
               key={cat}
               style={[styles.chip, selectedCategory === cat && styles.activeChip]}
               onPress={() => setSelectedCategory(cat)}
+              activeOpacity={0.85}
             >
               <Text
                 style={[
@@ -207,7 +214,7 @@ export default function CultureScreen() {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#2E7D32" style={{ marginTop: 50 }} />
+        <ActivityIndicator size="large" color={GREEN} style={{ marginTop: 50 }} />
       ) : (
         <FlatList
           data={experiences}
@@ -219,12 +226,14 @@ export default function CultureScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => fetchExperiences(true)}
-              tintColor="#2E7D32"
+              tintColor={GREEN}
             />
           }
           ListEmptyComponent={
             <View style={styles.emptyBox}>
-              <Ionicons name="leaf-outline" size={34} color="#9CA3AF" />
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="leaf-outline" size={34} color="#9CA3AF" />
+              </View>
               <Text style={styles.emptyTitle}>No experiences found</Text>
               <Text style={styles.emptyText}>
                 Try another category or search keyword.
@@ -238,214 +247,311 @@ export default function CultureScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9F9F9" },
+  container: {
+    flex: 1,
+    backgroundColor: BG,
+  },
 
-  header: { paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20 },
+  header: {
+    paddingTop: 58,
+    paddingBottom: 22,
+    paddingHorizontal: 20,
+  },
+
   headerTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 16,
   },
-  headerTitle: { fontSize: 24, fontWeight: "bold", color: "#FFF" },
-  headerSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.7)" },
+
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#FFF",
+  },
+
+  headerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.82)",
+    marginTop: 4,
+  },
 
   bookIcon: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 8,
-    borderRadius: 10,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
     position: "relative",
   },
 
   notificationDot: {
     position: "absolute",
-    top: 6,
-    right: 6,
+    top: 8,
+    right: 8,
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#F57C00",
+    backgroundColor: "#F59E0B",
     borderWidth: 1.5,
-    borderColor: "#1B5E20",
+    borderColor: DARK_GREEN,
   },
 
   searchWrapper: {
     flexDirection: "row",
     backgroundColor: "#FFF",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 42,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    height: 54,
     alignItems: "center",
   },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 14 },
 
-  filterSection: { marginVertical: 12 },
-  chipScroll: { paddingHorizontal: 20 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: "#FFF",
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: "#EEE",
+  searchInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#111827",
   },
-  activeChip: { backgroundColor: "#2E7D32", borderColor: "#2E7D32" },
-  chipText: { color: "#666", fontSize: 12, fontWeight: "600" },
-  activeChipText: { color: "#FFF" },
 
-  listContainer: { paddingHorizontal: 20, paddingBottom: 30 },
+  filterSection: {
+    marginTop: 12,
+    marginBottom: 6,
+  },
 
-  ultraCompactCard: {
+  chipScroll: {
+    paddingHorizontal: 20,
+    paddingRight: 30,
+  },
+
+  chip: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 18,
+    backgroundColor: "#FFF",
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  activeChip: {
+    backgroundColor: GREEN,
+    borderColor: GREEN,
+  },
+
+  chipText: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  activeChipText: {
+    color: "#FFF",
+  },
+
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    paddingTop: 4,
+  },
+
+  card: {
     flexDirection: "row",
     backgroundColor: "#FFF",
-    borderRadius: 15,
-    marginBottom: 12,
-    minHeight: 118,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
+    borderRadius: 20,
+    marginBottom: 14,
+    height: 175,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#EEF1EF",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
 
-  imageBox: { width: 115, minHeight: 118, position: "relative" },
-  thumbImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  imageBox: {
+    width: 128,
+    height: "100%",
+    position: "relative",
+    backgroundColor: "#E5E7EB",
+  },
 
-  miniCategory: {
-    position: "absolute",
-    bottom: 0,
+  thumbImage: {
     width: "100%",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingVertical: 3,
-  },
-  miniCategoryText: {
-    color: "#FFF",
-    fontSize: 8,
-    fontWeight: "bold",
-    textAlign: "center",
-    textTransform: "uppercase",
+    height: "100%",
+    resizeMode: "cover",
   },
 
-  vrMiniBadge: {
+  vrBadge: {
     position: "absolute",
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(46,125,50,0.95)",
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 999,
-    gap: 3,
   },
-  vrMiniBadgeText: {
+
+  vrBadgeText: {
     color: "#fff",
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "700",
+    marginLeft: 4,
   },
 
-  textContainer: {
+  categoryOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+  },
+
+  categoryOverlayText: {
+    color: "#FFF",
+    fontSize: 9,
+    fontWeight: "800",
+    textAlign: "center",
+    letterSpacing: 0.7,
+  },
+
+  contentBox: {
     flex: 1,
-    padding: 12,
+    padding: 16,
     justifyContent: "space-between",
   },
 
-  topRow: {
+  topContent: {
+    flexShrink: 1,
+  },
+
+  titleRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-start",
   },
+
   titleMain: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#222",
     flex: 1,
-    marginRight: 6,
-    lineHeight: 18,
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#111827",
+    lineHeight: 21,
+    marginRight: 8,
+  },
+
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3FAF4",
+    borderWidth: 1,
+    borderColor: "#DCEEDD",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+
+  ratingText: {
+    marginLeft: 4,
+    fontSize: 11,
+    fontWeight: "700",
+    color: GREEN,
   },
 
   hostRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
-    gap: 4,
-  },
-  hostNameText: {
-    fontSize: 11,
-    color: "#666",
-    fontWeight: "500",
-    fontStyle: "italic",
+    marginTop: 8,
   },
 
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    backgroundColor: "#F0F7F0",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  ratingVal: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#2E7D32",
+  hostNameText: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
+    marginLeft: 5,
+    flex: 1,
   },
 
   bottomSection: {
     flexDirection: "row",
+    alignItems: "flex-end",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  priceHead: {
-    fontSize: 9,
-    color: "#999",
-    marginBottom: -1,
-  },
-  priceValText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#2E7D32",
+    marginTop: 8,
   },
 
-  insightBtn: {
+  priceWrap: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  priceHead: {
+    fontSize: 11,
+    color: "#9CA3AF",
+    marginBottom: 3,
+    fontWeight: "500",
+  },
+
+  priceValText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: GREEN,
+  },
+
+  exploreBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2E7D32",
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 11,
-    gap: 4,
-    minHeight: 34,
+    backgroundColor: GREEN,
+    paddingHorizontal: 16,
+    height: 40,
+    borderRadius: 14,
   },
-  insightBtnText: {
+
+  exploreBtnText: {
     color: "#FFF",
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "capitalize",
+    fontSize: 12,
+    fontWeight: "800",
+    marginRight: 4,
   },
 
   emptyBox: {
     backgroundColor: "#FFF",
-    borderRadius: 16,
+    borderRadius: 20,
     alignItems: "center",
-    paddingVertical: 30,
+    paddingVertical: 34,
     paddingHorizontal: 20,
-    marginTop: 30,
+    marginTop: 28,
+    borderWidth: 1,
+    borderColor: "#EEF1EF",
   },
+
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
   emptyTitle: {
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: 14,
+    fontSize: 17,
     fontWeight: "700",
     color: "#111827",
   },
+
   emptyText: {
     marginTop: 6,
     fontSize: 13,
     color: "#6B7280",
     textAlign: "center",
+    lineHeight: 19,
   },
 });

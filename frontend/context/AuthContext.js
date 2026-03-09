@@ -1,197 +1,172 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext } from "react";
 import {
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut as firebaseSignOut,
-    onAuthStateChanged,
-    getIdToken,
-    updateProfile 
-} from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  getIdToken,
+  updateProfile,
+} from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Initialize the Auth Context
 const AuthContext = createContext({});
 
-/**
- * AuthProvider: The main wrapper component that manages global user state.
- * It handles Firebase Authentication, Firestore profile syncing, and session persistence.
- */
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null); 
-    const [userProfile, setUserProfile] = useState(null); 
-    const [loading, setLoading] = useState(true); 
-    const [authToken, setAuthToken] = useState(null); 
+  const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authToken, setAuthToken] = useState(null);
 
-    /**
-     * fetchProfileWithRetry:
-     * Attempts to fetch the user's Firestore document with retry support.
-     */
-    const fetchProfileWithRetry = async (uid, attempts = 3) => {
-        const docRef = doc(db, 'users', uid);
-        for (let i = 0; i < attempts; i++) {
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) return docSnap.data();
-                return null;
-            } catch (error) {
-                if (i === attempts - 1) {
-                    console.error("Firestore fetch failed after maximum attempts:", error.message);
-                    return null;
-                }
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
+  const fetchProfileWithRetry = async (uid, attempts = 3) => {
+    const docRef = doc(db, "users", uid);
+
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) return docSnap.data();
+        return null;
+      } catch (error) {
+        if (i === attempts - 1) {
+          console.error("Firestore fetch failed after maximum attempts:", error.message);
+          return null;
         }
-    };
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
+    }
+  };
 
-    useEffect(() => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
 
-        /**
-         * Firebase auth state listener
-         */
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            setLoading(true);
+      if (firebaseUser) {
+        setUser(firebaseUser);
 
-            if (firebaseUser) {
-                setUser(firebaseUser);
-
-                try {
-                    // 1️⃣ Get Firebase ID token for backend authentication
-                    const token = await getIdToken(firebaseUser);
-
-                    // 🔍 DEBUG: Show token in terminal
-                    console.log("TOKEN:", token);
-
-                    setAuthToken(token);
-                    await AsyncStorage.setItem('userToken', token);
-
-                    // 2️⃣ Fetch Firestore user profile
-                    const profileData = await fetchProfileWithRetry(firebaseUser.uid);
-
-                    if (profileData) {
-                        setUserProfile({
-                            uid: firebaseUser.uid,
-                            ...profileData
-                        });
-                    }
-
-                } catch (error) {
-                    console.error('❌ AuthContext Initialization Error:', error.message);
-                }
-
-            } else {
-                // 3️⃣ Clear states when logged out
-                setUser(null);
-                setUserProfile(null);
-                setAuthToken(null);
-                await AsyncStorage.removeItem('userToken');
-            }
-
-            setLoading(false);
-        });
-
-        return unsubscribe;
-
-    }, []);
-
-    /**
-     * Login existing user
-     */
-    const login = async (email, password) => {
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            return userCredential.user;
-        } catch (error) {
-            console.error("Login service error:", error.code);
-            throw error;
-        }
-    };
+          const token = await getIdToken(firebaseUser);
+          setAuthToken(token);
+          await AsyncStorage.setItem("userToken", token);
 
-    /**
-     * Register new user
-     */
-    const register = async (email, password, userData) => {
-        try {
+          const profileData = await fetchProfileWithRetry(firebaseUser.uid);
 
-            // Create Firebase auth account
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const firebaseUser = userCredential.user;
-
-            // Set display name
-            await updateProfile(firebaseUser, {
-                displayName: userData.name
+          if (profileData) {
+            setUserProfile({
+              uid: firebaseUser.uid,
+              ...profileData,
             });
-
-            // Build Firestore profile
-            const userDoc = {
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                name: userData.name || "",
-                phone: userData.phone || "",
-                userType: userData.userType,
-                createdAt: new Date().toISOString(),
+          } else {
+            const fallbackProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              name: firebaseUser.displayName || "",
+              phone: "",
+              bio: "",
+              location: "",
+              profileImage: "",
+              role: "tourist",
+              createdAt: new Date().toISOString(),
             };
 
-            if (userData.userType === 'tourist') {
-                userDoc.country = userData.country || "";
-            } 
-            else if (userData.userType === 'host') {
-                userDoc.expertise = userData.expertise || "";
-            }
-
-            // Save profile
-            await setDoc(doc(db, 'users', firebaseUser.uid), userDoc);
-
-            // Update local state
-            setUserProfile(userDoc);
-
-            return firebaseUser;
-
+            await setDoc(doc(db, "users", firebaseUser.uid), fallbackProfile, { merge: true });
+            setUserProfile(fallbackProfile);
+          }
         } catch (error) {
-            console.error("Registration service error:", error.message);
-            throw error;
+          console.error("AuthContext Initialization Error:", error.message);
         }
-    };
+      } else {
+        setUser(null);
+        setUserProfile(null);
+        setAuthToken(null);
+        await AsyncStorage.removeItem("userToken");
+      }
 
-    /**
-     * Logout user
-     */
-    const logout = async () => {
-        try {
-            await firebaseSignOut(auth);
-        } catch (error) {
-            console.error("Logout error:", error.message);
-            throw error;
-        }
-    };
+      setLoading(false);
+    });
 
-    const value = {
-        user,
-        userProfile,
-        authToken,
-        login,
-        register,
-        logout,
-        loading
-    };
+    return unsubscribe;
+  }, []);
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const login = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
+    } catch (error) {
+      console.error("Login service error:", error.code);
+      throw error;
+    }
+  };
+
+  const register = async (email, password, userData) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      await updateProfile(firebaseUser, {
+        displayName: userData.name,
+      });
+
+      const role = userData.userType || "tourist";
+
+      const userDoc = {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || "",
+        name: userData.name || "",
+        phone: userData.phone || "",
+        role,
+        userType: role,
+        createdAt: new Date().toISOString(),
+        bio: "",
+        location: "",
+        profileImage: "",
+      };
+
+      if (role === "tourist") {
+        userDoc.country = userData.country || "";
+      } else if (role === "host") {
+        userDoc.expertise = userData.expertise || "";
+      }
+
+      await setDoc(doc(db, "users", firebaseUser.uid), userDoc, { merge: true });
+      setUserProfile(userDoc);
+
+      return firebaseUser;
+    } catch (error) {
+      console.error("Registration service error:", error.message);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error.message);
+      throw error;
+    }
+  };
+
+  const value = {
+    user,
+    userProfile,
+    setUserProfile,
+    authToken,
+    login,
+    register,
+    logout,
+    loading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Custom hook for accessing AuthContext
- */
 export const useAuth = () => {
-    const context = useContext(AuthContext);
+  const context = useContext(AuthContext);
 
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
 
-    return context;
+  return context;
 };

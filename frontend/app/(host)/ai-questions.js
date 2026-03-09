@@ -31,8 +31,6 @@ export default function AIQuestionsScreen() {
   const [items, setItems] = useState([]);
 
   const [activeExperienceId, setActiveExperienceId] = useState("ALL");
-  const [hiddenUnknownIds, setHiddenUnknownIds] = useState(new Set());
-
   const [filterModalOpen, setFilterModalOpen] = useState(false);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -49,37 +47,40 @@ export default function AIQuestionsScreen() {
       const exps = Array.isArray(expRes.data) ? expRes.data : [];
       setExperiences(exps);
 
-      const all = [];
+      const allUnknowns = [];
 
       for (const exp of exps) {
         try {
-          const uRes = await api.get(`/assistant/unknown/${exp._id}`);
-          const list = Array.isArray(uRes.data) ? uRes.data : [];
+          const unknownRes = await api.get(`/assistant/unknown/${exp._id}`);
+          const list = Array.isArray(unknownRes.data) ? unknownRes.data : [];
 
-          list.forEach((u) => {
-            all.push({
-              ...u,
-              experienceTitle: exp.title,
-              experienceCategory: exp.category,
+          list.forEach((item) => {
+            if (item?.type && item.type !== "NEEDS_HOST") return;
+
+            allUnknowns.push({
+              ...item,
+              experienceTitle: exp?.title || "Experience",
+              experienceCategory: exp?.category || "",
             });
           });
         } catch (err) {
           console.log(
-            "Unknown fetch failed for exp:",
+            "Unknown fetch failed:",
             exp?._id,
-            err?.response?.data || err?.message
+            err?.response?.data || err?.message || err
           );
         }
       }
 
-      all.sort(
+      allUnknowns.sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
-      setItems(all);
+
+      setItems(allUnknowns);
     } catch (err) {
       Alert.alert(
         "Error",
-        err?.response?.data?.error || "Failed to load AI Questions"
+        err?.response?.data?.error || "Failed to load AI questions."
       );
     } finally {
       setLoading(false);
@@ -105,20 +106,18 @@ export default function AIQuestionsScreen() {
 
   const selectedExperienceTitle = useMemo(() => {
     const found = expOptions.find(
-      (x) => String(x._id) === String(activeExperienceId)
+      (item) => String(item._id) === String(activeExperienceId)
     );
     return found?.title || "All Experiences";
   }, [expOptions, activeExperienceId]);
 
   const visibleItems = useMemo(() => {
-    return (items || [])
-      .filter((x) => !hiddenUnknownIds.has(String(x._id)))
-      .filter((x) =>
-        activeExperienceId === "ALL"
-          ? true
-          : String(x.experienceId) === String(activeExperienceId)
-      );
-  }, [items, activeExperienceId, hiddenUnknownIds]);
+    return (items || []).filter((item) =>
+      activeExperienceId === "ALL"
+        ? true
+        : String(item.experienceId) === String(activeExperienceId)
+    );
+  }, [items, activeExperienceId]);
 
   const totalCount = visibleItems.length;
   const badgeText = totalCount > 99 ? "99+" : String(totalCount);
@@ -130,7 +129,7 @@ export default function AIQuestionsScreen() {
     setModalOpen(true);
   };
 
-  const closeModal = () => {
+  const closeAnswerModal = () => {
     Keyboard.dismiss();
     setModalOpen(false);
     setSelected(null);
@@ -141,9 +140,11 @@ export default function AIQuestionsScreen() {
   const submitAnswer = async () => {
     if (!selected) return;
 
-    const cleanAnswer = (answerText || "").trim();
+    const cleanAnswer = String(answerText || "").trim();
+    const cleanEvidence = String(evidenceText || "").trim();
+
     if (!cleanAnswer) {
-      Alert.alert("Missing Answer", "Please write an answer before saving.");
+      Alert.alert("Missing Answer", "Please write the verified answer first.");
       return;
     }
 
@@ -154,23 +155,19 @@ export default function AIQuestionsScreen() {
         experienceId: selected.experienceId,
         question: selected.question,
         answer: cleanAnswer,
-        evidence: (evidenceText || "").trim(),
+        evidence: cleanEvidence,
       });
 
-      setHiddenUnknownIds((prev) => {
-        const next = new Set([...prev]);
-        next.add(String(selected._id));
-        return next;
-      });
+      setItems((prev) =>
+        prev.filter((item) => String(item._id) !== String(selected._id))
+      );
 
-      setItems((prev) => prev.filter((x) => String(x._id) !== String(selected._id)));
-
-      Alert.alert("Saved", "Answer saved successfully.");
-      closeModal();
+      Alert.alert("Saved", "Verified answer saved successfully.");
+      closeAnswerModal();
     } catch (err) {
       Alert.alert(
         "Error",
-        err?.response?.data?.error || "Failed to save answer"
+        err?.response?.data?.error || "Failed to save verified answer."
       );
     } finally {
       setSubmitting(false);
@@ -237,6 +234,14 @@ export default function AIQuestionsScreen() {
           text: "#A16207",
           label: "Rules",
         };
+      case "WHICH":
+        return {
+          icon: "list-outline",
+          bg: "#EEF2FF",
+          border: "#C7D2FE",
+          text: "#4338CA",
+          label: "Which",
+        };
       default:
         return {
           icon: "chatbubble-ellipses-outline",
@@ -249,10 +254,12 @@ export default function AIQuestionsScreen() {
   };
 
   const renderItem = ({ item, index }) => {
+    const intentUI = getIntentConfig(item.intent);
+
     const dateText = item.createdAt
       ? new Date(item.createdAt).toLocaleString("en-GB")
       : "";
-    const intentUI = getIntentConfig(item.intent);
+
     const confidenceValue =
       typeof item.confidence === "number" ? item.confidence.toFixed(2) : "0.00";
 
@@ -281,11 +288,7 @@ export default function AIQuestionsScreen() {
             onPress={() => openAnswerModal(item)}
             activeOpacity={0.85}
           >
-            <Ionicons
-              name="create-outline"
-              size={17}
-              color={Colors.surface}
-            />
+            <Ionicons name="create-outline" size={17} color={Colors.surface} />
             <Text style={styles.answerBtnText}>Answer</Text>
           </TouchableOpacity>
         </View>
@@ -316,6 +319,7 @@ export default function AIQuestionsScreen() {
           <View style={styles.questionIconWrap}>
             <Ionicons name="help-circle" size={18} color={Colors.primary} />
           </View>
+
           <View style={{ flex: 1 }}>
             <Text style={styles.questionLabel}>Question</Text>
             <Text style={styles.questionText}>{item.question}</Text>
@@ -361,7 +365,7 @@ export default function AIQuestionsScreen() {
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.title}>AI Questions</Text>
             <Text style={styles.subtitle}>
-              Answer questions for your experiences
+              Answer relevant questions for your experiences
             </Text>
           </View>
 
@@ -388,10 +392,11 @@ export default function AIQuestionsScreen() {
                   color={Colors.primary}
                 />
               </View>
+
               <View>
                 <Text style={styles.pendingLabel}>Questions to Review</Text>
                 <Text style={styles.pendingSubtext}>
-                  Check your unanswered questions
+                  Relevant unanswered questions only.
                 </Text>
               </View>
             </View>
@@ -422,6 +427,7 @@ export default function AIQuestionsScreen() {
                 {selectedExperienceTitle}
               </Text>
             </View>
+
             <Ionicons name="chevron-down" size={18} color="#6B7280" />
           </TouchableOpacity>
         </View>
@@ -434,7 +440,7 @@ export default function AIQuestionsScreen() {
         ) : (
           <FlatList
             data={visibleItems}
-            keyExtractor={(x) => String(x._id)}
+            keyExtractor={(item) => String(item._id)}
             renderItem={renderItem}
             refreshing={refreshing}
             onRefresh={onRefresh}
@@ -452,7 +458,7 @@ export default function AIQuestionsScreen() {
                 </View>
                 <Text style={styles.emptyTitle}>All caught up</Text>
                 <Text style={styles.emptyText}>
-                  No unanswered AI questions right now.
+                  No relevant unanswered AI questions right now.
                 </Text>
               </View>
             }
@@ -475,42 +481,47 @@ export default function AIQuestionsScreen() {
               </TouchableOpacity>
             </View>
 
-            {expOptions.map((exp) => {
-              const isActive =
-                String(activeExperienceId) === String(exp._id);
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 6 }}
+            >
+              {expOptions.map((exp) => {
+                const isActive =
+                  String(activeExperienceId) === String(exp._id);
 
-              return (
-                <TouchableOpacity
-                  key={String(exp._id)}
-                  style={[
-                    styles.filterOption,
-                    isActive && styles.filterOptionActive,
-                  ]}
-                  onPress={() => {
-                    setActiveExperienceId(exp._id);
-                    setFilterModalOpen(false);
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <Text
+                return (
+                  <TouchableOpacity
+                    key={String(exp._id)}
                     style={[
-                      styles.filterOptionText,
-                      isActive && styles.filterOptionTextActive,
+                      styles.filterOption,
+                      isActive && styles.filterOptionActive,
                     ]}
+                    onPress={() => {
+                      setActiveExperienceId(exp._id);
+                      setFilterModalOpen(false);
+                    }}
+                    activeOpacity={0.85}
                   >
-                    {exp.title}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.filterOptionText,
+                        isActive && styles.filterOptionTextActive,
+                      ]}
+                    >
+                      {exp.title}
+                    </Text>
 
-                  {isActive && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={Colors.primary}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+                    {isActive && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={Colors.primary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -519,7 +530,7 @@ export default function AIQuestionsScreen() {
         visible={modalOpen}
         transparent
         animationType="fade"
-        onRequestClose={closeModal}
+        onRequestClose={closeAnswerModal}
       >
         <KeyboardAvoidingView
           style={styles.modalRoot}
@@ -533,7 +544,7 @@ export default function AIQuestionsScreen() {
                   <View style={styles.modalHeader}>
                     <Text style={styles.modalTitle}>Answer Question</Text>
                     <TouchableOpacity
-                      onPress={closeModal}
+                      onPress={closeAnswerModal}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                       <Ionicons name="close" size={22} color="#444" />
@@ -549,27 +560,59 @@ export default function AIQuestionsScreen() {
                     bounces={false}
                   >
                     {!!selected && (
-                      <View style={styles.modalSection}>
-                        <Text style={styles.modalLabel}>Question</Text>
-                        <View style={styles.modalQuestionBox}>
-                          <Ionicons
-                            name="help-circle-outline"
-                            size={16}
-                            color={Colors.primary}
-                          />
-                          <Text style={styles.modalQuestion}>
-                            {selected.question}
-                          </Text>
+                      <>
+                        <View style={styles.modalSection}>
+                          <Text style={styles.modalLabel}>Experience</Text>
+                          <View style={styles.metaPreviewCard}>
+                            <Text style={styles.metaPreviewTitle}>
+                              {selected.experienceTitle || "Experience"}
+                            </Text>
+                            {!!selected.experienceCategory && (
+                              <Text style={styles.metaPreviewSub}>
+                                {selected.experienceCategory}
+                              </Text>
+                            )}
+                          </View>
                         </View>
-                      </View>
+
+                        <View style={styles.modalSection}>
+                          <Text style={styles.modalLabel}>Tourist Question</Text>
+                          <View style={styles.modalQuestionBox}>
+                            <Ionicons
+                              name="help-circle-outline"
+                              size={16}
+                              color={Colors.primary}
+                            />
+                            <Text style={styles.modalQuestion}>
+                              {selected.question}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {!!selected.reason && (
+                          <View style={styles.modalSection}>
+                            <Text style={styles.modalLabel}>Reason</Text>
+                            <View style={styles.modalReasonBox}>
+                              <Ionicons
+                                name="information-circle-outline"
+                                size={16}
+                                color="#6B7280"
+                              />
+                              <Text style={styles.modalReasonText}>
+                                {selected.reason}
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </>
                     )}
 
                     <View style={styles.modalSection}>
-                      <Text style={styles.modalLabel}>Your Answer *</Text>
+                      <Text style={styles.modalLabel}>Verified Answer *</Text>
                       <TextInput
                         value={answerText}
                         onChangeText={setAnswerText}
-                        placeholder="Write the verified answer for tourists..."
+                        placeholder="Write the trusted answer tourists should receive..."
                         placeholderTextColor="#999"
                         style={styles.modalInput}
                         multiline
@@ -585,7 +628,7 @@ export default function AIQuestionsScreen() {
                       <TextInput
                         value={evidenceText}
                         onChangeText={setEvidenceText}
-                        placeholder="Optional note, rule, or supporting detail..."
+                        placeholder="Optional supporting detail, rule, or source note..."
                         placeholderTextColor="#999"
                         style={[styles.modalInput, styles.evidenceInput]}
                         multiline
@@ -1030,6 +1073,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 18,
     padding: 16,
+    maxHeight: "70%",
   },
 
   filterModalHeader: {
@@ -1092,7 +1136,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 24,
     overflow: "hidden",
-    maxHeight: Platform.OS === "ios" ? "78%" : "82%",
+    maxHeight: Platform.OS === "ios" ? "82%" : "86%",
   },
 
   modalHeader: {
@@ -1133,6 +1177,27 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
+  metaPreviewCard: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 14,
+    padding: 12,
+  },
+
+  metaPreviewTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
+  },
+
+  metaPreviewSub: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+
   modalQuestionBox: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1150,6 +1215,25 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#111827",
     lineHeight: 20,
+  },
+
+  modalReasonBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    columnGap: 8,
+    backgroundColor: "#FAFAFA",
+    borderWidth: 1,
+    borderColor: "#ECEFF3",
+    borderRadius: 14,
+    padding: 12,
+  },
+
+  modalReasonText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#6B7280",
+    lineHeight: 19,
+    fontWeight: "500",
   },
 
   modalInput: {

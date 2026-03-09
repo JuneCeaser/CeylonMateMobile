@@ -13,7 +13,7 @@ const unknownQuestionSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-    }, // firebase uid
+    },
 
     question: {
       type: String,
