@@ -15,7 +15,7 @@ import axios from 'axios';
 import ImageView from "react-native-image-viewing";
 
 // ⚠️ Replace with your Laptop's IP Address
-const API_URL = 'http://192.168.1.4:5000/api/places';                                                                             
+const API_URL = 'https://ceylonmate-backend.vercel.app/api/places';                                                                             
 
 const { width } = Dimensions.get('window');
 

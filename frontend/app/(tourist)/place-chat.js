@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { Colors } from '../../constants/theme';
 
-const API_URL = 'http://192.168.1.4:5000/api/places/chat';
+const API_URL = 'https://ceylonmate-backend.vercel.app/api/places/chat';
 
 export default function PlaceChatScreen() {
   const router = useRouter();
