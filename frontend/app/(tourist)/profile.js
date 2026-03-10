@@ -24,6 +24,12 @@ export default function ProfileScreen() {
     const router = useRouter();
     const { user, userProfile, logout } = useAuth();
 
+    //if you want firebase uid add console log here
+    console.log("Firebase UID:", userProfile?.firebaseUid);
+    console.log("Auth user UID:", user?.uid);
+    console.log("Full userProfile:", userProfile);
+    
+
     // States for the Moments feature
     const [moments, setMoments] = useState([]);
     const [loadingMoments, setLoadingMoments] = useState(true);

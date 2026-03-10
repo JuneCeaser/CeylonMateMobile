@@ -497,7 +497,7 @@ const updateExperience = async (req, res) => {
       updateData.images = Array.isArray(experience.images) ? experience.images : [];
     }
 
-    // Separate 360 VR image
+    // 360 VR image
     if (req.files?.vrImage?.[0]) {
       updateData.vrPreview = {
         type: "image",

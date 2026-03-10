@@ -5,89 +5,20 @@ const VerifiedQA = require("../models/VerifiedQA");
 const UnknownQuestion = require("../models/UnknownQuestion");
 const AssistantQALog = require("../models/AssistantQALog");
 
+// Initialize Groq LLM client for answer generation, verification, and voice transcription
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const ANSWER_THRESHOLD = 0.75;
-const CLARIFY_THRESHOLD = 0.5;
+// Confidence thresholds used in decision logic
+// Questions below CLARIFY_THRESHOLD are refused; between thresholds ask for clarification
+const ANSWER_THRESHOLD = 0.75;    // Min confidence to directly answer
+const CLARIFY_THRESHOLD = 0.5;    // Min confidence to ask for clarification (else refuse)
 
+// Stopwords to exclude from keyword matching - improves relevance by focusing on meaningful terms
 const STOPWORDS = new Set([
-  "a",
-  "an",
-  "and",
-  "are",
-  "as",
-  "at",
-  "be",
-  "but",
-  "by",
-  "can",
-  "could",
-  "did",
-  "do",
-  "does",
-  "for",
-  "from",
-  "get",
-  "give",
-  "had",
-  "has",
-  "have",
-  "how",
-  "i",
-  "in",
-  "into",
-  "is",
-  "it",
-  "its",
-  "me",
-  "my",
-  "of",
-  "on",
-  "or",
-  "please",
-  "should",
-  "tell",
-  "that",
-  "the",
-  "their",
-  "them",
-  "this",
-  "to",
-  "was",
-  "we",
-  "what",
-  "when",
-  "where",
-  "which",
-  "who",
-  "why",
-  "with",
-  "would",
-  "you",
-  "your",
-  "about",
-  "explain",
-  "mean",
-  "means",
-  "meaning",
-  "there",
-  "here",
-  "these",
-  "those",
-  "am",
-  "will",
-  "just",
-  "like",
-  "more",
-  "less",
-  "very",
-  "really",
-  "traditional",
-  "culture",
-  "cultural",
-  "experience",
+  "a","an","and","are","as","at","be","but","by","can","could","did","do","does","for","from","get","give","had","has","have","how","i","in","into","is","it","its","me","my","of","on","or","please","should","tell","that","the","their","them","this","to","was","we","what","when","where","which","who","why","with","would","you","your","about","explain","mean","means","meaning","there","here","these","those","am","will","just","like","more","less","very","really","traditional","culture","cultural","experience",
 ]);
 
+// Fetch experience with assistant knowledge fields
 async function getAssistantExperience(experienceId) {
   return Experience.findById(experienceId).select(
     "+assistantKnowledge +hostFullNotes +vrVideoUrl"
@@ -98,6 +29,11 @@ function cleanText(value = "") {
   return String(value || "").trim();
 }
 
+/**
+ * Normalize question for consistent comparison
+ * Lowercases, removes punctuation, collapses spaces
+ * Used for exact match queries and heuristic scoring
+ */
 function normalizeQuestion(q = "") {
   return String(q || "")
     .toLowerCase()
@@ -116,6 +52,10 @@ function tokenize(text = "") {
     .filter((w) => !STOPWORDS.has(w));
 }
 
+/**
+ * Remove duplicates from array and clean null/empty values
+ * Preserves order, useful for deduplicating keyword lists
+ */
 function uniqueStrings(values = []) {
   return [
     ...new Set(
@@ -154,6 +94,8 @@ function keywordOverlapDetails(a = "", b = "") {
     bSize: bTokens.size,
   };
 }
+
+// INTENT DETECTION - Categorize questions by type for routing
 
 function detectIntent(qRaw = "") {
   const q = qRaw.toLowerCase().trim();
@@ -239,6 +181,10 @@ function detectIntent(qRaw = "") {
   return "OTHER";
 }
 
+/**
+ * Get LLM instruction strings tailored to detected intent
+ * Ensures the AI focuses on the right type of information when answering
+ */
 function getIntentInstruction(intent = "OTHER") {
   switch (intent) {
     case "TOOLS":
@@ -270,6 +216,8 @@ function getIntentInstruction(intent = "OTHER") {
   }
 }
 
+
+//Check if transcript is too weak to process as a real question, Helps avoid processing accidental/junk audio input
 function isWeakTranscript(text = "") {
   const q = normalizeQuestion(text);
 
@@ -277,19 +225,9 @@ function isWeakTranscript(text = "") {
   if (q.length < 4) return true;
 
   const blockedExact = new Set([
-    "thank you",
-    "thank you for watching",
-    "thanks",
-    "thanks for watching",
-    "okay",
-    "ok",
-    "hello",
-    "hi",
-    "hmm",
-    "um",
-    "huh",
-    "yes",
-    "no",
+    "thank you","thank you for watching",
+    "thanks","thanks for watching","okay",
+    "ok","hello","hi","hmm","um","huh","yes","no",
   ]);
 
   if (blockedExact.has(q)) return true;
@@ -300,6 +238,13 @@ function isWeakTranscript(text = "") {
   return false;
 }
 
+// EVIDENCE COLLECTION & RANKING - Extract and score relevant information
+
+/**
+ * Build searchable profile from experience
+ * Extracts all text content from experience and assistant knowledge
+ * Creates token set for efficient keyword matching
+ */
 function buildExperienceProfile(exp = {}) {
   const ak = exp.assistantKnowledge || {};
 
@@ -349,6 +294,7 @@ function buildExperienceProfile(exp = {}) {
   };
 }
 
+//Checks keyword overlap and title/category matches, Efficiently filters obviously off-topic questions before LLM call
 function judgeRelevanceHeuristically(question = "", exp = {}) {
   const qTokens = tokenize(question);
   const profile = buildExperienceProfile(exp);
@@ -386,6 +332,8 @@ function judgeRelevanceHeuristically(question = "", exp = {}) {
   };
 }
 
+//Use LLM to determine if question is relevant to experience
+//Called when heuristic check is uncertain, Provides more nuanced relevance judgment than keyword matching
 async function checkRelevanceLLM({ question, exp }) {
   const ak = exp.assistantKnowledge || {};
 
@@ -447,6 +395,8 @@ Rituals: ${(ak.rituals || [])
   return out.includes("NOT") ? "NOT_RELEVANT" : "RELEVANT";
 }
 
+//Create a scored evidence item for ranking
+//Tracks label, source, and keyword overlap for later ranking
 function makeEvidenceItem(label, text, sourceKey, question = "") {
   const clean = cleanText(text);
   if (!clean) return null;
@@ -462,6 +412,8 @@ function makeEvidenceItem(label, text, sourceKey, question = "") {
   };
 }
 
+//Extract all candidate evidence from experience
+//Creates evidence items with relevance scores for later ranking
 function collectEvidenceCandidates(exp = {}, question = "", intent = "OTHER") {
   const ak = exp.assistantKnowledge || {};
   const items = [];
@@ -611,15 +563,7 @@ function collectEvidenceCandidates(exp = {}, question = "", intent = "OTHER") {
 
   const intentPreferredKeys = {
     TOOLS: ["tools", "tool", "equipment"],
-    MATERIALS: [
-      "ingredients",
-      "material",
-      "materials",
-      "fabric",
-      "wax",
-      "dye",
-      "colors",
-    ],
+    MATERIALS: ["ingredients","material","materials","fabric","wax","dye","colors",],
     STEPS: ["steps", "step", "how", "process", "procedure"],
     HISTORY: ["origins", "history", "background", "when"],
     WHY: ["why", "culturalBackground", "origins.history", "rituals"],
@@ -659,6 +603,7 @@ function collectEvidenceCandidates(exp = {}, question = "", intent = "OTHER") {
   return sorted;
 }
 
+//Select best evidence pieces from all candidates
 function buildEvidenceBundle(exp = {}, question = "", intent = "OTHER") {
   const ranked = collectEvidenceCandidates(exp, question, intent);
   const topRelevant = ranked.filter((x) => x.rankScore > 0.08).slice(0, 10);
@@ -685,6 +630,7 @@ function buildEvidenceBundle(exp = {}, question = "", intent = "OTHER") {
   };
 }
 
+//Calculate confidence score for response
 function computeConfidence({
   exactVerified = false,
   fuzzyScore = 0,
@@ -705,6 +651,8 @@ function computeConfidence({
   return Number(Math.max(0, Math.min(0.92, score)).toFixed(2));
 }
 
+//Find exact question match in verified Q&A database
+//Checks normalized question text,Highest confidence matches - used if found
 async function findExactVerifiedQA(experienceId, cleanQuestion) {
   const questionNorm = normalizeQuestion(cleanQuestion);
 
@@ -714,6 +662,8 @@ async function findExactVerifiedQA(experienceId, cleanQuestion) {
   });
 }
 
+//Find best fuzzy match in verified Q&A database
+//Scores candidates by keyword overlap in question/evidence/answer fields. Used when exact match not found but similar question exists
 async function findBestVerifiedQA(experienceId, cleanQuestion, intent) {
   const candidates = await VerifiedQA.find({ experienceId })
     .sort({ updatedAt: -1, createdAt: -1 })
@@ -779,6 +729,7 @@ async function findBestVerifiedQA(experienceId, cleanQuestion, intent) {
   return { item: null, score: 0 };
 }
 
+//Generate answer using LLM
 async function generateAnswerLLM({
   question,
   evidence,
@@ -824,6 +775,7 @@ ${evidence}`,
   return completion.choices?.[0]?.message?.content?.trim() || "";
 }
 
+//Verify that generated answer is supported by provided evidence
 async function verifyAnswer({ question, evidence, answer }) {
   if (!answer || !evidence) {
     return { verdict: "SKIPPED", reason: "No answer or information." };
@@ -881,6 +833,7 @@ ${answer}`,
   return { verdict, reason };
 }
 
+//Save unanswered/unclear question for host review
 async function saveUnknownQuestion({
   experienceId,
   touristId,
@@ -917,6 +870,8 @@ async function saveUnknownQuestion({
   }
 }
 
+// MESSAGE BUILDERS - Friendly fallback messages
+//Message when question is relevant but needs more specific details, Guides user to ask more specific follow-up questions
 function buildClarifyMessage(exp = {}) {
   return `I need a little more detail to answer correctly about "${exp.title}". Please ask in a more specific way, for example about the materials, tools, steps, meaning, history, or rules.`;
 }
@@ -925,6 +880,7 @@ function buildOffTopicMessage(exp = {}) {
   return `That question seems unrelated to this experience. Please ask something specifically about "${exp.title}".`;
 }
 
+//Message when question is on-topic but not yet in knowledge base
 function buildUnknownMessage() {
   return "That is a good question. I do not have enough verified detail yet, but I’ll save it so the host can add a trusted answer later.";
 }
@@ -934,6 +890,7 @@ exports.askAssistant = async (req, res) => {
     const touristId = req.user?.id;
     const { experienceId, question } = req.body;
 
+    // Verify user is authenticated
     if (!touristId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -946,6 +903,7 @@ exports.askAssistant = async (req, res) => {
       return res.status(400).json({ error: "question is required" });
     }
 
+    // Fetch experience with all assistant knowledge data
     const exp = await getAssistantExperience(experienceId);
     if (!exp) {
       return res.status(404).json({ error: "Experience not found" });
@@ -953,6 +911,7 @@ exports.askAssistant = async (req, res) => {
 
     const cleanQuestion = cleanText(question);
 
+    // Reject noise: empty text, fillers, incomplete words
     if (isWeakTranscript(cleanQuestion)) {
       return res.status(400).json({
         error:
@@ -970,6 +929,7 @@ exports.askAssistant = async (req, res) => {
 
     const intent = detectIntent(cleanQuestion);
 
+    // Route 1: Check for exact match in verified Q&A database
     const exactVerified = await findExactVerifiedQA(exp._id, cleanQuestion);
     if (exactVerified?.answer) {
       const log = await AssistantQALog.create({
@@ -998,6 +958,7 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
+    // Route 2: Assess question relevance to this specific experience
     const relevanceHeuristic = judgeRelevanceHeuristically(cleanQuestion, exp);
     let relevance = relevanceHeuristic.relevant ? "RELEVANT" : "UNCERTAIN";
 
@@ -1049,6 +1010,7 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
+    // Route 3: Search for similar verified Q&A matches
     const fuzzyVerified = await findBestVerifiedQA(
       exp._id,
       cleanQuestion,
@@ -1084,8 +1046,10 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
+    // Route 4: Build evidence bundle from experience knowledge
     const evidenceBundle = buildEvidenceBundle(exp, cleanQuestion, intent);
 
+    // Calculate confidence using multiple signals
     let confidence = computeConfidence({
       exactVerified: false,
       fuzzyScore: fuzzyVerified.score,
@@ -1175,6 +1139,7 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
+    // Route 5: Generate answer using LLM with collected evidence
     const answer = await generateAnswerLLM({
       question: cleanQuestion,
       evidence: evidenceBundle.evidenceText,
@@ -1229,6 +1194,8 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
+    // Route 6: Verify that answer is supported by evidence
+    // This catches hallucinations where LLM invents unsupported information
     const verification = await verifyAnswer({
       question: cleanQuestion,
       evidence: evidenceBundle.evidenceText,
@@ -1259,6 +1226,7 @@ exports.askAssistant = async (req, res) => {
       });
     }
 
+    // Log interaction for analytics and debugging
     const log = await AssistantQALog.create({
       touristId,
       experienceId: exp._id,
@@ -1291,6 +1259,10 @@ exports.askAssistant = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/assistant/voice
+ * Voice-based question handler with speech-to-text
+ */
 exports.voiceAssistant = async (req, res) => {
   try {
     const touristId = req.user?.id;
@@ -1307,6 +1279,7 @@ exports.voiceAssistant = async (req, res) => {
       return res.status(400).json({ error: "experienceId is required" });
     }
 
+    // Transcribe audio to text using Groq Whisper model
     const transcription = await groq.audio.transcriptions.create({
       file: fs.createReadStream(req.file.path),
       model: "whisper-large-v3",
@@ -1314,6 +1287,7 @@ exports.voiceAssistant = async (req, res) => {
       temperature: 0,
     });
 
+    // Validate transcription output quality
     const recognizedText = cleanText(transcription?.text);
 
     if (!recognizedText || isWeakTranscript(recognizedText)) {
@@ -1331,6 +1305,7 @@ exports.voiceAssistant = async (req, res) => {
       });
     }
 
+    // Pass transcription to text handler for processing
     req.body.question = recognizedText;
     req.body.experienceId = experienceId;
 
@@ -1339,6 +1314,7 @@ exports.voiceAssistant = async (req, res) => {
     console.error("Assistant voice error:", err.message);
     return res.status(500).json({ error: "Voice assistant failed" });
   } finally {
+    // Clean up temporary audio file regardless of success/failure
     try {
       if (req.file?.path && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -1352,6 +1328,11 @@ exports.voiceAssistant = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/assistant/history
+ * Retrieve question/answer history for logged-in tourist
+ * Used to show chat history in the app
+ */
 exports.getMyHistory = async (req, res) => {
   try {
     const touristId = req.user?.id;
@@ -1370,6 +1351,11 @@ exports.getMyHistory = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/assistant/verified-qa
+ * Host endpoint to add verified answers for unknown questions
+ * Helps improve assistant over time by building trusted answer database
+ */
 exports.addVerifiedQA = async (req, res) => {
   try {
     const hostId = req.user?.id;
@@ -1397,6 +1383,7 @@ exports.addVerifiedQA = async (req, res) => {
     const questionNorm = normalizeQuestion(cleanQ);
     const detectedIntent = detectIntent(cleanQ);
 
+    // Create or update verified Q&A record
     const doc = await VerifiedQA.findOneAndUpdate(
       {
         experienceId: exp._id,
@@ -1420,6 +1407,7 @@ exports.addVerifiedQA = async (req, res) => {
       }
     );
 
+    // Clean up corresponding unknown question entries after host provides answer
     try {
       await UnknownQuestion.deleteMany({
         experienceId: exp._id,
@@ -1439,20 +1427,28 @@ exports.addVerifiedQA = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/assistant/unknown/:experienceId
+ * Host endpoint to view all unanswered questions from tourists
+ * Helps hosts identify knowledge gaps to fill in their experience data
+ */
 exports.getUnknownForExperience = async (req, res) => {
   try {
     const hostId = req.user?.id;
     const { experienceId } = req.params;
 
+    // Verify experience exists
     const exp = await Experience.findById(experienceId);
     if (!exp) {
       return res.status(404).json({ error: "Experience not found" });
     }
 
+    // Only the host can view unknown questions for their experience
     if (String(exp.host) !== String(hostId)) {
       return res.status(401).json({ error: "Unauthorized host" });
     }
 
+    // Fetch unanswered questions sorted by newest first
     const items = await UnknownQuestion.find({
       experienceId: exp._id,
       type: "NEEDS_HOST",

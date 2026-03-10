@@ -97,10 +97,7 @@ exports.addMoment = async (req, res) => {
             console.error("Vision AI Error:", aiError.message);
         }
 
-        // --- SMART LOCATION LOGIC ---
-        // Priority 1: Use Manual Location (if user typed one for an activity).
-        // Priority 2: Use AI Identified City (if AI found a landmark like Dalada Maligawa).
-        // Priority 3: Fallback to Device GPS (the 'location' variable from the frontend).
+        //LOCATION LOGIC 
         const finalLocation = manualLocation || (aiData.city && aiData.city !== "Sri Lanka" ? `${aiData.city}, Sri Lanka` : location);
 
         const newMoment = new Moment({
